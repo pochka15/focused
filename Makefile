@@ -1,0 +1,2 @@
+start:
+	bun dev
