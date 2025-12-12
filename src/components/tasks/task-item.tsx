@@ -41,9 +41,9 @@ export const TaskItem = ({
     <div
       {...dragHandleProps}
       className={cn(
-        "flex items-center gap-2 p-2 bg-white dark:bg-gray-800 rounded-md border border-gray-200 dark:border-gray-700 group transition-all duration-200 hover:shadow-md cursor-grab",
+        "group flex cursor-grab items-center gap-2 rounded-md border border-gray-200 bg-white p-2 transition-all duration-200 hover:shadow-md dark:border-gray-700 dark:bg-gray-800",
         isDragging
-          ? "opacity-50 rotate-1 scale-105 shadow-lg cursor-grabbing"
+          ? "scale-105 rotate-1 cursor-grabbing opacity-50 shadow-lg"
           : "opacity-100"
       )}
     >
@@ -68,14 +68,14 @@ export const TaskItem = ({
           onChange={(e) => setWipTitle(e.target.value)}
           onBlur={handleEdit}
           onKeyDown={handleKeyPress}
-          className="flex-1 h-6 text-sm"
+          className="h-6 flex-1 text-sm"
           autoFocus
         />
       ) : (
         <span
           className={cn(
-            "flex-1 text-sm cursor-pointer",
-            task.completed && "line-through text-gray-500"
+            "flex-1 cursor-pointer text-sm",
+            task.completed && "text-gray-500 line-through"
           )}
           onClick={() => setIsEditing(true)}
         >
@@ -87,7 +87,7 @@ export const TaskItem = ({
         variant="ghost"
         size="icon-sm"
         onClick={() => removeTask(groupId, task.id)}
-        className="text-gray-400 hover:text-red-500 opacity-0 group-hover:opacity-100"
+        className="text-gray-400 opacity-0 group-hover:opacity-100 hover:text-red-500"
       >
         <X className="size-4" />
       </Button>

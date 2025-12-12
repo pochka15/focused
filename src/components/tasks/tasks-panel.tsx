@@ -23,7 +23,7 @@ export const TasksPanel: FC<{ className?: string }> = ({ className }) => {
 
   return (
     <div className={className}>
-      <div className="flex gap-2 mb-6">
+      <div className="mb-6 flex gap-2">
         <Input
           value={newGroupName}
           onChange={(e) => setNewGroupName(e.target.value)}
@@ -32,15 +32,15 @@ export const TasksPanel: FC<{ className?: string }> = ({ className }) => {
           className="flex-1"
         />
         <Button onClick={handleAddGroup} disabled={!newGroupName.trim()}>
-          <Plus className="w-4 h-4" />
+          <Plus className="h-4 w-4" />
           Add Group
         </Button>
       </div>
 
       <div className="space-y-6">
         {groups.length === 0 ? (
-          <div className="text-center py-12 text-gray-500">
-            <p className="text-lg mb-2">No task groups yet</p>
+          <div className="py-12 text-center text-gray-500">
+            <p className="mb-2 text-lg">No task groups yet</p>
             <p>Create your first group to get started!</p>
           </div>
         ) : (

@@ -70,18 +70,18 @@ export const Timeline = () => {
 
   return (
     <div className="mb-2">
-      <div className="h-1 bg-gray-200 dark:bg-gray-700 rounded-full">
+      <div className="h-1 rounded-full bg-gray-200 dark:bg-gray-700">
         <div
           className={cn(
-            "h-1 rounded-full bg-primary",
+            "bg-primary h-1 rounded-full",
             isUrgent && "bg-red-500"
           )}
           style={{ width: `${Math.min(100, (minutesLeft / 60) * 100)}%` }}
         />
       </div>
 
-      <div className="flex items-center justify-between mt-2">
-        <div className="text-xs text-muted-foreground">Time left</div>
+      <div className="mt-2 flex items-center justify-between">
+        <div className="text-muted-foreground text-xs">Time left</div>
         <div className="flex items-center gap-2">
           {editingTime ? (
             <Input
@@ -96,7 +96,7 @@ export const Timeline = () => {
             />
           ) : (
             <button
-              className="text-sm text-muted-foreground hover:underline"
+              className="text-muted-foreground text-sm hover:underline"
               onClick={() => setEditingTime(true)}
             >
               {formatTime(minutesLeft)}

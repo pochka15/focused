@@ -71,7 +71,7 @@ export const FocusPanel: FC<{
 
   return (
     <div className={className}>
-      <div className="flex items-center gap-3 mb-4">
+      <div className="mb-4 flex items-center gap-3">
         <Select
           value={focusedGroupId ?? undefined}
           onValueChange={(v: string) => setFocusedGroup(v)}
@@ -89,8 +89,8 @@ export const FocusPanel: FC<{
         </Select>
       </div>
 
-      <div className="bg-white dark:bg-gray-800 rounded-md p-6 border border-gray-200 dark:border-gray-700 mb-4">
-        <p className="text-lg font-semibold mb-4">
+      <div className="mb-4 rounded-md border border-gray-200 bg-white p-6 dark:border-gray-700 dark:bg-gray-800">
+        <p className="mb-4 text-lg font-semibold">
           {focusedTask ? focusedTask.title : "No tasks so far"}
         </p>
 
@@ -100,7 +100,7 @@ export const FocusPanel: FC<{
         <div className="mt-6 flex justify-end">
           {nextTask ? (
             <div className="text-right">
-              <div className="text-xs text-muted-foreground">
+              <div className="text-muted-foreground text-xs">
                 Up next{" "}
                 {nextGroupId !== focusedGroupId && nextGroup
                   ? `from ${nextGroup.name}`
@@ -109,7 +109,7 @@ export const FocusPanel: FC<{
               <p className="mt-1 text-xs">{nextTask.title}</p>
             </div>
           ) : (
-            <div className="text-xs text-muted-foreground">Finito</div>
+            <div className="text-muted-foreground text-xs">Finito</div>
           )}
         </div>
       </div>

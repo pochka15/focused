@@ -86,8 +86,8 @@ export const TaskGroup = ({ group }: { group: TaskGroupData }) => {
   };
 
   return (
-    <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
-      <div className="flex items-center justify-between mb-3">
+    <div className="rounded-lg border border-gray-200 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-900">
+      <div className="mb-3 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Button
             variant="ghost"
@@ -96,9 +96,9 @@ export const TaskGroup = ({ group }: { group: TaskGroupData }) => {
             className="text-gray-400 hover:text-gray-600"
           >
             {isCollapsed ? (
-              <ChevronUp className="w-4 h-4" />
+              <ChevronUp className="h-4 w-4" />
             ) : (
-              <ChevronDown className="w-4 h-4" />
+              <ChevronDown className="h-4 w-4" />
             )}
           </Button>
 
@@ -108,12 +108,12 @@ export const TaskGroup = ({ group }: { group: TaskGroupData }) => {
               onChange={(e) => setEditGroupName(e.target.value)}
               onBlur={handleGroupNameEdit}
               onKeyDown={handleGroupNameKeyPress}
-              className="font-semibold h-7 text-base"
+              className="h-7 text-base font-semibold"
               autoFocus
             />
           ) : (
             <h3
-              className="font-semibold text-lg cursor-pointer hover:text-blue-600"
+              className="cursor-pointer text-lg font-semibold hover:text-blue-600"
               onClick={() => setIsEditingGroupName(true)}
             >
               {group.name}
@@ -151,7 +151,7 @@ export const TaskGroup = ({ group }: { group: TaskGroupData }) => {
             <Droppable droppableId={group.id}>
               {(provided) => (
                 <div
-                  className="space-y-2 mb-3"
+                  className="mb-3 space-y-2"
                   {...provided.droppableProps}
                   ref={provided.innerRef}
                 >
