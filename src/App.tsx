@@ -1,39 +1,20 @@
-import { MainPanel } from "@/components/experimental/main-panel";
-import { FocusPanel } from "@/components/focus-panel";
-import { TasksPanel } from "@/components/tasks/tasks-panel";
+import { CommandLine } from "@/components/command-line";
+import { MainPanel } from "@/components/main-panel";
 import { ThemeProvider } from "@/components/theme-provider";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useState } from "react";
+import { Help } from "./components/help";
 import "./index.css";
-import { useShortcuts } from "./lib/hooks/use-shortcuts";
+import { NuphyProvider } from "./lib/nuphy/nuphy-provider";
 
 export function App() {
-  const [activeTab, setActiveTab] = useState("tab3");
-  const switchTab = () =>
-    setActiveTab((it) => (it === "tab1" ? "tab2" : "tab1"));
-
-  useShortcuts({ "cmd+j": switchTab });
-
   return (
     <ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme">
-      <div className="bg-background text-foreground min-h-screen p-4">
-        <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList>
-            <TabsTrigger value="tab1">Tasks</TabsTrigger>
-            <TabsTrigger value="tab2">Focus</TabsTrigger>
-            <TabsTrigger value="tab3">Experimental</TabsTrigger>
-          </TabsList>
-          <TabsContent value="tab1">
-            <TasksPanel className="max-w-4xl" />
-          </TabsContent>
-          <TabsContent value="tab2">
-            <FocusPanel className="max-w-4xl" onTabChange={switchTab} />
-          </TabsContent>
-          <TabsContent value="tab3">
-            <MainPanel />
-          </TabsContent>
-        </Tabs>
-      </div>
+      <NuphyProvider>
+        <div className="bg-background text-foreground min-h-screen p-4">
+          <MainPanel />
+          <CommandLine />
+          <Help />
+        </div>
+      </NuphyProvider>
     </ThemeProvider>
   );
 }
