@@ -7,7 +7,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Slider } from "@/components/ui/slider";
-import { useUiStore } from "@/domain/stores/ui-store";
+import { useUiStore } from "@/lib/stores/ui-store";
 import { dropRight, head, nth } from "lodash";
 import { useState, type FC } from "react";
 

@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { useTasksStore, type Task } from "@/domain/stores/tasks-store";
-import { cn } from "@/lib/utils";
+import { useTasksStore, type Task } from "@/lib/stores/tasks-store";
+import { cn } from "@/lib/random/utils";
 import type { DraggableProvidedDragHandleProps } from "@hello-pangea/dnd";
 import { Check, GripVertical, X } from "lucide-react";
 import { useState } from "react";

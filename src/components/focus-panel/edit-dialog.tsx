@@ -10,8 +10,8 @@ import {
   useTasksStore,
   type Task,
   type TaskGroup,
-} from "@/domain/stores/tasks-store";
-import { useUiStore } from "@/domain/stores/ui-store";
+} from "@/lib/stores/tasks-store";
+import { useUiStore } from "@/lib/stores/ui-store";
 import { useState, type FC } from "react";
 
 export const EditDialog: FC<{ open: boolean; onClose: () => void }> = ({

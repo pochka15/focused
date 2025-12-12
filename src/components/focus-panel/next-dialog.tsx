@@ -6,7 +6,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { useTasksStore } from "@/domain/stores/tasks-store";
+import { useTasksStore } from "@/lib/stores/tasks-store";
 import { useState, type FC } from "react";
 
 export const NextDialog: FC<{

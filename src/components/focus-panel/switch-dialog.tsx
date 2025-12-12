@@ -6,8 +6,8 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { useTasksStore } from "@/domain/stores/tasks-store";
-import { useUiStore } from "@/domain/stores/ui-store";
+import { useTasksStore } from "@/lib/stores/tasks-store";
+import { useUiStore } from "@/lib/stores/ui-store";
 import { useState, type FC } from "react";
 
 export const SwitchDialog: FC<{ open: boolean; onClose: () => void }> = ({

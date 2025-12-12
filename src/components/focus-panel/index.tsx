@@ -10,8 +10,8 @@ import {
   useTasksStore,
   type Task,
   type TaskGroup,
-} from "@/domain/stores/tasks-store";
-import { useUiStore } from "@/domain/stores/ui-store";
+} from "@/lib/stores/tasks-store";
+import { useUiStore } from "@/lib/stores/ui-store";
 import { useShortcuts } from "@/lib/hooks/use-shortcuts";
 import { head } from "lodash";
 import { useState, type FC } from "react";

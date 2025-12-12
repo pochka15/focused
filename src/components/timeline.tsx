@@ -1,5 +1,5 @@
-import { useUiStore } from "@/domain/stores/ui-store";
-import { cn } from "@/lib/utils";
+import { useUiStore } from "@/lib/stores/ui-store";
+import { cn } from "@/lib/random/utils";
 import { useEffect, useState } from "react";
 import {
   formatTime,

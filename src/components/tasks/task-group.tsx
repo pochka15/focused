@@ -3,7 +3,7 @@ import { Input } from "@/components/ui/input";
 import {
   useTasksStore,
   type TaskGroup as TaskGroupData,
-} from "@/domain/stores/tasks-store";
+} from "@/lib/stores/tasks-store";
 import type { DropResult } from "@hello-pangea/dnd";
 import { DragDropContext, Draggable, Droppable } from "@hello-pangea/dnd";
 import { Plus, X, ChevronDown, ChevronUp } from "lucide-react";

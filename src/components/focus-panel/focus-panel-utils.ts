@@ -1,4 +1,4 @@
-import type { Task, TaskGroup } from "@/domain/stores/tasks-store";
+import type { Task, TaskGroup } from "@/lib/stores/tasks-store";
 
 export const parseTimeString = (str: string) => {
   // Accept formats like "1H:30m" or "01:30" or "90" (minutes)

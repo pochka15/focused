@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { useTasksStore } from "@/domain/stores/tasks-store";
+import { useTasksStore } from "@/lib/stores/tasks-store";
 import { Plus } from "lucide-react";
 import { useState, type FC } from "react";
 import { TaskGroup } from "./task-group";
