@@ -1,6 +1,6 @@
 export type NewTask = {
   name: string;
-  urgencyLvl: "urgent" | "normal" | "evening";
+  priority: "p1" | "p2" | "p3";
   tag: "garbage" | "nicely-done" | "just-do-it";
   mode: "deep" | "light";
 };

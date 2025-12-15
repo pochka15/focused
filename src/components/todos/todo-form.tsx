@@ -11,17 +11,21 @@ import { useTodosStore } from "@/lib/stores/todos-store";
 import type { Task } from "@/lib/todos/todo-models";
 import { findKey } from "lodash";
 import { ArrowRight } from "lucide-react";
-import { modes as importedModes, tags as importedTags } from "./todo-table-row";
+import {
+  modes as importedModes,
+  tags as importedTags,
+  priority as importedPriority,
+} from "./todo-table-row";
 
-const urgencyLvl: Record<Task["urgencyLvl"], [string, string]> = {
-  urgent: ["🔥 Горит", "A"],
-  evening: ["Не горит", "S"],
-  normal: ["Можно потом", "D"],
+const priority: Record<Task["priority"], [string, string]> = {
+  p1: [importedPriority["p1"], "A"],
+  p2: [importedPriority["p2"], "S"],
+  p3: [importedPriority["p3"], "D"],
 };
 
 const tags: Record<Task["tag"], [string, string]> = {
-  "just-do-it": [importedTags["just-do-it"], "J"],
-  "nicely-done": [importedTags["nicely-done"], "K"],
+  "nicely-done": [importedTags["nicely-done"], "J"],
+  "just-do-it": [importedTags["just-do-it"], "K"],
   garbage: [importedTags.garbage, "L"],
 };
 
@@ -57,9 +61,9 @@ export const TodoForm = () => {
       const findKeyByHint = (obj: Record<string, [string, string]>) =>
         findKey(obj, ([_, hint]) => hint.toLowerCase() === key);
 
-      const urgencyKey = findKeyByHint(urgencyLvl);
-      if (urgencyKey) {
-        form.setFieldValue("urgencyLvl", urgencyKey as Task["urgencyLvl"]);
+      const priorityKey = findKeyByHint(priority);
+      if (priorityKey) {
+        form.setFieldValue("priority", priorityKey as Task["priority"]);
         return true;
       }
 
@@ -135,15 +139,15 @@ export const TodoForm = () => {
       </div>
 
       <form.Field
-        name="urgencyLvl"
+        name="priority"
         children={(field) => (
           <ToggleGroup
             type="single"
             spacing={2}
             value={field.state.value}
-            onValueChange={(it) => field.handleChange(it as any)}
+            onValueChange={(it) => field.handleChange(it as Task["priority"])}
           >
-            {Object.entries(urgencyLvl).map(([value, [label, hint]]) => (
+            {Object.entries(priority).map(([value, [label, hint]]) => (
               <ToggleGroupItem
                 key={value}
                 value={value}
@@ -165,7 +169,7 @@ export const TodoForm = () => {
             type="single"
             spacing={2}
             value={field.state.value}
-            onValueChange={(it) => field.handleChange(it as any)}
+            onValueChange={(it) => field.handleChange(it as Task["tag"])}
           >
             {Object.entries(tags).map(([value, [label, hint]]) => (
               <ToggleGroupItem
@@ -189,7 +193,7 @@ export const TodoForm = () => {
             type="single"
             spacing={2}
             value={field.state.value}
-            onValueChange={(it) => field.handleChange(it as any)}
+            onValueChange={(it) => field.handleChange(it as Task["mode"])}
           >
             {Object.entries(modes).map(([value, [label, hint]]) => (
               <ToggleGroupItem

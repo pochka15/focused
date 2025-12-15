@@ -2,13 +2,14 @@ import { sortBy } from "lodash";
 import type { Task, TodoItem } from "./todo-models";
 
 export const sortByUrgency = (todos: TodoItem[]): TodoItem[] => {
-  const priorities = { urgent: 0, normal: 1, evening: 2 } as const;
+  const priorities = { p1: 0, p2: 1, p3: 2 } as const;
   return sortBy(todos, [
     (it) => !isTask(it),
-    (it) => (isTask(it) ? priorities[it.urgencyLvl] : 0),
+    (it) => (isTask(it) ? priorities[it.priority] : 0),
   ]);
 };
 
 export function isTask(todo: TodoItem): todo is Task {
-  return "urgencyLvl" in todo;
+  const key: keyof Task = "priority";
+  return key in todo;
 }

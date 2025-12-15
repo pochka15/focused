@@ -4,15 +4,21 @@ import type { Task, TodoItem } from "@/lib/todos/todo-models";
 import type { FC } from "react";
 import { isTask } from "@/lib/todos/todo-utils";
 
+export const priority: Record<Task["priority"], string> = {
+  p1: "🔥",
+  p2: "Normal",
+  p3: "Low",
+};
+
 export const modes: Record<Task["mode"], string> = {
-  deep: "На подумать",
-  light: "На чилле",
+  deep: "🧠",
+  light: "🛋️",
 };
 
 export const tags: Record<Task["tag"], string> = {
-  "just-do-it": "Just Do It",
-  "nicely-done": "Раздать стиль",
-  garbage: "Хрень",
+  "nicely-done": "🌟",
+  "just-do-it": "🍭",
+  garbage: "🍬",
 };
 
 export const TodoTableRow: FC<{
@@ -38,9 +44,7 @@ export const TodoTableRow: FC<{
         </span>
       </TableCell>
       <TableCell>
-        <span className="py-1 font-medium">
-          {todo.urgencyLvl === "urgent" ? "🔥 Горит" : todo.urgencyLvl}
-        </span>
+        <span className="py-1 font-medium">{priority[todo.priority]}</span>
       </TableCell>
       <TableCell>
         <span className="py-1">{tags[todo.tag]}</span>
