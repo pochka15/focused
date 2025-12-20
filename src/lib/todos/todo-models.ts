@@ -1,19 +1,24 @@
+import type { TagName, TodoMode } from "./mappings";
+
 export type NewTask = {
   name: string;
-  priority: "p1" | "p2" | "p3";
-  tag: "garbage" | "nicely-done" | "just-do-it";
-  mode: "deep" | "light";
+  priority: number;
+  tag: TagName;
+  mode: TodoMode;
 };
 
 export type Task = NewTask & {
   id: string;
-  completed: boolean;
 };
 
-export type Event = {
-  id: string;
+export type NewEvent = {
   name: string;
-  date: Date;
+  rawTime: string;
 };
 
+export type Event = NewEvent & {
+  id: string;
+};
+
+export type NewTodoItem = NewTask | NewEvent;
 export type TodoItem = Task | Event;

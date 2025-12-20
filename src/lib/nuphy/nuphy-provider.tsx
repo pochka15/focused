@@ -1,32 +1,18 @@
 import { getKeysCombo } from "@/lib/random/keyboard-utils";
 import {
   createContext,
-  useCallback,
   useContext,
   useEffect,
-  useMemo,
-  useState,
+  useRef,
   type FC,
   type PropsWithChildren,
 } from "react";
-import {
-  handleEvent as importedHandleEvent,
-  type KeyHandler,
-  type KnownNuphys,
-  type NuphyEvent,
-} from "./mappings";
+import { useNuphyStore } from "../stores/nuphys-store";
+import { nuphyPriorities, type KeyHandler, type KnownNuphy } from "./mappings";
 
 type NuphyProviderContextType = {
-  register: (name: KnownNuphys, handler: KeyHandler) => void;
-  unregister: (name: KnownNuphys) => void;
-  activeNuphys: string[];
-  handleEvent: (event: NuphyEvent) => void;
-};
-
-const dbg = (s: any) => {
-  if (false) {
-    console.log(s);
-  }
+  register: (name: KnownNuphy, handler: KeyHandler) => void;
+  unregister: (name: KnownNuphy) => void;
 };
 
 const NuphyProviderContext = createContext<NuphyProviderContextType | null>(
@@ -38,53 +24,39 @@ interface NuphyProviderProps {}
 export const NuphyProvider: FC<PropsWithChildren<NuphyProviderProps>> = ({
   children,
 }) => {
-  const [nuphys, setNuphys] = useState<Map<KnownNuphys, KeyHandler>>(new Map());
-  const [activeNuphys, setActiveNuphys] = useState<KnownNuphys[]>(["root"]);
+  const handlersRef = useRef<Map<KnownNuphy, KeyHandler>>(new Map());
+  const activeNuphysRef = useRef<KnownNuphy[]>([]);
 
-  dbg(activeNuphys);
+  const register = (name: KnownNuphy, handler: KeyHandler) => {
+    handlersRef.current.set(name, handler);
+    const filtered = activeNuphysRef.current.filter((n) => n !== name);
+    const newList = [...filtered, name];
+    activeNuphysRef.current = newList.sort(
+      (a, b) => nuphyPriorities[b] - nuphyPriorities[a]
+    );
+  };
 
-  const register = useCallback((name: KnownNuphys, handler: KeyHandler) => {
-    setNuphys((prev) => new Map(prev).set(name, handler));
-  }, []);
-
-  const unregister = useCallback((name: KnownNuphys) => {
-    setNuphys((prev) => {
-      const newMap = new Map(prev);
-      newMap.delete(name);
-      return newMap;
-    });
-  }, []);
-
-  const handleEvent = useCallback(
-    (ev: NuphyEvent) => importedHandleEvent(ev, setActiveNuphys),
-    []
-  );
+  const unregister = (name: KnownNuphy) => {
+    handlersRef.current.delete(name);
+    activeNuphysRef.current = activeNuphysRef.current.filter((n) => n !== name);
+  };
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
-      const keyCombo = getKeysCombo(event);
-      if (keyCombo === "cmd+j") event.preventDefault();
+      const combo = getKeysCombo(event);
+      if (combo === "cmd+j") event.preventDefault();
 
-      // Iterate through active listeners in order
-      for (const listenerName of activeNuphys) {
-        const handler = nuphys.get(listenerName);
-        if (handler) {
-          const handled = handler(keyCombo);
-          if (handled) {
-            break; // Stop processing if handler returns true
-          }
-        }
-      }
+      activeNuphysRef.current.find((name) => {
+        const handler = handlersRef.current.get(name);
+        return handler && handler(combo, event);
+      });
     };
 
     document.addEventListener("keydown", handleKeyDown);
     return () => document.removeEventListener("keydown", handleKeyDown);
-  }, [nuphys, activeNuphys]);
+  }, []);
 
-  const value: NuphyProviderContextType = useMemo(
-    () => ({ activeNuphys, register, unregister, handleEvent }),
-    [activeNuphys, register, unregister]
-  );
+  const value: NuphyProviderContextType = { register, unregister };
 
   return (
     <NuphyProviderContext.Provider value={value}>
@@ -94,42 +66,34 @@ export const NuphyProvider: FC<PropsWithChildren<NuphyProviderProps>> = ({
 };
 
 interface UseNuphyOptions {
-  name: KnownNuphys;
-  keyHandler: KeyHandler;
+  name: KnownNuphy;
+  enabled: boolean;
+  keys: KeyHandler;
 }
 
-interface UseNuphyReturn {
-  isActive: boolean;
-  sendEvent: (event: NuphyEvent) => void;
-}
-
-export const useNuphy = ({
-  name,
-  keyHandler,
-}: UseNuphyOptions): UseNuphyReturn => {
+/**
+ * Nuphy is like a keyboard listener. Just wanted to use this name.
+ */
+export const useNuphy = ({ name, enabled, keys }: UseNuphyOptions) => {
   const context = useContext(NuphyProviderContext);
+  const disableModes = useNuphyStore((it) => it.disableModes);
+  const enableMode = useNuphyStore((it) => it.enableMode);
+  const getMode = useNuphyStore((it) => it.getMode);
 
   if (!context) {
     throw new Error("useNuphy must be used within a NuphyProvider");
   }
 
-  const {
-    activeNuphys: activeListeners,
-    register,
-    unregister,
-    handleEvent,
-  } = context;
+  const { register, unregister } = context;
 
   useEffect(() => {
-    register(name, keyHandler);
+    if (enabled) register(name, keys);
+    else unregister(name);
 
     return () => {
       unregister(name);
     };
-  }, [name, register, unregister, keyHandler]);
+  }, [name, keys, enabled]);
 
-  return {
-    isActive: activeListeners.includes(name),
-    sendEvent: handleEvent,
-  };
+  return { disableModes, enableMode, getMode };
 };

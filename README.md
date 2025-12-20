@@ -1,17 +1,9 @@
 # Stay focused
 
-Experimental app. Kinda like a Todo app for switching contexts, but with less noise.
+Experimental app. Kinda like a minimalistic Todo app with extensive keyboard use.
 
-Not gonna be 100% beautiful or anything - just a pet project with some AI garbage thrown in.
-
-![Screen](./docs/screen-1.png)
-
-## Update
-
-It didn't work well for me. I've refactored it to be a simple todo app controlled by keyboard.
-
-![Screen](./docs/screen-2.png)
+[![Demo](https://github.com/pochka15/focused/blob/main/assets/demo.png)](https://drive.google.com/file/d/11ketI6uvGhBfScdbkj4uK6aR24OIetOX/view?usp=sharing)
 
 ## Quick start
 
-`make start`
+Install Bun and run via `make start`

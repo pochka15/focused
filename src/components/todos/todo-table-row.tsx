@@ -1,68 +1,55 @@
 import { TableCell, TableRow } from "@/components/ui/table";
 import { cn } from "@/lib/random/utils";
-import type { Task, TodoItem } from "@/lib/todos/todo-models";
+import { colors, findTag } from "@/lib/todos/mappings";
+import type { TodoItem } from "@/lib/todos/todo-models";
+import { checkEventIsSoon, isTask } from "@/lib/todos/todo-utils";
 import type { FC } from "react";
-import { isTask } from "@/lib/todos/todo-utils";
-
-export const priority: Record<Task["priority"], string> = {
-  p1: "🔥",
-  p2: "Normal",
-  p3: "Low",
-};
-
-export const modes: Record<Task["mode"], string> = {
-  deep: "🧠",
-  light: "🛋️",
-};
-
-export const tags: Record<Task["tag"], string> = {
-  "nicely-done": "🌟",
-  "just-do-it": "🍭",
-  garbage: "🍬",
-};
 
 export const TodoTableRow: FC<{
   todo: TodoItem;
   num: number;
   cross: boolean;
+  editing: boolean;
   nextNum?: number;
-}> = ({ todo, num, cross, nextNum }) => {
+}> = ({ todo, num, cross, editing, nextNum }) => {
+  const tag = isTask(todo) ? findTag(todo.tag) : undefined;
+  const sTag = tag ? `${tag?.emoji} ${tag?.description}` : "tag not found";
+
   return isTask(todo) ? (
-    <TableRow className={cn(cross && "text-muted-foreground line-through")}>
-      <TableCell className="w-[50px] font-mono">
+    <TableRow className={cn(cross && colors.deleting)}>
+      <TableCell
+        className={cn("w-[50px] font-mono", editing && colors.editing)}
+      >
         {num}
         {nextNum ? ` -> ${nextNum}` : ""}
       </TableCell>
-      <TableCell className="font-medium">
-        <span
-          className={cn(
-            "wrap-break-word",
-            todo.completed && "text-muted-foreground line-through"
-          )}
-        >
-          {todo.name}
-        </span>
+      <TableCell className="font-medium text-balance whitespace-normal">
+        <span> {todo.name}</span>
       </TableCell>
       <TableCell>
-        <span className="py-1 font-medium">{priority[todo.priority]}</span>
+        <span className="py-1 font-medium">{todo.priority}</span>
+      </TableCell>
+      <TableCell className="font-medium text-balance whitespace-normal">
+        <span className="py-1">{sTag}</span>
       </TableCell>
       <TableCell>
-        <span className="py-1">{tags[todo.tag]}</span>
-      </TableCell>
-      <TableCell>
-        <span className="py-1">{modes[todo.mode]}</span>
+        <span className="py-1">{todo.mode}</span>
       </TableCell>
     </TableRow>
   ) : (
-    <TableRow className={cn(cross && "text-muted-foreground line-through")}>
-      <TableCell className="w-[50px] font-mono">{num}</TableCell>
-      <TableCell className="font-medium">{todo.name}</TableCell>
-      <TableCell colSpan={2}>
-        <span className="text-muted-foreground text-sm">Event</span>
+    <TableRow className={cn(cross && colors.deleting)}>
+      <TableCell
+        className={cn("w-[50px] font-mono", editing && colors.editing)}
+      >
+        {num}
+        {nextNum ? ` -> ${nextNum}` : ""}
       </TableCell>
-      <TableCell className="text-right">
-        <span className="text-muted-foreground text-xs">
-          {new Date(todo.date).toLocaleDateString()}
+      <TableCell className="font-medium text-balance whitespace-normal">
+        {todo.name}
+      </TableCell>
+      <TableCell colSpan={3}>
+        <span className={cn(checkEventIsSoon(todo) && colors.soonEvent)}>
+          {todo.rawTime}
         </span>
       </TableCell>
     </TableRow>
