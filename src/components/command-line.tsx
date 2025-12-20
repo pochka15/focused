@@ -1,6 +1,7 @@
 import { useNuphy } from "@/lib/nuphy/nuphy-provider";
 import { cn } from "@/lib/random/utils";
 import { useEffect, useRef, useState } from "react";
+import { useTheme } from "./theme-provider";
 
 interface CommandLineProps {
   className?: string;
@@ -9,9 +10,19 @@ interface CommandLineProps {
 export const CommandLine = ({ className }: CommandLineProps) => {
   const [command, setCommand] = useState({ ready: false, value: "" });
   const inputRef = useRef<HTMLInputElement>(null);
+  const { setTheme } = useTheme();
 
   const submit = () => {
     switch (command.value) {
+      case "theme-dark":
+        setTheme("dark");
+        break;
+      case "theme-light":
+        setTheme("light");
+        break;
+      case "theme-system":
+        setTheme("system");
+        break;
       case "help":
         sendEvent({ name: "set-help", data: { isActive: true } });
         break;
