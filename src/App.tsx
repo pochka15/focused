@@ -3,6 +3,7 @@ import { Help } from "@/components/help";
 import { MainPanel } from "@/components/main-panel";
 import { ThemeProvider } from "@/components/theme-provider";
 import { NuphyProvider } from "@/lib/nuphy/nuphy-provider";
+import { Stats } from "./components/stats";
 import "./index.css";
 import { RootNuphy } from "./lib/nuphy/root-nuphy";
 
@@ -15,6 +16,7 @@ export function App() {
             <MainPanel />
             <CommandLine />
             <Help />
+            <Stats />
           </div>
         </RootNuphy>
       </NuphyProvider>
