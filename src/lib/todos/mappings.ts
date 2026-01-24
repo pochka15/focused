@@ -90,7 +90,7 @@ export const tagsMapping: Record<TagName, Tag> = {
   pleasures: {
     key: "n",
     emoji: "🍰",
-    description: "Чиста для себя пакайфавать",
+    description: "А теперь время для флекса",
     autoFill: {
       priority: 3,
       tag: "pleasures",
