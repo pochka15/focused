@@ -7,6 +7,7 @@ export const nuphyPriorities = {
   help: 4,
   command: 5,
   notesPanel: 6,
+  canvasBoard: 7,
 } as const;
 
 export type KnownNuphy = keyof typeof nuphyPriorities;

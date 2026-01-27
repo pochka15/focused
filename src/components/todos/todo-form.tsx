@@ -31,11 +31,17 @@ const tags = orderedTags
   .map((it) => findTag(it))
   .filter((it) => it !== undefined);
 
-const getDefaultValues = (editedTodo?: TodoItem) => {
-  return editedTodo ? fromTodoItem(editedTodo) : getDefaultTodo();
+const getDefaultValues = (editedTodo?: TodoItem, spawnX = 0, spawnY = 0) => {
+  const base = editedTodo ? fromTodoItem(editedTodo) : getDefaultTodo();
+  return { ...base, spawnX, spawnY };
 };
 
-export const TodoForm = () => {
+interface TodoFormProps {
+  spawnX?: number;
+  spawnY?: number;
+}
+
+export const TodoForm = ({ spawnX = 0, spawnY = 0 }: TodoFormProps) => {
   const formRef = useRef<HTMLFormElement>(null);
   const nameInputRef = useRef<HTMLInputElement>(null);
   const eventRawTimeRef = useRef<HTMLInputElement>(null);
@@ -52,14 +58,12 @@ export const TodoForm = () => {
     : undefined;
 
   const form = useForm({
-    defaultValues: getDefaultValues(editedTodo),
+    defaultValues: getDefaultValues(editedTodo, spawnX, spawnY),
     validators: { onChange: todoSchema },
     onSubmit: (res) => {
       if (editedId) editTodo(autoFillTodoItem(editedId, res.value));
       else {
         addTodo(autoFillNewTodoItem(res.value), res.value.pushFront);
-        form.resetField("name");
-        nameInputRef.current?.focus();
       }
       form.reset();
       disableModes(["editingTodo", "selectingTodos"]);
@@ -261,20 +265,20 @@ export const TodoForm = () => {
               spacing={2}
               value={field.state.value}
               onValueChange={(it) => field.handleChange(it as FTodo["tag"])}
-              className="grid grid-cols-3 gap-x-4 gap-y-8"
+              className="grid grid-cols-4 gap-2"
             >
               {tags.map(({ autoFill: { tag }, key, description, emoji }) => (
                 <ToggleGroupItem
                   key={tag}
                   value={tag}
                   aria-label={tag}
-                  className="relative flex size-full flex-col items-center justify-center rounded-lg border"
+                  className="relative flex size-full flex-col items-center justify-center rounded-lg border p-2"
                 >
-                  <span className="py-2 text-4xl">{emoji}</span>
-                  <span className="text-center text-lg whitespace-pre-line">
+                  <span className="text-2xl">{emoji}</span>
+                  <span className="text-center text-xs line-clamp-2">
                     {description}
                   </span>
-                  <span className="absolute top-1 right-1 font-mono text-xl font-bold text-pink-500">
+                  <span className="absolute top-0.5 right-0.5 font-mono text-sm font-bold text-pink-500">
                     {key}
                   </span>
                 </ToggleGroupItem>

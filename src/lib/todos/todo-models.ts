@@ -5,6 +5,8 @@ export type NewTask = {
   priority: number;
   tag: TagName;
   mode: TodoMode;
+  x: number;
+  y: number;
 };
 
 export type Task = NewTask & {
@@ -14,6 +16,8 @@ export type Task = NewTask & {
 export type NewEvent = {
   name: string;
   rawTime: string;
+  x: number;
+  y: number;
 };
 
 export type Event = NewEvent & {
