@@ -42,6 +42,8 @@ export const CanvasBoard = () => {
     x: number;
     y: number;
   } | null>(null);
+  const [selectedEnemyIds, setSelectedEnemyIds] = useState<Set<string>>(new Set());
+  const [isMouseDown, setIsMouseDown] = useState(false);
 
   const stageRef = useRef<Konva.Stage>(null);
   const lastFocusTimeRef = useRef<number>(Date.now());
@@ -180,33 +182,44 @@ export const CanvasBoard = () => {
     const transform = stage.getAbsoluteTransform().copy().invert();
     const worldPos = transform.point(pointerPosition);
 
+    // Clear selection rectangle if showing
+    setSelectionStart(null);
+    setSelectionEnd(null);
+
     setSpawnPosition({ x: worldPos.x, y: worldPos.y });
     enableMode("editingTodo");
   };
 
-  // Handle mouse down on stage to start selection
+  // Handle mouse down on stage to start selection or clear selection
   const handleStageMouseDown = (e: Konva.KonvaEventObject<MouseEvent>) => {
-    // Ignore if clicking on enemy or space is pressed
-    if (e.target !== e.target.getStage() || isSpacePressed) return;
+    // Ignore if space is pressed
+    if (isSpacePressed) return;
 
-    const stage = e.target.getStage();
-    if (!stage) return;
+    setIsMouseDown(true);
 
-    const pointerPosition = stage.getPointerPosition();
-    if (!pointerPosition) return;
+    // If clicking on empty stage, clear selection and potentially start new selection
+    if (e.target === e.target.getStage()) {
+      setSelectedEnemyIds(new Set());
 
-    // Convert screen coordinates to world coordinates
-    const transform = stage.getAbsoluteTransform().copy().invert();
-    const worldPos = transform.point(pointerPosition);
+      const stage = e.target.getStage();
+      if (!stage) return;
 
-    // Start selection
-    setSelectionStart(worldPos);
-    setSelectionEnd(worldPos);
+      const pointerPosition = stage.getPointerPosition();
+      if (!pointerPosition) return;
+
+      // Convert screen coordinates to world coordinates
+      const transform = stage.getAbsoluteTransform().copy().invert();
+      const worldPos = transform.point(pointerPosition);
+
+      // Start selection
+      setSelectionStart(worldPos);
+      setSelectionEnd(worldPos);
+    }
   };
 
   // Handle mouse move for selection rectangle
   const handleStageMouseMove = (e: Konva.KonvaEventObject<MouseEvent>) => {
-    if (!selectionStart) return;
+    if (!selectionStart || !isMouseDown) return;
 
     const stage = e.target.getStage();
     if (!stage) return;
@@ -222,8 +235,25 @@ export const CanvasBoard = () => {
 
   // Handle mouse up to end selection
   const handleStageMouseUp = () => {
+    setIsMouseDown(false);
+
     if (selectionStart && selectionEnd) {
-      // Selection complete - for now, just clear it
+      // Calculate which enemies are in the selection rectangle
+      const minX = Math.min(selectionStart.x, selectionEnd.x);
+      const maxX = Math.max(selectionStart.x, selectionEnd.x);
+      const minY = Math.min(selectionStart.y, selectionEnd.y);
+      const maxY = Math.max(selectionStart.y, selectionEnd.y);
+
+      const selected = new Set<string>();
+      todos.forEach((todo) => {
+        if (todo.x >= minX && todo.x <= maxX && todo.y >= minY && todo.y <= maxY) {
+          selected.add(todo.id);
+        }
+      });
+
+      setSelectedEnemyIds(selected);
+      
+      // Clear selection rectangle
       setSelectionStart(null);
       setSelectionEnd(null);
     }
@@ -244,11 +274,24 @@ export const CanvasBoard = () => {
     enableMode("editingTodo", { id: todoId });
   };
 
-  // Handle enemy drag (Shift + drag)
-  const handleEnemyDrag = (todoId: string, x: number, y: number) => {
+  // Handle enemy drag - if enemy is in selection, drag all selected
+  const handleEnemyDrag = (todoId: string, newX: number, newY: number) => {
     const todo = todos.find((t) => t.id === todoId);
-    if (todo) {
-      editTodo({ ...todo, x, y });
+    if (!todo) return;
+
+    const deltaX = newX - todo.x;
+    const deltaY = newY - todo.y;
+
+    if (selectedEnemyIds.has(todoId)) {
+      // Drag all selected enemies
+      todos.forEach((t) => {
+        if (selectedEnemyIds.has(t.id)) {
+          editTodo({ ...t, x: t.x + deltaX, y: t.y + deltaY });
+        }
+      });
+    } else {
+      // Drag only this enemy
+      editTodo({ ...todo, x: newX, y: newY });
     }
   };
 
@@ -293,6 +336,7 @@ export const CanvasBoard = () => {
               key={todo.id}
               todo={todo}
               isKillMode={isKillMode}
+              isSelected={selectedEnemyIds.has(todo.id)}
               isDraggingEnabled={true}
               onClick={() => handleEnemyClick(todo.id, todo.x, todo.y)}
               onRightClick={() => handleEnemyRightClick(todo.id)}

@@ -12,6 +12,7 @@ interface EnemyProps {
   onClick?: () => void;
   onRightClick?: () => void;
   isKillMode?: boolean;
+  isSelected?: boolean;
   isDraggingEnabled?: boolean;
 }
 
@@ -21,6 +22,7 @@ export const Enemy = ({
   onClick,
   onRightClick,
   isKillMode = false,
+  isSelected = false,
   isDraggingEnabled = false,
 }: EnemyProps) => {
   const groupRef = useRef<Konva.Group>(null);
@@ -54,8 +56,8 @@ export const Enemy = ({
       <Circle
         radius={ENEMY_RADIUS}
         fill={color}
-        stroke={isKillMode ? "#ef4444" : "#1e293b"} // red-500 in kill mode, slate-800 otherwise
-        strokeWidth={isKillMode ? 4 : 2}
+        stroke={isKillMode ? "#ef4444" : isSelected ? "#22d3ee" : "#1e293b"} // red in kill mode, cyan if selected, slate otherwise
+        strokeWidth={isKillMode || isSelected ? 4 : 2}
         shadowColor="black"
         shadowBlur={10}
         shadowOpacity={0.3}
