@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Stage, Layer, Circle, Text } from "react-konva";
 import { Enemy } from "./canvas-enemy";
 import { Character } from "./canvas-character";
+import { SelectionRectangle } from "./selection-rectangle";
 import { useTodosStore } from "@/lib/stores/todos-store";
 import { useNuphy } from "@/lib/nuphy/nuphy-provider";
 import { useNuphyMode } from "@/lib/stores/nuphys-store";
@@ -26,10 +27,12 @@ export const CanvasBoard = () => {
     height: window.innerHeight,
   });
   const [spawnPosition, setSpawnPosition] = useState({ x: 0, y: 0 });
-  const [characterPosition, setCharacterPosition] = useState({ x: STARTING_POINT.x, y: STARTING_POINT.y });
+  const [characterPosition, setCharacterPosition] = useState({ ...STARTING_POINT });
   const [isKillMode, setIsKillMode] = useState(false);
   const [isSpacePressed, setIsSpacePressed] = useState(false);
   const [isShiftPressed, setIsShiftPressed] = useState(false);
+  const [selectionStart, setSelectionStart] = useState<{ x: number; y: number } | null>(null);
+  const [selectionEnd, setSelectionEnd] = useState<{ x: number; y: number } | null>(null);
 
   const stageRef = useRef<Konva.Stage>(null);
   const lastFocusTimeRef = useRef<number>(Date.now());
@@ -153,7 +156,7 @@ export const CanvasBoard = () => {
     };
   }, []);
 
-  // Handle canvas click to spawn enemy
+  // Handle canvas click to spawn enemy or start selection
   const handleStageClick = (e: Konva.KonvaEventObject<MouseEvent>) => {
     // Ignore if clicking on enemy
     if (e.target !== e.target.getStage()) return;
@@ -168,26 +171,56 @@ export const CanvasBoard = () => {
     if (!pointerPosition) return;
 
     // Convert screen coordinates to world coordinates
-    const stageAttrs = stage.attrs;
-    const worldX = (pointerPosition.x - (stageAttrs.x || 0)) / (stageAttrs.scaleX || 1);
-    const worldY = (pointerPosition.y - (stageAttrs.y || 0)) / (stageAttrs.scaleY || 1);
+    const transform = stage.getAbsoluteTransform().copy().invert();
+    const worldPos = transform.point(pointerPosition);
 
-    setSpawnPosition({ x: worldX, y: worldY });
+    // If shift is pressed, start selection (but don't do anything yet)
+    if (isShiftPressed) {
+      setSelectionStart(worldPos);
+      setSelectionEnd(worldPos);
+      return;
+    }
+
+    setSpawnPosition({ x: worldPos.x, y: worldPos.y });
     enableMode("editingTodo");
   };
 
-  // Handle enemy click in kill mode
+  // Handle mouse move for selection rectangle
+  const handleStageMouseMove = (e: Konva.KonvaEventObject<MouseEvent>) => {
+    if (!isShiftPressed || !selectionStart) return;
+
+    const stage = e.target.getStage();
+    if (!stage) return;
+
+    const pointerPosition = stage.getPointerPosition();
+    if (!pointerPosition) return;
+
+    const transform = stage.getAbsoluteTransform().copy().invert();
+    const worldPos = transform.point(pointerPosition);
+
+    setSelectionEnd(worldPos);
+  };
+
+  // Handle mouse up to end selection
+  const handleStageMouseUp = () => {
+    if (selectionStart && selectionEnd) {
+      // Selection complete - for now, just clear it
+      setSelectionStart(null);
+      setSelectionEnd(null);
+    }
+  };
+
+  // Handle enemy click
   const handleEnemyClick = (todoId: string, x: number, y: number) => {
-    if (!isKillMode) return;
-
-    // Animate character to enemy position
-    setCharacterPosition({ x, y });
-
-    // Fade out and remove enemy after animation
-    setTimeout(() => {
+    if (isKillMode) {
+      // In kill mode: complete the task and teleport character
       completeTodo(todoId);
+      setCharacterPosition({ x, y });
       setIsKillMode(false);
-    }, KILL_ANIMATION_DURATION);
+    } else {
+      // Normal click: open edit form
+      enableMode("editingTodo", { id: todoId });
+    }
   };
 
   // Handle enemy drag (Shift + drag)
@@ -206,6 +239,8 @@ export const CanvasBoard = () => {
         height={dimensions.height}
         draggable={isSpacePressed}
         onClick={handleStageClick}
+        onMouseMove={handleStageMouseMove}
+        onMouseUp={handleStageMouseUp}
       >
         <Layer>
           {/* Starting point marker */}
@@ -236,11 +271,22 @@ export const CanvasBoard = () => {
               key={todo.id}
               todo={todo}
               isKillMode={isKillMode}
-              isDraggingEnabled={isShiftPressed && !isKillMode}
+              isDraggingEnabled={false}
               onClick={() => handleEnemyClick(todo.id, todo.x, todo.y)}
               onDragEnd={(x, y) => handleEnemyDrag(todo.id, x, y)}
             />
           ))}
+
+          {/* Selection rectangle */}
+          {selectionStart && selectionEnd && (
+            <SelectionRectangle
+              x={selectionStart.x}
+              y={selectionStart.y}
+              width={selectionEnd.x - selectionStart.x}
+              height={selectionEnd.y - selectionStart.y}
+              visible={true}
+            />
+          )}
 
           {/* Kill mode indicator */}
           {isKillMode && (
