@@ -1,25 +1,27 @@
-import { useEffect, useRef, useState } from "react";
-import { Stage, Layer, Circle, Text } from "react-konva";
-import { Enemy } from "./canvas-enemy";
-import { Character } from "./canvas-character";
-import { SelectionRectangle } from "./selection-rectangle";
-import { useTodosStore } from "@/lib/stores/todos-store";
+import {
+  Drawer,
+  DrawerContent,
+  DrawerHeader,
+  DrawerTitle,
+} from "@/components/ui/drawer";
+import { getDefaultPosition, hasPosition } from "@/lib/canvas/canvas-utils";
+import { STARTING_POINT } from "@/lib/canvas/constants";
+import {
+  calculateEventPosition,
+  getCurrentMinutesLeft,
+} from "@/lib/canvas/event-positioning";
 import { useNuphy } from "@/lib/nuphy/nuphy-provider";
 import { useNuphyMode } from "@/lib/stores/nuphys-store";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
-import { TodoForm } from "./todos/todo-form";
-import {
-  STARTING_POINT,
-  KILL_ANIMATION_DURATION,
-  TELEPORT_ANIMATION_DURATION,
-  EVENT_MOVE_ANIMATION_DURATION,
-  ENEMY_RADIUS,
-} from "@/lib/canvas/constants";
-import { hasPosition, getDefaultPosition } from "@/lib/canvas/canvas-utils";
-import { calculateEventPosition, getCurrentMinutesLeft } from "@/lib/canvas/event-positioning";
-import { isTask } from "@/lib/todos/todo-utils";
+import { useTodosStore } from "@/lib/stores/todos-store";
 import type { Event } from "@/lib/todos/todo-models";
+import { isTask } from "@/lib/todos/todo-utils";
 import type Konva from "konva";
+import { useEffect, useRef, useState } from "react";
+import { Circle, Layer, Stage, Text } from "react-konva";
+import { Character } from "./canvas-character";
+import { Enemy } from "./canvas-enemy";
+import { SelectionRectangle } from "./selection-rectangle";
+import { TodoForm } from "./todos/todo-form";
 
 export const CanvasBoard = () => {
   const [dimensions, setDimensions] = useState({
@@ -27,12 +29,19 @@ export const CanvasBoard = () => {
     height: window.innerHeight,
   });
   const [spawnPosition, setSpawnPosition] = useState({ x: 0, y: 0 });
-  const [characterPosition, setCharacterPosition] = useState({ ...STARTING_POINT });
+  const [characterPosition, setCharacterPosition] = useState({
+    ...STARTING_POINT,
+  });
   const [isKillMode, setIsKillMode] = useState(false);
   const [isSpacePressed, setIsSpacePressed] = useState(false);
-  const [isShiftPressed, setIsShiftPressed] = useState(false);
-  const [selectionStart, setSelectionStart] = useState<{ x: number; y: number } | null>(null);
-  const [selectionEnd, setSelectionEnd] = useState<{ x: number; y: number } | null>(null);
+  const [selectionStart, setSelectionStart] = useState<{
+    x: number;
+    y: number;
+  } | null>(null);
+  const [selectionEnd, setSelectionEnd] = useState<{
+    x: number;
+    y: number;
+  } | null>(null);
 
   const stageRef = useRef<Konva.Stage>(null);
   const lastFocusTimeRef = useRef<number>(Date.now());
@@ -107,7 +116,7 @@ export const CanvasBoard = () => {
         if (!isTask(todo)) {
           const event = todo as Event;
           const previousMinutes = eventMinutesRef.current.get(event.id);
-          
+
           if (previousMinutes !== undefined) {
             const newPosition = calculateEventPosition(
               event,
@@ -119,7 +128,7 @@ export const CanvasBoard = () => {
             if (newPosition) {
               // Update position in store
               editTodo({ ...event, x: newPosition.x, y: newPosition.y });
-              
+
               // Update tracked minutes
               const currentMinutes = getCurrentMinutesLeft(event);
               if (currentMinutes !== null) {
@@ -135,16 +144,14 @@ export const CanvasBoard = () => {
     return () => window.removeEventListener("focus", handleFocus);
   }, [todos, editTodo]);
 
-  // Track Space and Shift key state
+  // Track Space key state
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === " ") setIsSpacePressed(true);
-      if (e.key === "Shift") setIsShiftPressed(true);
     };
 
     const handleKeyUp = (e: KeyboardEvent) => {
       if (e.key === " ") setIsSpacePressed(false);
-      if (e.key === "Shift") setIsShiftPressed(false);
     };
 
     window.addEventListener("keydown", handleKeyDown);
@@ -156,13 +163,12 @@ export const CanvasBoard = () => {
     };
   }, []);
 
-  // Handle canvas click to spawn enemy or start selection
-  const handleStageClick = (e: Konva.KonvaEventObject<MouseEvent>) => {
+  // Handle canvas right-click to spawn enemy
+  const handleStageRightClick = (e: Konva.KonvaEventObject<MouseEvent>) => {
+    e.evt.preventDefault();
+
     // Ignore if clicking on enemy
     if (e.target !== e.target.getStage()) return;
-
-    // If space is pressed, allow dragging the stage
-    if (isSpacePressed) return;
 
     const stage = e.target.getStage();
     if (!stage) return;
@@ -174,20 +180,33 @@ export const CanvasBoard = () => {
     const transform = stage.getAbsoluteTransform().copy().invert();
     const worldPos = transform.point(pointerPosition);
 
-    // If shift is pressed, start selection (but don't do anything yet)
-    if (isShiftPressed) {
-      setSelectionStart(worldPos);
-      setSelectionEnd(worldPos);
-      return;
-    }
-
     setSpawnPosition({ x: worldPos.x, y: worldPos.y });
     enableMode("editingTodo");
   };
 
+  // Handle mouse down on stage to start selection
+  const handleStageMouseDown = (e: Konva.KonvaEventObject<MouseEvent>) => {
+    // Ignore if clicking on enemy or space is pressed
+    if (e.target !== e.target.getStage() || isSpacePressed) return;
+
+    const stage = e.target.getStage();
+    if (!stage) return;
+
+    const pointerPosition = stage.getPointerPosition();
+    if (!pointerPosition) return;
+
+    // Convert screen coordinates to world coordinates
+    const transform = stage.getAbsoluteTransform().copy().invert();
+    const worldPos = transform.point(pointerPosition);
+
+    // Start selection
+    setSelectionStart(worldPos);
+    setSelectionEnd(worldPos);
+  };
+
   // Handle mouse move for selection rectangle
   const handleStageMouseMove = (e: Konva.KonvaEventObject<MouseEvent>) => {
-    if (!isShiftPressed || !selectionStart) return;
+    if (!selectionStart) return;
 
     const stage = e.target.getStage();
     if (!stage) return;
@@ -217,10 +236,12 @@ export const CanvasBoard = () => {
       completeTodo(todoId);
       setCharacterPosition({ x, y });
       setIsKillMode(false);
-    } else {
-      // Normal click: open edit form
-      enableMode("editingTodo", { id: todoId });
     }
+  };
+
+  // Handle enemy right-click to edit
+  const handleEnemyRightClick = (todoId: string) => {
+    enableMode("editingTodo", { id: todoId });
   };
 
   // Handle enemy drag (Shift + drag)
@@ -238,7 +259,8 @@ export const CanvasBoard = () => {
         width={dimensions.width}
         height={dimensions.height}
         draggable={isSpacePressed}
-        onClick={handleStageClick}
+        onMouseDown={handleStageMouseDown}
+        onContextMenu={handleStageRightClick}
         onMouseMove={handleStageMouseMove}
         onMouseUp={handleStageMouseUp}
       >
@@ -271,8 +293,9 @@ export const CanvasBoard = () => {
               key={todo.id}
               todo={todo}
               isKillMode={isKillMode}
-              isDraggingEnabled={false}
+              isDraggingEnabled={true}
               onClick={() => handleEnemyClick(todo.id, todo.x, todo.y)}
+              onRightClick={() => handleEnemyRightClick(todo.id)}
               onDragEnd={(x, y) => handleEnemyDrag(todo.id, x, y)}
             />
           ))}
@@ -304,24 +327,23 @@ export const CanvasBoard = () => {
         </Layer>
       </Stage>
 
-      {/* Spawn enemy dialog */}
-      <Dialog
+      {/* Todo form drawer */}
+      <Drawer
         open={isFormOpen}
         onOpenChange={(open) => {
           if (!open) disableModes(["editingTodo"]);
         }}
+        direction="right"
       >
-        <DialogContent
-          className="max-w-md"
-          style={{
-            position: "fixed",
-            left: `${Math.min(spawnPosition.x + 100, dimensions.width - 400)}px`,
-            top: `${Math.min(spawnPosition.y, dimensions.height - 600)}px`,
-          }}
-        >
-          <TodoForm spawnX={spawnPosition.x} spawnY={spawnPosition.y} />
-        </DialogContent>
-      </Dialog>
+        <DrawerContent>
+          <DrawerHeader>
+            <DrawerTitle>Task</DrawerTitle>
+          </DrawerHeader>
+          <div className="px-4 pb-4">
+            <TodoForm spawnX={spawnPosition.x} spawnY={spawnPosition.y} />
+          </div>
+        </DrawerContent>
+      </Drawer>
     </>
   );
 };

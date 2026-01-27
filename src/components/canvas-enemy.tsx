@@ -10,6 +10,7 @@ interface EnemyProps {
   todo: TodoItem;
   onDragEnd?: (x: number, y: number) => void;
   onClick?: () => void;
+  onRightClick?: () => void;
   isKillMode?: boolean;
   isDraggingEnabled?: boolean;
 }
@@ -18,6 +19,7 @@ export const Enemy = ({
   todo,
   onDragEnd,
   onClick,
+  onRightClick,
   isKillMode = false,
   isDraggingEnabled = false,
 }: EnemyProps) => {
@@ -26,6 +28,11 @@ export const Enemy = ({
   const handleDragEnd = (e: Konva.KonvaEventObject<DragEvent>) => {
     const node = e.target;
     onDragEnd?.(node.x(), node.y());
+  };
+
+  const handleContextMenu = (e: Konva.KonvaEventObject<PointerEvent>) => {
+    e.evt.preventDefault();
+    onRightClick?.();
   };
 
   // Get color and emoji based on task type
@@ -41,6 +48,7 @@ export const Enemy = ({
       onDragEnd={handleDragEnd}
       onClick={onClick}
       onTap={onClick}
+      onContextMenu={handleContextMenu}
     >
       {/* Enemy circle */}
       <Circle
