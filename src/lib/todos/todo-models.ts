@@ -7,6 +7,7 @@ export type NewTask = {
   mode: TodoMode;
   x: number;
   y: number;
+  completed?: boolean;
 };
 
 export type Task = NewTask & {
@@ -18,6 +19,7 @@ export type NewEvent = {
   rawTime: string;
   x: number;
   y: number;
+  completed?: boolean;
 };
 
 export type Event = NewEvent & {

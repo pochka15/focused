@@ -18,6 +18,7 @@ interface EnemyProps {
   onRightClick?: () => void;
   isKillMode?: boolean;
   isSelected?: boolean;
+  isGhost?: boolean;
   isDraggingEnabled?: boolean;
 }
 
@@ -28,6 +29,7 @@ export const Enemy = ({
   onRightClick,
   isKillMode = false,
   isSelected = false,
+  isGhost = false,
   isDraggingEnabled = false,
 }: EnemyProps) => {
   const groupRef = useRef<Konva.Group>(null);
@@ -45,6 +47,7 @@ export const Enemy = ({
   // Get color and emoji based on task type
   const color = isTask(todo) ? TAG_COLORS[todo.tag] : EVENT_COLOR;
   const emoji = isTask(todo) ? tagsMapping[todo.tag].emoji : "⏰";
+  const opacity = isGhost ? 0.3 : 1;
 
   const getMinutesLeft = (): number | null => {
     return isEvent(todo) ? calcMinutesLeft((todo as Event).rawTime) : null;
@@ -59,6 +62,7 @@ export const Enemy = ({
       ref={groupRef}
       x={todo.x}
       y={todo.y}
+      opacity={opacity}
       draggable={isDraggingEnabled}
       onDragEnd={handleDragEnd}
       onClick={onClick}

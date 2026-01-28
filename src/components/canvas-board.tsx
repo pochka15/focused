@@ -208,8 +208,11 @@ export const CanvasBoard = () => {
   // Handle enemy click
   const handleEnemyClick = (todoId: string, x: number, y: number) => {
     if (isKillMode) {
-      // In kill mode: complete the task and teleport character
-      completeTodo(todoId);
+      // In kill mode: mark task as completed (ghost) and teleport character
+      const todo = todos.find((t) => t.id === todoId);
+      if (todo) {
+        editTodo({ ...todo, completed: true });
+      }
       setCharacterPosition({ x, y });
       setIsKillMode(false);
     }
@@ -283,6 +286,7 @@ export const CanvasBoard = () => {
               todo={todo}
               isKillMode={isKillMode}
               isSelected={selectedEnemyIds.has(todo.id)}
+              isGhost={todo.completed || false}
               isDraggingEnabled={true}
               onClick={() => handleEnemyClick(todo.id, todo.x, todo.y)}
               onRightClick={() => handleEnemyRightClick(todo.id)}
