@@ -6,15 +6,9 @@ import {
 } from "@/components/ui/drawer";
 import { getDefaultPosition, hasPosition } from "@/lib/canvas/canvas-utils";
 import { STARTING_POINT } from "@/lib/canvas/constants";
-import {
-  calculateEventPosition,
-  getCurrentMinutesLeft,
-} from "@/lib/canvas/event-positioning";
 import { useNuphy } from "@/lib/nuphy/nuphy-provider";
 import { useNuphyMode } from "@/lib/stores/nuphys-store";
 import { useTodosStore } from "@/lib/stores/todos-store";
-import type { Event } from "@/lib/todos/todo-models";
-import { isTask } from "@/lib/todos/todo-utils";
 import type Konva from "konva";
 import { useEffect, useRef, useState } from "react";
 import { Circle, Layer, Stage, Text } from "react-konva";
@@ -48,8 +42,6 @@ export const CanvasBoard = () => {
   const [isMouseDown, setIsMouseDown] = useState(false);
 
   const stageRef = useRef<Konva.Stage>(null);
-  const lastFocusTimeRef = useRef<number>(Date.now());
-  const eventMinutesRef = useRef<Map<string, number>>(new Map());
 
   const todos = useTodosStore((s) => s.todos);
   const editTodo = useTodosStore((s) => s.editTodo);
@@ -93,60 +85,6 @@ export const CanvasBoard = () => {
       }
     });
   }, []);
-
-  // Track event minutes for position calculations
-  useEffect(() => {
-    todos.forEach((todo) => {
-      if (!isTask(todo)) {
-        const minutes = getCurrentMinutesLeft(todo);
-        if (minutes !== null && !eventMinutesRef.current.has(todo.id)) {
-          eventMinutesRef.current.set(todo.id, minutes);
-        }
-      }
-    });
-  }, [todos]);
-
-  // Handle window focus to update event positions
-  useEffect(() => {
-    const handleFocus = () => {
-      const now = Date.now();
-      const timeSinceFocus = now - lastFocusTimeRef.current;
-      lastFocusTimeRef.current = now;
-
-      // Only process if significant time has passed (more than 10 seconds)
-      if (timeSinceFocus < 10000) return;
-
-      todos.forEach((todo) => {
-        if (!isTask(todo)) {
-          const event = todo as Event;
-          const previousMinutes = eventMinutesRef.current.get(event.id);
-
-          if (previousMinutes !== undefined) {
-            const newPosition = calculateEventPosition(
-              event,
-              event.x,
-              event.y,
-              previousMinutes
-            );
-
-            if (newPosition) {
-              // Update position in store
-              editTodo({ ...event, x: newPosition.x, y: newPosition.y });
-
-              // Update tracked minutes
-              const currentMinutes = getCurrentMinutesLeft(event);
-              if (currentMinutes !== null) {
-                eventMinutesRef.current.set(event.id, currentMinutes);
-              }
-            }
-          }
-        }
-      });
-    };
-
-    window.addEventListener("focus", handleFocus);
-    return () => window.removeEventListener("focus", handleFocus);
-  }, [todos, editTodo]);
 
   // Track Space key state
   useEffect(() => {
