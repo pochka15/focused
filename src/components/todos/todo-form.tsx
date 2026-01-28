@@ -33,7 +33,7 @@ const tags = orderedTags
 
 const getDefaultValues = (editedTodo?: TodoItem, x = 0, y = 0) => {
   const base = editedTodo ? fromTodoItem(editedTodo) : getDefaultTodo();
-  return { ...base, x, y };
+  return { ...base, x: editedTodo?.x ?? x, y: editedTodo?.y ?? y };
 };
 
 interface TodoFormProps {
