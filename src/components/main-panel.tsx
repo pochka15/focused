@@ -200,7 +200,6 @@ export const MainPanel = () => {
       <TablePanel />
       <SoonEvents />
       <TodoForm />
-      <NotesPanel />
     </div>
   );
 };
