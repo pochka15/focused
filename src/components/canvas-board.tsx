@@ -1,5 +1,6 @@
 import {
   Drawer,
+  DrawerDescription,
   DrawerContent,
   DrawerHeader,
   DrawerTitle,
@@ -327,6 +328,7 @@ export const CanvasBoard = () => {
         <DrawerContent>
           <DrawerHeader>
             <DrawerTitle>Task</DrawerTitle>
+            <DrawerDescription />
           </DrawerHeader>
           <div className="px-4 pb-4">
             <TodoForm x={spawnPosition.x} y={spawnPosition.y} />

@@ -1,7 +1,12 @@
 import { Circle, Group, Text } from "react-konva";
 import { ENEMY_RADIUS, EVENT_COLOR, TAG_COLORS } from "@/lib/canvas/constants";
 import type { TodoItem, Event } from "@/lib/todos/todo-models";
-import { isTask, calcMinutesLeft, checkEventIsSoon } from "@/lib/todos/todo-utils";
+import {
+  isTask,
+  calcMinutesLeft,
+  checkEventIsSoon,
+  isEvent,
+} from "@/lib/todos/todo-utils";
 import { tagsMapping } from "@/lib/todos/mappings";
 import { useRef } from "react";
 import type Konva from "konva";
@@ -40,6 +45,14 @@ export const Enemy = ({
   // Get color and emoji based on task type
   const color = isTask(todo) ? TAG_COLORS[todo.tag] : EVENT_COLOR;
   const emoji = isTask(todo) ? tagsMapping[todo.tag].emoji : "⏰";
+
+  const getMinutesLeft = (): number | null => {
+    return isEvent(todo) ? calcMinutesLeft((todo as Event).rawTime) : null;
+  };
+
+  const showEventTexts = (todo: TodoItem): boolean => {
+    return isEvent(todo) && checkEventIsSoon(todo);
+  };
 
   return (
     <Group
@@ -89,7 +102,7 @@ export const Enemy = ({
           wrap="word"
           ellipsis={true}
         />
-      ) : (
+      ) : showEventTexts(todo) ? (
         <>
           {/* Event time and name */}
           <Text
@@ -104,22 +117,17 @@ export const Enemy = ({
             ellipsis={true}
           />
           {/* Minutes left if event is soon */}
-          {checkEventIsSoon(todo as Event) && (() => {
-            const minutes = calcMinutesLeft((todo as Event).rawTime);
-            return minutes !== null ? (
-              <Text
-                text={`(in ${minutes} minutes)`}
-                y={ENEMY_RADIUS + 28}
-                fontSize={12}
-                fill="#f472b6"
-                align="center"
-                width={ENEMY_RADIUS * 3}
-                offsetX={ENEMY_RADIUS * 1.5}
-              />
-            ) : null;
-          })()}
+          <Text
+            text={`(in ${getMinutesLeft()} minutes)`}
+            y={ENEMY_RADIUS + 28}
+            fontSize={12}
+            fill="#f472b6"
+            align="center"
+            width={ENEMY_RADIUS * 3}
+            offsetX={ENEMY_RADIUS * 1.5}
+          />
         </>
-      )}
+      ) : null}
     </Group>
   );
 };
