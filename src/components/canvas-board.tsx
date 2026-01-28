@@ -42,7 +42,9 @@ export const CanvasBoard = () => {
     x: number;
     y: number;
   } | null>(null);
-  const [selectedEnemyIds, setSelectedEnemyIds] = useState<Set<string>>(new Set());
+  const [selectedEnemyIds, setSelectedEnemyIds] = useState<Set<string>>(
+    new Set()
+  );
   const [isMouseDown, setIsMouseDown] = useState(false);
 
   const stageRef = useRef<Konva.Stage>(null);
@@ -246,13 +248,18 @@ export const CanvasBoard = () => {
 
       const selected = new Set<string>();
       todos.forEach((todo) => {
-        if (todo.x >= minX && todo.x <= maxX && todo.y >= minY && todo.y <= maxY) {
+        if (
+          todo.x >= minX &&
+          todo.x <= maxX &&
+          todo.y >= minY &&
+          todo.y <= maxY
+        ) {
           selected.add(todo.id);
         }
       });
 
       setSelectedEnemyIds(selected);
-      
+
       // Clear selection rectangle
       setSelectionStart(null);
       setSelectionEnd(null);
@@ -384,7 +391,7 @@ export const CanvasBoard = () => {
             <DrawerTitle>Task</DrawerTitle>
           </DrawerHeader>
           <div className="px-4 pb-4">
-            <TodoForm spawnX={spawnPosition.x} spawnY={spawnPosition.y} />
+            <TodoForm x={spawnPosition.x} y={spawnPosition.y} />
           </div>
         </DrawerContent>
       </Drawer>

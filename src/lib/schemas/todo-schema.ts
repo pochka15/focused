@@ -22,8 +22,8 @@ export const todoSchema = z.object({
   todoKind: z.enum(todoKinds),
   eventRawTime: z.string(),
   pushFront: z.boolean(),
-  spawnX: z.number(),
-  spawnY: z.number(),
+  x: z.number(),
+  y: z.number(),
 });
 
 export type FTodo = z.infer<typeof todoSchema>;
@@ -36,15 +36,15 @@ export const getDefaultTodo = (): FTodo => ({
   todoKind: "task",
   eventRawTime: new Date().toTimeString().slice(0, 5),
   pushFront: true,
-  spawnX: 0,
-  spawnY: 0,
+  x: 0,
+  y: 0,
 });
 
 const toEvent = (data: FTodo): NewEvent => ({
   name: data.name,
   rawTime: data.eventRawTime,
-  x: data.spawnX,
-  y: data.spawnY,
+  x: data.x,
+  y: data.y,
 });
 
 export const autoFillNewTodoItem = (data: FTodo): NewTodoItem => {
@@ -68,8 +68,8 @@ const buildTask = (todo: Task): FTodo => {
     mode: todo.mode,
     eventRawTime: base.eventRawTime,
     pushFront: base.pushFront,
-    spawnX: todo.x,
-    spawnY: todo.y,
+    x: todo.x,
+    y: todo.y,
   };
 };
 
@@ -83,8 +83,8 @@ const buildEvent = (todo: Event): FTodo => {
     mode: base.mode,
     eventRawTime: todo.rawTime,
     pushFront: base.pushFront,
-    spawnX: todo.x,
-    spawnY: todo.y,
+    x: todo.x,
+    y: todo.y,
   };
 };
 

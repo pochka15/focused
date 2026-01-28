@@ -31,17 +31,17 @@ const tags = orderedTags
   .map((it) => findTag(it))
   .filter((it) => it !== undefined);
 
-const getDefaultValues = (editedTodo?: TodoItem, spawnX = 0, spawnY = 0) => {
+const getDefaultValues = (editedTodo?: TodoItem, x = 0, y = 0) => {
   const base = editedTodo ? fromTodoItem(editedTodo) : getDefaultTodo();
-  return { ...base, spawnX, spawnY };
+  return { ...base, x, y };
 };
 
 interface TodoFormProps {
-  spawnX?: number;
-  spawnY?: number;
+  x?: number;
+  y?: number;
 }
 
-export const TodoForm = ({ spawnX = 0, spawnY = 0 }: TodoFormProps) => {
+export const TodoForm = ({ x = 0, y = 0 }: TodoFormProps) => {
   const formRef = useRef<HTMLFormElement>(null);
   const nameInputRef = useRef<HTMLInputElement>(null);
   const eventRawTimeRef = useRef<HTMLInputElement>(null);
@@ -58,7 +58,7 @@ export const TodoForm = ({ spawnX = 0, spawnY = 0 }: TodoFormProps) => {
     : undefined;
 
   const form = useForm({
-    defaultValues: getDefaultValues(editedTodo, spawnX, spawnY),
+    defaultValues: getDefaultValues(editedTodo, x, y),
     validators: { onChange: todoSchema },
     onSubmit: (res) => {
       if (editedId) editTodo(autoFillTodoItem(editedId, res.value));

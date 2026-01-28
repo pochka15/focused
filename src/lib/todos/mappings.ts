@@ -5,7 +5,7 @@ export type Tag = {
   key: string;
   emoji: string;
   description: string;
-  autoFill: Omit<NewTask, "name">;
+  autoFill: Omit<NewTask, "name" | "x" | "y">;
 };
 
 export const orderedTags = [
