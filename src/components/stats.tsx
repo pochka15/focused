@@ -9,13 +9,15 @@ const emoji = tagsMapping[deepRoutineTag].emoji;
 
 export const Stats = () => {
   const { enabled: showingHelp } = useNuphyMode("showingHelp");
-  const history = useTodosStore((it) => it.history);
-  const tasks = history.filter((t) => isTask(t) && t.tag === deepRoutineTag);
+  const todos = useTodosStore((it) => it.todos);
+  const tasks = todos.filter(
+    (t) => isTask(t) && t.completed && t.tag === deepRoutineTag
+  );
 
   return (
     <div
       className={cn(
-        "fixed right-4 bottom-4 z-50 text-4xl",
+        "fixed top-4 right-4 z-50 text-4xl",
         showingHelp && "hidden"
       )}
     >
