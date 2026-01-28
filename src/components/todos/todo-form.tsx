@@ -262,23 +262,23 @@ export const TodoForm = ({ x = 0, y = 0 }: TodoFormProps) => {
             <p className="text-pink-500">Tags</p>
             <ToggleGroup
               type="single"
-              spacing={1}
+              spacing={2}
               value={field.state.value}
               onValueChange={(it) => field.handleChange(it as FTodo["tag"])}
-              className="flex flex-col gap-1"
+              className="grid grid-cols-3 gap-x-4 gap-y-8"
             >
               {tags.map(({ autoFill: { tag }, key, description, emoji }) => (
                 <ToggleGroupItem
                   key={tag}
                   value={tag}
                   aria-label={tag}
-                  className="relative flex w-full items-center gap-3 rounded border px-3 py-2"
+                  className="relative flex size-full flex-col items-center justify-center rounded-lg border"
                 >
-                  <span className="text-2xl">{emoji}</span>
-                  <span className="flex-1 text-left text-sm">
+                  <span className="py-2 text-4xl">{emoji}</span>
+                  <span className="text-center text-lg whitespace-pre-line">
                     {description}
                   </span>
-                  <span className="font-mono text-sm font-bold text-pink-500">
+                  <span className="absolute top-1 right-1 font-mono text-xl font-bold text-pink-500">
                     {key}
                   </span>
                 </ToggleGroupItem>

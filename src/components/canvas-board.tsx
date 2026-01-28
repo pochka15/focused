@@ -1,10 +1,10 @@
 import {
-  Drawer,
-  DrawerDescription,
-  DrawerContent,
-  DrawerHeader,
-  DrawerTitle,
-} from "@/components/ui/drawer";
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { getDefaultPosition, hasPosition } from "@/lib/canvas/canvas-utils";
 import { STARTING_POINT } from "@/lib/canvas/constants";
 import { useNuphy } from "@/lib/nuphy/nuphy-provider";
@@ -321,24 +321,20 @@ export const CanvasBoard = () => {
         </Layer>
       </Stage>
 
-      {/* Todo form drawer */}
-      <Drawer
+      <Dialog
         open={isFormOpen}
         onOpenChange={(open) => {
           if (!open) disableModes(["editingTodo"]);
         }}
-        direction="right"
       >
-        <DrawerContent>
-          <DrawerHeader>
-            <DrawerTitle>Task</DrawerTitle>
-            <DrawerDescription />
-          </DrawerHeader>
-          <div className="px-4 pb-4">
-            <TodoForm x={spawnPosition.x} y={spawnPosition.y} />
-          </div>
-        </DrawerContent>
-      </Drawer>
+        <DialogContent className="min-w-1/3">
+          <DialogHeader>
+            <DialogTitle>Task</DialogTitle>
+            <DialogDescription />
+          </DialogHeader>
+          <TodoForm x={spawnPosition.x} y={spawnPosition.y} />
+        </DialogContent>
+      </Dialog>
     </>
   );
 };
