@@ -99,10 +99,6 @@ export const Enemy = ({
           text={todo.name}
           y={ENEMY_RADIUS + 10}
           fontSize={14}
-          fill="white"
-          align="center"
-          width={ENEMY_RADIUS * 3}
-          offsetX={ENEMY_RADIUS * 1.5}
           wrap="word"
           ellipsis={true}
         />
@@ -114,9 +110,6 @@ export const Enemy = ({
             y={ENEMY_RADIUS + 10}
             fontSize={14}
             fill="#f472b6"
-            align="center"
-            width={ENEMY_RADIUS * 3}
-            offsetX={ENEMY_RADIUS * 1.5}
             wrap="word"
             ellipsis={true}
           />
@@ -126,9 +119,6 @@ export const Enemy = ({
             y={ENEMY_RADIUS + 28}
             fontSize={12}
             fill="#f472b6"
-            align="center"
-            width={ENEMY_RADIUS * 3}
-            offsetX={ENEMY_RADIUS * 1.5}
           />
         </>
       ) : null}
