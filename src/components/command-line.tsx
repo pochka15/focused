@@ -20,6 +20,7 @@ export const CommandLine = ({ className }: CommandLineProps) => {
   const getTodos = useTodosStore((it) => it.getTodos);
   const getHistory = useTodosStore((it) => it.getHistory);
   const clearHistory = useTodosStore((it) => it.clearHistory);
+  const clear = useTodosStore((it) => it.clear);
 
   const { enableMode, disableModes } = useNuphy({
     name: "command",
@@ -71,6 +72,10 @@ export const CommandLine = ({ className }: CommandLineProps) => {
         break;
       case "clear-history":
         clearHistory();
+        console.log("History cleared");
+        break;
+      case "clear":
+        clear();
         console.log("History cleared");
         break;
     }

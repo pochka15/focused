@@ -18,6 +18,7 @@ interface TodosState {
   reorder: (ids: string[]) => void;
   getHistory: () => TodoItem[];
   clearHistory: () => void;
+  clear: () => void;
 }
 
 export const useTodosStore = create<TodosState>()(
@@ -98,6 +99,13 @@ export const useTodosStore = create<TodosState>()(
         }),
 
       getHistory: () => get().history,
+
+      clear: () => {
+        set((state) => {
+          state.todos = [];
+          state.history = [];
+        });
+      },
 
       clearHistory: () =>
         set((state) => {

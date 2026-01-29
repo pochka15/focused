@@ -5,8 +5,8 @@ export const nuphyPriorities = {
   tablePanel: 2,
   addTodo: 3,
   help: 4,
-  command: 5,
-  notesPanel: 6,
+  notesPanel: 5,
+  command: 6,
   canvasBoard: 7,
 } as const;
 
