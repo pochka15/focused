@@ -19,10 +19,6 @@ export const helpCommands = {
     key: "r",
     description: "Reorder",
   },
-  focus: {
-    key: "f",
-    description: "Focus item",
-  },
   edit: {
     key: "e",
     description: "Edit item",

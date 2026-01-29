@@ -60,6 +60,32 @@ export const CanvasBoard = () => {
         return true;
       }
 
+      // Pan to right-most task
+      if (key === "f" && !isFormOpen) {
+        const stage = stageRef.current;
+        if (!stage) return false;
+
+        // Find the right-most task (highest x coordinate)
+        const rightMostTodo = todos.reduce((max, todo) => {
+          if (!hasPosition(todo)) return max;
+          return todo.x > (max?.x ?? -Infinity) ? todo : max;
+        }, null as typeof todos[0] | null);
+
+        if (rightMostTodo && hasPosition(rightMostTodo)) {
+          // Calculate the position to center the right-most task
+          const centerX = dimensions.width / 2;
+          const centerY = dimensions.height / 2;
+          
+          // Set stage position so that the right-most task is at the center
+          stage.position({
+            x: centerX - rightMostTodo.x,
+            y: centerY - rightMostTodo.y,
+          });
+          stage.batchDraw();
+        }
+        return true;
+      }
+
       return false;
     },
   });

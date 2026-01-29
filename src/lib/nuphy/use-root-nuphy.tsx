@@ -12,7 +12,6 @@ export const useRootNuphy = () => {
         [helpCommands.archive.key]: "selectingTodos",
         [helpCommands.reorder.key]: "selectingTodos",
         [helpCommands.edit.key]: "selectingTodos",
-        [helpCommands.focus.key]: "focusing",
         [helpCommands.newTodo.key]: "editingTodo",
         [helpCommands.help.key]: "showingHelp",
         [helpCommands.notes.key]: "showingNotes",
