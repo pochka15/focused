@@ -4,15 +4,16 @@ import { useTodosStore } from "@/lib/stores/todos-store";
 import { tagsMapping, type TagName } from "@/lib/todos/mappings";
 import { isTask } from "@/lib/todos/todo-utils";
 
-const deepRoutineTag: TagName = "deep-routine";
-const emoji = tagsMapping[deepRoutineTag].emoji;
+const targetTags: TagName[] = [
+  "good-one",
+  "light-good",
+  "deep-routine",
+  "light-routine",
+];
 
 export const Stats = () => {
   const { enabled: showingHelp } = useNuphyMode("showingHelp");
   const todos = useTodosStore((it) => it.todos);
-  const tasks = todos.filter(
-    (t) => isTask(t) && t.completed && t.tag === deepRoutineTag
-  );
 
   return (
     <div
@@ -22,9 +23,16 @@ export const Stats = () => {
       )}
     >
       <div className="flex gap-2">
-        {tasks.map((_, ind) => (
-          <span key={ind}>{emoji}</span>
-        ))}
+        {targetTags.map((tag) => {
+          const tasks = todos.filter(
+            (t) => isTask(t) && t.completed && t.tag === tag
+          );
+          const emoji = tagsMapping[tag].emoji;
+          
+          return tasks.map((_, ind) => (
+            <span key={`${tag}-${ind}`}>{emoji}</span>
+          ));
+        })}
       </div>
     </div>
   );
