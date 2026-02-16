@@ -13,7 +13,6 @@ import { useTodosStore } from "@/lib/stores/todos-store";
 import type Konva from "konva";
 import { useEffect, useRef, useState } from "react";
 import { Circle, Layer, Stage, Text } from "react-konva";
-import { Character } from "./canvas-character";
 import { Enemy } from "./canvas-enemy";
 import { SelectionRectangle } from "./selection-rectangle";
 import { TodoForm } from "./todos/todo-form";
@@ -24,9 +23,6 @@ export const CanvasBoard = () => {
     height: window.innerHeight,
   });
   const [spawnPosition, setSpawnPosition] = useState({ x: 0, y: 0 });
-  const [characterPosition, setCharacterPosition] = useState({
-    ...STARTING_POINT,
-  });
   const [isKillMode, setIsKillMode] = useState(false);
   const [isSpacePressed, setIsSpacePressed] = useState(false);
   const [selectionStart, setSelectionStart] = useState<{
@@ -234,12 +230,11 @@ export const CanvasBoard = () => {
   // Handle enemy click
   const handleEnemyClick = (todoId: string, x: number, y: number) => {
     if (isKillMode) {
-      // In kill mode: mark task as completed (ghost) and teleport character
+      // In kill mode: mark task as completed (ghost)
       const todo = todos.find((t) => t.id === todoId);
       if (todo) {
         editTodo({ ...todo, completed: true });
       }
-      setCharacterPosition({ x, y });
       setIsKillMode(false);
     }
   };
@@ -301,9 +296,6 @@ export const CanvasBoard = () => {
             fontStyle="bold"
             offsetX={25}
           />
-
-          {/* Character */}
-          <Character x={characterPosition.x} y={characterPosition.y} />
 
           {/* Enemies */}
           {todos.map((todo) => (
