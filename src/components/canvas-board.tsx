@@ -42,7 +42,6 @@ export const CanvasBoard = () => {
 
   const todos = useTodosStore((s) => s.todos);
   const editTodo = useTodosStore((s) => s.editTodo);
-  const completeTodo = useTodosStore((s) => s.archiveTodo);
 
   const { enabled: isFormOpen } = useNuphyMode("editingTodo");
 
