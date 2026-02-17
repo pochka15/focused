@@ -1,7 +1,8 @@
 import { create } from "zustand";
 import { immer } from "zustand/middleware/immer";
 
-type EditedTodoData = { id?: string };
+type Position = { x: number; y: number };
+type EditedTodoData = { id?: string; spawnPosition?: Position };
 type Mode<T = {}> = { enabled: boolean; data: T };
 
 export type SelectOperation = "archive" | "delete" | "reorder" | "edit";

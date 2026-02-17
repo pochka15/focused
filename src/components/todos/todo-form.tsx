@@ -36,12 +36,7 @@ const getDefaultValues = (editedTodo?: TodoItem, x = 0, y = 0) => {
   return { ...base, x: editedTodo?.x ?? x, y: editedTodo?.y ?? y };
 };
 
-interface TodoFormProps {
-  x?: number;
-  y?: number;
-}
-
-export const TodoForm = ({ x = 0, y = 0 }: TodoFormProps) => {
+export const TodoForm = () => {
   const formRef = useRef<HTMLFormElement>(null);
   const nameInputRef = useRef<HTMLInputElement>(null);
   const eventRawTimeRef = useRef<HTMLInputElement>(null);
@@ -56,6 +51,7 @@ export const TodoForm = ({ x = 0, y = 0 }: TodoFormProps) => {
   const editedTodo = editedId
     ? todos.find((it) => it.id === editedId)
     : undefined;
+  const { x, y } = editedTodoData?.spawnPosition ?? { x: 0, y: 0 };
 
   const form = useForm({
     defaultValues: getDefaultValues(editedTodo, x, y),

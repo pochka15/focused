@@ -12,7 +12,6 @@ export const useRootNuphy = () => {
         [helpCommands.archive.key]: "selectingTodos",
         [helpCommands.reorder.key]: "selectingTodos",
         [helpCommands.edit.key]: "selectingTodos",
-        [helpCommands.newTodo.key]: "editingTodo",
         [helpCommands.help.key]: "showingHelp",
         [helpCommands.notes.key]: "showingNotes",
       };
@@ -36,9 +35,6 @@ export const useRootNuphy = () => {
           disableModes(["focusing"]);
           enableMode(name, { order: [], operation });
         } else {
-          if (key === helpCommands.newTodo.key) {
-            disableModes(["selectingTodos"]);
-          }
           enableMode(name);
         }
       }

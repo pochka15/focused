@@ -5,7 +5,11 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { getDefaultPosition, hasPosition } from "@/lib/canvas/canvas-utils";
+import {
+  findRightMostTodo,
+  getDefaultPosition,
+  hasPosition,
+} from "@/lib/canvas/canvas-utils";
 import { STARTING_POINT } from "@/lib/canvas/constants";
 import { useNuphy } from "@/lib/nuphy/nuphy-provider";
 import { useNuphyMode } from "@/lib/stores/nuphys-store";
@@ -14,6 +18,7 @@ import type Konva from "konva";
 import { useEffect, useRef, useState } from "react";
 import { Circle, Layer, Stage, Text } from "react-konva";
 import { Enemy } from "./canvas-enemy";
+import { helpCommands } from "./help";
 import { SelectionRectangle } from "./selection-rectangle";
 import { TodoForm } from "./todos/todo-form";
 
@@ -22,7 +27,6 @@ export const CanvasBoard = () => {
     width: window.innerWidth,
     height: window.innerHeight,
   });
-  const [spawnPosition, setSpawnPosition] = useState({ x: 0, y: 0 });
   const [isKillMode, setIsKillMode] = useState(false);
   const [isSpacePressed, setIsSpacePressed] = useState(false);
   const [selectionStart, setSelectionStart] = useState<{
@@ -55,22 +59,29 @@ export const CanvasBoard = () => {
         return true;
       }
 
+      if (key == helpCommands.newTodo.key && !isFormOpen) {
+        event.preventDefault();
+        const rightMostTodo = findRightMostTodo(todos);
+        const spawnPosition =
+          rightMostTodo && hasPosition(rightMostTodo)
+            ? { x: rightMostTodo.x + 70, y: rightMostTodo.y - 70 }
+            : STARTING_POINT;
+        enableMode("editingTodo", { spawnPosition });
+        return true;
+      }
+
       // Pan to right-most task
       if (key === "f" && !isFormOpen) {
         const stage = stageRef.current;
         if (!stage) return false;
 
-        // Find the right-most task (highest x coordinate)
-        const rightMostTodo = todos.reduce((max, todo) => {
-          if (!hasPosition(todo)) return max;
-          return todo.x > (max?.x ?? -Infinity) ? todo : max;
-        }, null as typeof todos[0] | null);
+        const rightMostTodo = findRightMostTodo(todos);
 
         if (rightMostTodo && hasPosition(rightMostTodo)) {
           // Calculate the position to center the right-most task
           const centerX = dimensions.width / 2;
           const centerY = dimensions.height / 2;
-          
+
           // Set stage position so that the right-most task is at the center
           stage.position({
             x: centerX - rightMostTodo.x,
@@ -148,8 +159,9 @@ export const CanvasBoard = () => {
     setSelectionStart(null);
     setSelectionEnd(null);
 
-    setSpawnPosition({ x: worldPos.x, y: worldPos.y });
-    enableMode("editingTodo");
+    enableMode("editingTodo", {
+      spawnPosition: { x: worldPos.x, y: worldPos.y },
+    });
   };
 
   // Handle mouse down on stage to start selection or clear selection
@@ -349,7 +361,7 @@ export const CanvasBoard = () => {
             <DialogTitle>Task</DialogTitle>
             <DialogDescription />
           </DialogHeader>
-          <TodoForm x={spawnPosition.x} y={spawnPosition.y} />
+          <TodoForm />
         </DialogContent>
       </Dialog>
     </>

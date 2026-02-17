@@ -1,9 +1,15 @@
+import type { TodoItem } from "../todos/todo-models";
 import { STARTING_POINT } from "./constants";
 
 /**
  * Calculate distance between two points
  */
-export const distance = (x1: number, y1: number, x2: number, y2: number): number => {
+export const distance = (
+  x1: number,
+  y1: number,
+  x2: number,
+  y2: number
+): number => {
   return Math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2);
 };
 
@@ -40,6 +46,18 @@ export const moveToward = (
 export const hasPosition = (todo: { x?: number; y?: number }): boolean => {
   return typeof todo.x === "number" && typeof todo.y === "number";
 };
+
+/**
+ * Returns a todo with the highest x coordinate
+ */
+export const findRightMostTodo = (todos: TodoItem[]): TodoItem | null =>
+  todos.reduce(
+    (max, todo) => {
+      if (!hasPosition(todo)) return max;
+      return todo.x > (max?.x ?? -Infinity) ? todo : max;
+    },
+    null as (typeof todos)[0] | null
+  );
 
 /**
  * Default position generator for migrated todos
