@@ -7,6 +7,7 @@ type EditedTodoData = { id?: string; spawnPosition?: Position };
 export type Modes = {
   showingHelp: Mode;
   showingCommand: Mode;
+  editingNotifications: Mode;
   selectingTodos: Mode<{
     order: number[];
     operation: SelectOperation;
@@ -25,6 +26,5 @@ export const getDefaultModes = (): Modes => ({
   editingTodo: { enabled: false, data: {} },
   focusing: { enabled: false, data: {} },
   showingNotes: { enabled: false, data: {} },
+  editingNotifications: { enabled: false, data: {} },
 });
-
-

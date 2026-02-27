@@ -15,10 +15,10 @@ export const helpCommands = {
     key: "d",
     description: "Delete",
   },
-  reorder: {
-    key: "r",
-    description: "Reorder",
-  },
+  // reorder: {
+  //   key: "r",
+  //   description: "Reorder",
+  // },
   edit: {
     key: "e",
     description: "Edit item",
@@ -30,6 +30,10 @@ export const helpCommands = {
   notes: {
     key: "j",
     description: "Quick note",
+  },
+  notifications: {
+    key: "r",
+    description: "Edit notifications",
   },
 };
 
