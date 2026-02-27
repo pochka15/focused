@@ -1,9 +1,9 @@
-import { useNuphy } from "@/lib/nuphy/nuphy-provider";
 import { cn } from "@/lib/random/utils";
-import { useNuphyMode } from "@/lib/stores/nuphys-store";
 import { useTodosStore } from "@/lib/stores/todos-store";
 import { formatHistory } from "@/lib/todos/history-utils";
 import { sortByPriority } from "@/lib/todos/todo-utils";
+import { useShortcutsMode } from "@/shared-lib/shortcuts/shortcuts-store";
+import { useShortcuts } from "@/shared-lib/shortcuts/use-shortcuts";
 import { useEffect, useRef, useState } from "react";
 import { useTheme } from "./theme-provider";
 
@@ -15,14 +15,14 @@ export const CommandLine = ({ className }: CommandLineProps) => {
   const inputRef = useRef<HTMLInputElement>(null);
   const [command, setCommand] = useState("");
   const { setTheme } = useTheme();
-  const { enabled } = useNuphyMode("showingCommand");
+  const { enabled } = useShortcutsMode("showingCommand");
   const reorder = useTodosStore((it) => it.reorder);
   const getTodos = useTodosStore((it) => it.getTodos);
   const getHistory = useTodosStore((it) => it.getHistory);
   const clearHistory = useTodosStore((it) => it.clearHistory);
   const clear = useTodosStore((it) => it.clear);
 
-  const { enableMode, disableModes } = useNuphy({
+  const { enableMode, disableModes } = useShortcuts({
     name: "command",
     enabled,
     keys: (key) => {

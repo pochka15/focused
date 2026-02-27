@@ -5,9 +5,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { useNuphy } from "@/lib/nuphy/nuphy-provider";
 import { cn, safeParseNumber } from "@/lib/random/utils";
-import { useNuphyMode, type SelectOperation } from "@/lib/stores/nuphys-store";
+import type { SelectOperation } from "@/lib/shortcuts/shortcuts-modes";
 import { useTodosStore } from "@/lib/stores/todos-store";
 import { colors } from "@/lib/todos/mappings";
 import {
@@ -15,9 +14,10 @@ import {
   checkEventIsSoon,
   isEvent,
 } from "@/lib/todos/todo-utils";
+import { useShortcutsMode } from "@/shared-lib/shortcuts/shortcuts-store";
+import { useShortcuts } from "@/shared-lib/shortcuts/use-shortcuts";
 import { nth } from "lodash";
 import { useEffect, useState } from "react";
-import { NotesPanel } from "./notes-panel";
 import { TodoForm } from "./todos/todo-form";
 import { TodoTableRow } from "./todos/todo-table-row";
 
@@ -29,7 +29,7 @@ const SoonEvents = () => {
     .sort(
       (a, b) => calcMinutesLeft(a.rawTime)!! - calcMinutesLeft(b.rawTime)!!
     );
-  const { enabled: editing } = useNuphyMode("editingTodo");
+  const { enabled: editing } = useShortcutsMode("editingTodo");
 
   return soonEvents?.length && !editing ? (
     <div className="flex w-full flex-col items-center justify-center gap-2 pt-4">
@@ -44,11 +44,11 @@ const SoonEvents = () => {
 
 const TablePanel = () => {
   const todos = useTodosStore((it) => it.todos);
-  const { enabled: focusing } = useNuphyMode("focusing");
+  const { enabled: focusing } = useShortcutsMode("focusing");
   const { enabled: selecting, data: selectingTodosData } =
-    useNuphyMode("selectingTodos");
+    useShortcutsMode("selectingTodos");
   const { enabled: editing, data: editingTodoData } =
-    useNuphyMode("editingTodo");
+    useShortcutsMode("editingTodo");
   const reorder = useTodosStore((it) => it.reorder);
   const bulkArchive = useTodosStore((it) => it.bulkArchive);
   const bulkDelete = useTodosStore((it) => it.bulkDelete);
@@ -75,7 +75,7 @@ const TablePanel = () => {
   const displayedTodos = focusing ? todos.slice(0, 2) : todos;
   const remainingCount = focusing ? Math.max(0, todos.length - 2) : 0;
 
-  const { enableMode, disableModes } = useNuphy({
+  const { enableMode, disableModes } = useShortcuts({
     name: "tablePanel",
     enabled: selecting || focusing,
     keys: (key, evt) => {

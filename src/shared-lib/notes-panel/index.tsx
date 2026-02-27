@@ -1,25 +1,22 @@
-import { Textarea } from "@/components/ui/textarea";
-import { useNuphy } from "@/lib/nuphy/nuphy-provider";
-import { cn } from "@/lib/random/utils";
-import { useNuphyMode } from "@/lib/stores/nuphys-store";
-import { useEffect, useRef, useState } from "react";
+"use client";
 
-const NOTES_KEY = "focused-notes";
+import { Textarea } from "@/components/ui/textarea";
+import { cn } from "@/lib/random/utils";
+import { useShortcutsMode } from "@/shared-lib/shortcuts/shortcuts-store";
+import { useShortcuts } from "@/shared-lib/shortcuts/use-shortcuts";
+import { useEffect, useRef, useState } from "react";
+import { getNotes, saveNotes } from "./notes-panel-utils";
 
 export const NotesPanel = () => {
-  const { enabled } = useNuphyMode("showingNotes");
+  const { enabled } = useShortcutsMode("showingNotes");
   const [notes, setNotes] = useState("");
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
     if (enabled) {
-      const savedNotes = localStorage.getItem(NOTES_KEY);
+      const savedNotes = getNotes();
       if (savedNotes) {
-        try {
-          setNotes(JSON.parse(savedNotes));
-        } catch {
-          setNotes(savedNotes);
-        }
+        setNotes(savedNotes);
       }
 
       if (textareaRef.current) {
@@ -34,11 +31,11 @@ export const NotesPanel = () => {
   }, [enabled]);
 
   const saveAndClose = () => {
-    localStorage.setItem(NOTES_KEY, JSON.stringify(notes));
+    saveNotes(notes);
     disableModes(["showingNotes"]);
   };
 
-  const { disableModes } = useNuphy({
+  const { disableModes } = useShortcuts({
     name: "notesPanel",
     enabled,
     keys: (key) => {

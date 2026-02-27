@@ -1,8 +1,8 @@
 import { cn } from "@/lib/random/utils";
-import { useNuphyMode } from "@/lib/stores/nuphys-store";
 import { useTodosStore } from "@/lib/stores/todos-store";
 import { tagsMapping, type TagName } from "@/lib/todos/mappings";
 import { isTask } from "@/lib/todos/todo-utils";
+import { useShortcutsMode } from "@/shared-lib/shortcuts/shortcuts-store";
 
 const targetTags: TagName[] = [
   "good-one",
@@ -12,7 +12,7 @@ const targetTags: TagName[] = [
 ];
 
 export const Stats = () => {
-  const { enabled: showingHelp } = useNuphyMode("showingHelp");
+  const { enabled: showingHelp } = useShortcutsMode("showingHelp");
   const todos = useTodosStore((it) => it.todos);
 
   return (
@@ -28,7 +28,7 @@ export const Stats = () => {
             (t) => isTask(t) && t.completed && t.tag === tag
           );
           const emoji = tagsMapping[tag].emoji;
-          
+
           return tasks.map((_, ind) => (
             <span key={`${tag}-${ind}`}>{emoji}</span>
           ));

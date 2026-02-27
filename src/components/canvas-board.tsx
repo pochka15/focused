@@ -11,9 +11,9 @@ import {
   hasPosition,
 } from "@/lib/canvas/canvas-utils";
 import { STARTING_POINT } from "@/lib/canvas/constants";
-import { useNuphy } from "@/lib/nuphy/nuphy-provider";
-import { useNuphyMode } from "@/lib/stores/nuphys-store";
 import { useTodosStore } from "@/lib/stores/todos-store";
+import { useShortcutsMode } from "@/shared-lib/shortcuts/shortcuts-store";
+import { useShortcuts } from "@/shared-lib/shortcuts/use-shortcuts";
 import type Konva from "konva";
 import { useEffect, useRef, useState } from "react";
 import { Circle, Layer, Stage, Text } from "react-konva";
@@ -47,9 +47,9 @@ export const CanvasBoard = () => {
   const todos = useTodosStore((s) => s.todos);
   const editTodo = useTodosStore((s) => s.editTodo);
 
-  const { enabled: isFormOpen } = useNuphyMode("editingTodo");
+  const { enabled: isFormOpen } = useShortcutsMode("editingTodo");
 
-  const { enableMode, disableModes } = useNuphy({
+  const { enableMode, disableModes } = useShortcuts({
     name: "canvasBoard",
     enabled: true,
     keys: (key, event) => {

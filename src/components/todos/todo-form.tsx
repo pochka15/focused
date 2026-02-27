@@ -1,5 +1,4 @@
 import { Input } from "@/components/ui/input";
-import { useNuphy } from "@/lib/nuphy/nuphy-provider";
 import { cn } from "@/lib/random/utils";
 import {
   autoFillNewTodoItem,
@@ -14,7 +13,6 @@ import { useEffect, useRef } from "react";
 
 import { Button } from "@/components/ui/button";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-import { useNuphyMode } from "@/lib/stores/nuphys-store";
 import { useTodosStore } from "@/lib/stores/todos-store";
 import {
   findTag,
@@ -26,6 +24,8 @@ import {
 import type { TodoItem } from "@/lib/todos/todo-models";
 import { findKey } from "lodash";
 import { ArrowRight } from "lucide-react";
+import { useShortcutsMode } from "@/shared-lib/shortcuts/shortcuts-store";
+import { useShortcuts } from "@/shared-lib/shortcuts/use-shortcuts";
 
 const tags = orderedTags
   .map((it) => findTag(it))
@@ -46,7 +46,7 @@ export const TodoForm = () => {
   const addTodo = useTodosStore((s) => s.addTodo);
   const editTodo = useTodosStore((s) => s.editTodo);
 
-  const { enabled, data: editedTodoData } = useNuphyMode("editingTodo");
+  const { enabled, data: editedTodoData } = useShortcutsMode("editingTodo");
   const editedId = editedTodoData?.id;
   const editedTodo = editedId
     ? todos.find((it) => it.id === editedId)
@@ -70,7 +70,7 @@ export const TodoForm = () => {
     useStore(form.store, (state) => state.values.todoKind) === "task";
   const editingEvent = !editingTask;
 
-  const { disableModes } = useNuphy({
+  const { disableModes } = useShortcuts({
     name: "addTodo",
     enabled,
     keys: (key, event) => {

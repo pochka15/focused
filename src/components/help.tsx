@@ -1,6 +1,6 @@
-import { useNuphy } from "@/lib/nuphy/nuphy-provider";
 import { cn } from "@/lib/random/utils";
-import { useNuphyMode } from "@/lib/stores/nuphys-store";
+import { useShortcutsMode } from "@/shared-lib/shortcuts/shortcuts-store";
+import { useShortcuts } from "@/shared-lib/shortcuts/use-shortcuts";
 
 export const helpCommands = {
   command: {
@@ -37,9 +37,9 @@ export type HelpCommandKey =
   (typeof helpCommands)[keyof typeof helpCommands]["key"];
 
 export const Help = () => {
-  const { enabled } = useNuphyMode("showingHelp");
+  const { enabled } = useShortcutsMode("showingHelp");
 
-  const { disableModes } = useNuphy({
+  const { disableModes } = useShortcuts({
     name: "help",
     enabled,
     keys: (key) => {
