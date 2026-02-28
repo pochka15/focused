@@ -7,7 +7,6 @@ import { NotesPanel } from "@/shared-lib/notes-panel";
 import { ShortcutsProvider } from "@/shared-lib/shortcuts/shortcuts-provider";
 import { Stats } from "./components/stats";
 import "./index.css";
-import { NotificationsDialog } from "./components/notifications-dialog";
 
 export function App() {
   return (
@@ -19,7 +18,6 @@ export function App() {
           <Help />
           <Stats />
           <NotesPanel />
-          <NotificationsDialog />
         </RootShortcuts>
       </ShortcutsProvider>
     </ThemeProvider>
