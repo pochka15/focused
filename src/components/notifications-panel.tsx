@@ -1,6 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { cn } from "@/lib/random/utils";
 import {
   getDefaultNotificationRow,
   getDefaultNotifications,
@@ -12,11 +11,10 @@ import { useShortcutsMode } from "@/shared-lib/shortcuts/shortcuts-store";
 import { useShortcuts } from "@/shared-lib/shortcuts/use-shortcuts";
 import { useForm } from "@tanstack/react-form";
 import { Plus, Trash2 } from "lucide-react";
-import { Button } from "./ui/button";
 import { useRef, type KeyboardEvent } from "react";
+import { Button } from "./ui/button";
 
-export const NotificationsPanel = () => {
-  const { enabled } = useShortcutsMode("editingNotifications");
+const NotificationsForm = () => {
   const notifications = useNotificationsStore((it) => it.notifications);
   const addNotification = useNotificationsStore((it) => it.addNotification);
   const editNotification = useNotificationsStore((it) => it.editNotification);
@@ -57,7 +55,7 @@ export const NotificationsPanel = () => {
 
   const { disableModes } = useShortcuts({
     name: "notificationsPanel",
-    enabled,
+    enabled: true,
     keys: (key, event) => {
       if (key === "Escape") {
         form.handleSubmit();
@@ -77,7 +75,7 @@ export const NotificationsPanel = () => {
 
   return (
     <form
-      className={cn("flex max-w-5xl flex-col gap-4 p-4", !enabled && "hidden")}
+      className="flex max-w-5xl flex-col gap-4 p-4"
       onSubmit={(e) => {
         e.preventDefault();
         form.handleSubmit();
@@ -279,4 +277,10 @@ export const NotificationsPanel = () => {
       </div>
     </form>
   );
+};
+
+export const NotificationsPanel = () => {
+  const { enabled } = useShortcutsMode("editingNotifications");
+  if (!enabled) return null;
+  return <NotificationsForm />;
 };

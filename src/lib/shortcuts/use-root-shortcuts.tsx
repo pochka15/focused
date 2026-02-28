@@ -3,15 +3,15 @@ import type { ModeName, SelectOperation } from "./shortcuts-modes";
 import { helpCommands, type HelpCommandKey } from "@/components/help";
 
 export const useRootShortcuts = () => {
-  const { enableMode, disableModes } = useShortcuts({
+  const { enableMode } = useShortcuts({
     name: "root",
     enabled: true,
     keys: (key, event) => {
       const keyModeMap: Record<HelpCommandKey, ModeName> = {
         [helpCommands.command.key]: "showingCommand",
         [helpCommands.archive.key]: "selectingTodos",
-        // [helpCommands.reorder.key]: "selectingTodos",
         [helpCommands.edit.key]: "selectingTodos",
+        [helpCommands.sync.key]: "syncing",
         [helpCommands.help.key]: "showingHelp",
         [helpCommands.notes.key]: "showingNotes",
         [helpCommands.notifications.key]: "editingNotifications",
@@ -21,7 +21,9 @@ export const useRootShortcuts = () => {
       if (name) {
         event.preventDefault();
 
-        if (name === "selectingTodos") {
+        if (name === "syncing") {
+          enableMode(name, { lastUpdated: Date.now() });
+        } else if (name === "selectingTodos") {
           const operationMap: Record<HelpCommandKey, SelectOperation> = {
             [helpCommands.edit.key]: "edit",
             // [helpCommands.reorder.key]: "reorder",
@@ -33,7 +35,6 @@ export const useRootShortcuts = () => {
             throw new Error("Invalid operation");
           }
 
-          disableModes(["focusing"]);
           enableMode(name, { order: [], operation });
         } else {
           enableMode(name);

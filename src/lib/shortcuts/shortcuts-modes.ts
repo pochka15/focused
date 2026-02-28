@@ -13,7 +13,7 @@ export type Modes = {
     operation: SelectOperation;
   }>;
   editingTodo: Mode<EditedTodoData>;
-  focusing: Mode;
+  syncing: Mode<{ lastUpdated: number }>;
   showingNotes: Mode;
 };
 
@@ -24,7 +24,7 @@ export const getDefaultModes = (): Modes => ({
   showingCommand: { enabled: false, data: {} },
   selectingTodos: { enabled: false, data: { order: [], operation: "archive" } },
   editingTodo: { enabled: false, data: {} },
-  focusing: { enabled: false, data: {} },
+  syncing: { enabled: false, data: { lastUpdated: 0 } },
   showingNotes: { enabled: false, data: {} },
   editingNotifications: { enabled: false, data: {} },
 });
