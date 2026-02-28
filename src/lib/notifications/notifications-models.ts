@@ -4,6 +4,8 @@ export type NewNotification = {
   timeM: number;
   repeatsInMinutes: number;
   isComplete: boolean;
+  notificationDescription?: string;
+  isCurrentlyShowing?: boolean;
 };
 
 export type Notification = NewNotification & {

@@ -12,6 +12,7 @@ interface NotificationsState {
   getNotifications: () => Notification[];
   addNotification: (n: NewNotification) => void;
   editNotification: (n: Notification) => void;
+  setNotifications: (notifications: Notification[]) => void;
   bulkDelete: (ids: string[]) => void;
   clear: () => void;
 }
@@ -40,6 +41,11 @@ export const useNotificationsStore = create<NotificationsState>()(
           if (index !== -1) {
             state.notifications[index] = notification;
           }
+        }),
+
+      setNotifications: (notifications: Notification[]) =>
+        set((state) => {
+          state.notifications = notifications;
         }),
 
       bulkDelete: (ids: string[]) =>

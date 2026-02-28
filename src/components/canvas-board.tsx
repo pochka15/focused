@@ -48,10 +48,13 @@ export const CanvasBoard = () => {
   const editTodo = useTodosStore((s) => s.editTodo);
 
   const { enabled: isFormOpen } = useShortcutsMode("editingTodo");
+  const { enabled: isEditingNotifications } = useShortcutsMode(
+    "editingNotifications"
+  );
 
   const { enableMode, disableModes } = useShortcuts({
     name: "canvasBoard",
-    enabled: true,
+    enabled: !isEditingNotifications,
     keys: (key, event) => {
       // Kill mode toggle
       if (key === "a" && !isFormOpen) {
@@ -276,6 +279,7 @@ export const CanvasBoard = () => {
     }
   };
 
+  if (isEditingNotifications) return null;
   return (
     <>
       <Stage
