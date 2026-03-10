@@ -1,15 +1,14 @@
-import { useEffect, type FC, type PropsWithChildren } from "react";
-import { toast } from "sonner";
 import {
   acknowledgeNotification,
   getDueNotifications,
-  getNotificationDisplayDescription,
   getRepeatSuffix,
   postponeNotification,
 } from "@/lib/notifications/notifications-utils";
-import { useNotificationsStore } from "@/lib/stores/notifications-store";
 import { useRootShortcuts } from "@/lib/shortcuts/use-root-shortcuts";
+import { useNotificationsStore } from "@/lib/stores/notifications-store";
 import { useShortcutsMode } from "@/shared-lib/shortcuts/shortcuts-store";
+import { useEffect, type FC, type PropsWithChildren } from "react";
+import { toast } from "sonner";
 
 export const RootController: FC<PropsWithChildren> = ({ children }) => {
   const { data } = useShortcutsMode("syncing");
@@ -27,7 +26,8 @@ export const RootController: FC<PropsWithChildren> = ({ children }) => {
     const dueNotifications = getDueNotifications(notifications, 10);
 
     dueNotifications.forEach((notification) => {
-      const toastDescription = `${getNotificationDisplayDescription(notification)}${getRepeatSuffix(notification)}`;
+      const descr = notification.notificationDescription?.trim() || "";
+      const toastDescription = `${descr}${getRepeatSuffix(notification)}`;
 
       toast(notification.notificationName, {
         id: `notification-${notification.id}`,

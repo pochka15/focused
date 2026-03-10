@@ -1,5 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { cn } from "@/lib/random/utils";
 import {
   getDefaultNotificationRow,
   getDefaultNotifications,
@@ -10,33 +11,24 @@ import { useNotificationsStore } from "@/lib/stores/notifications-store";
 import { useShortcutsMode } from "@/shared-lib/shortcuts/shortcuts-store";
 import { useShortcuts } from "@/shared-lib/shortcuts/use-shortcuts";
 import { useForm } from "@tanstack/react-form";
-import { Plus, Trash2 } from "lucide-react";
+import { ChevronDown, ChevronUp, Plus, RotateCcw, Trash2 } from "lucide-react";
 import { useRef, type KeyboardEvent } from "react";
 import { Button } from "./ui/button";
 
 const NotificationsForm = () => {
   const notifications = useNotificationsStore((it) => it.notifications);
-  const addNotification = useNotificationsStore((it) => it.addNotification);
-  const editNotification = useNotificationsStore((it) => it.editNotification);
-  const bulkDeleteNotifications = useNotificationsStore((it) => it.bulkDelete);
+  const setNotifications = useNotificationsStore((it) => it.setNotifications);
 
   const form = useForm({
     defaultValues: getDefaultNotifications(notifications),
     validators: { onChange: notificationsSchema },
     onSubmit: ({ value }) => {
-      const rowIds = new Set(value.rows.map((row) => row.id).filter(Boolean));
-      const idsToDelete = notifications
-        .map((n) => n.id)
-        .filter((id) => !rowIds.has(id));
+      const nextNotifications = value.rows.map((row) => ({
+        id: row.id ?? crypto.randomUUID(),
+        ...toNewNotification(row),
+      }));
 
-      value.rows.forEach((row) => {
-        if (row.id) editNotification({ id: row.id, ...toNewNotification(row) });
-        else addNotification(toNewNotification(row));
-      });
-
-      if (idsToDelete.length > 0) {
-        bulkDeleteNotifications(idsToDelete);
-      }
+      setNotifications(nextNotifications);
 
       form.reset();
       disableModes(["editingNotifications"]);
@@ -51,6 +43,43 @@ const NotificationsForm = () => {
       form.pushFieldValue("rows", getDefaultNotificationRow());
       setTimeout(() => firstFieldRef.current?.focus(), 0);
     }
+  };
+
+  const moveRow = (index: number, direction: -1 | 1) => {
+    const rows = form.getFieldValue("rows");
+    const nextIndex = index + direction;
+
+    if (nextIndex < 0 || nextIndex >= rows.length) {
+      return;
+    }
+
+    const nextRows = [...rows];
+    const currentRow = nextRows[index];
+    const targetRow = nextRows[nextIndex];
+    if (!currentRow || !targetRow) {
+      return;
+    }
+
+    nextRows[index] = targetRow;
+    nextRows[nextIndex] = currentRow;
+    form.setFieldValue("rows", nextRows);
+  };
+
+  const hasRowErrors = (rowIndex: number) => {
+    const fieldNames = [
+      `rows[${rowIndex}].notificationName`,
+      `rows[${rowIndex}].timeH`,
+      `rows[${rowIndex}].timeM`,
+      `rows[${rowIndex}].repeatsInMinutes`,
+      `rows[${rowIndex}].isComplete`,
+      `rows[${rowIndex}].notificationDescription`,
+    ];
+
+    return fieldNames.some((name) => {
+      const fieldInfo = form.getFieldInfo(name as any);
+      const errors = fieldInfo.instance?.state.meta.errors;
+      return !!errors && errors.length > 0;
+    });
   };
 
   const { disableModes } = useShortcuts({
@@ -88,30 +117,51 @@ const NotificationsForm = () => {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle>Notifications</CardTitle>
-              <Button
-                type="button"
-                onClick={() => {
-                  rowsField.pushValue(getDefaultNotificationRow());
-                }}
-                size="sm"
-                variant="outline"
-              >
-                <Plus className="mr-2 h-4 w-4" />
-                Add Notification
-              </Button>
+              <div className="flex items-center gap-2">
+                <Button
+                  type="button"
+                  onClick={() => {
+                    rowsField.pushValue(getDefaultNotificationRow());
+                  }}
+                  size="sm"
+                  variant="outline"
+                >
+                  <Plus className="mr-2 h-4 w-4" />
+                  Add Notification
+                </Button>
+                <Button
+                  type="button"
+                  onClick={() => {
+                    form.setFieldValue(
+                      "rows",
+                      form
+                        .getFieldValue("rows")
+                        .map((row) => ({
+                          ...row,
+                          isComplete: false,
+                          timeH: 11,
+                          timeM: 0,
+                        }))
+                    );
+                  }}
+                  size="sm"
+                  variant="outline"
+                >
+                  <RotateCcw className="size-4" />
+                </Button>
+              </div>
             </CardHeader>
             <CardContent>
               <div className="overflow-x-auto">
                 <table className="w-full border-collapse">
                   <thead>
                     <tr className="border-b">
+                      <th className="w-16 p-2 text-left font-medium">Move</th>
                       <th className="p-2 text-left font-medium">Name</th>
                       <th className="p-2 text-left font-medium">
                         Time (HH:MM)
                       </th>
-                      <th className="p-2 text-left font-medium">
-                        Repeats (min)
-                      </th>
+                      <th className="p-2 text-left font-medium">Repeats</th>
                       <th className="p-2 text-left font-medium">Complete</th>
                       <th className="p-2 text-left font-medium">Description</th>
                       <th className="w-12"></th>
@@ -121,16 +171,49 @@ const NotificationsForm = () => {
                     {rowsField.state.value.map((_, rowIndex: number) => {
                       const isLastRow =
                         rowIndex === rowsField.state.value.length - 1;
+                      const rowHasErrors = hasRowErrors(rowIndex);
                       return (
                         <tr
                           key={rowIndex}
-                          className="border-b last-of-type:border-none"
+                          className={cn(
+                            "border-b last-of-type:border-none",
+                            rowHasErrors && "bg-red-50/60 dark:bg-red-950/25"
+                          )}
                         >
+                          <td className="p-2">
+                            <div className="flex gap-1">
+                              <Button
+                                type="button"
+                                size="sm"
+                                variant="ghost"
+                                className="size-8 p-0"
+                                disabled={rowIndex === 0}
+                                onClick={() => moveRow(rowIndex, -1)}
+                                aria-label="Move row up"
+                              >
+                                <ChevronUp className="size-4" />
+                              </Button>
+                              <Button
+                                type="button"
+                                size="sm"
+                                variant="ghost"
+                                className="size-8 p-0"
+                                disabled={
+                                  rowIndex === rowsField.state.value.length - 1
+                                }
+                                onClick={() => moveRow(rowIndex, 1)}
+                                aria-label="Move row down"
+                              >
+                                <ChevronDown className="size-4" />
+                              </Button>
+                            </div>
+                          </td>
                           <td className="p-2">
                             <form.Field
                               name={`rows[${rowIndex}].notificationName`}
                               children={(field) => (
                                 <Input
+                                  autoComplete="off"
                                   ref={isLastRow ? firstFieldRef : undefined}
                                   id={field.name}
                                   name={field.name}
@@ -150,6 +233,7 @@ const NotificationsForm = () => {
                                 name={`rows[${rowIndex}].timeH`}
                                 children={(field) => (
                                   <Input
+                                    autoComplete="off"
                                     id={field.name}
                                     name={field.name}
                                     type="number"
@@ -172,6 +256,7 @@ const NotificationsForm = () => {
                                 name={`rows[${rowIndex}].timeM`}
                                 children={(field) => (
                                   <Input
+                                    autoComplete="off"
                                     id={field.name}
                                     name={field.name}
                                     type="number"
@@ -196,17 +281,15 @@ const NotificationsForm = () => {
                               name={`rows[${rowIndex}].repeatsInMinutes`}
                               children={(field) => (
                                 <Input
+                                  autoComplete="off"
                                   id={field.name}
                                   name={field.name}
-                                  type="number"
-                                  min="0"
                                   value={field.state.value}
                                   onBlur={field.handleBlur}
                                   onChange={(e) =>
-                                    field.handleChange(
-                                      parseInt(e.target.value) || 0
-                                    )
+                                    field.handleChange(e.target.value)
                                   }
+                                  placeholder="e.g. 1h 20m"
                                   className="h-8"
                                 />
                               )}
@@ -217,6 +300,7 @@ const NotificationsForm = () => {
                               name={`rows[${rowIndex}].isComplete`}
                               children={(field) => (
                                 <input
+                                  autoComplete="off"
                                   id={field.name}
                                   name={field.name}
                                   type="checkbox"
@@ -225,7 +309,7 @@ const NotificationsForm = () => {
                                   onChange={(e) =>
                                     field.handleChange(e.target.checked)
                                   }
-                                  className="h-4 w-4"
+                                  className="size-4"
                                 />
                               )}
                             />

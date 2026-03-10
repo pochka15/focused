@@ -35,13 +35,6 @@ const addMinutesFromNow = (
   };
 };
 
-export const getNotificationDisplayDescription = (
-  notification: Notification
-): string => {
-  const description = notification.notificationDescription?.trim();
-  return description?.length ? description : notification.notificationName;
-};
-
 export const isNotificationDue = (
   notification: Notification,
   thresholdInMinutes = 10
@@ -61,8 +54,6 @@ export const getDueNotifications = (
   notifications.filter((notification) =>
     isNotificationDue(notification, thresholdInMinutes)
   );
-
-
 
 export const postponeNotification = (
   notification: Notification,
@@ -89,7 +80,10 @@ export const acknowledgeNotification = (
   notification: Notification
 ): Notification => {
   if (notification.repeatsInMinutes > 0) {
-    const minutesUntil = getMinutesUntil(notification.timeH, notification.timeM);
+    const minutesUntil = getMinutesUntil(
+      notification.timeH,
+      notification.timeM
+    );
     const nextTime =
       minutesUntil < 0
         ? addMinutesFromNow(notification.repeatsInMinutes)
