@@ -67,7 +67,7 @@ export const NotesPanel = () => {
         value={notes}
         onChange={(e) => setNotes(e.target.value)}
         placeholder="Type your notes here..."
-        className="min-h-[200px] resize-none"
+        className="min-h-[200px] resize-none text-2xl!"
       />
     </div>
   );

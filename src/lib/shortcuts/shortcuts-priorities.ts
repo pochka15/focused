@@ -2,7 +2,8 @@ let priority = 1;
 const next = () => priority++;
 
 export const shortcutsPriorities = {
-  command: next(), // handled first
+  keystrokes: next(), // handled first
+  command: next(),
   notesPanel: next(),
   help: next(),
   notificationsPanel: next(),
