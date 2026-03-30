@@ -12,21 +12,21 @@ export const CHARACTER_SIZE = 50;
 
 // Tag to color mapping for enemy circles
 export const TAG_COLORS: Record<TagName, string> = {
-  "good-one": "#fbbf24", // amber-400
-  "light-good": "#a78bfa", // violet-400
-  "new-urgent": "#f87171", // red-400
-  "deep-routine": "#60a5fa", // blue-400
-  "light-routine": "#34d399", // emerald-400
-  "daily-noise": "#fb923c", // orange-400
-  pleasures: "#f472b6", // pink-400
-  other: "#94a3b8", // slate-400
+  "good-one": "#dbbc7f", // warm yellow
+  "light-good": "#d699b6", // mauve
+  "new-urgent": "#e67e80", // soft red
+  "deep-routine": "#7fbbb3", // muted aqua
+  "light-routine": "#83c092", // soft green
+  "daily-noise": "#e69875", // warm orange
+  pleasures: "#a7c080", // sage green
+  other: "#9aa79d", // neutral gray-green
 };
 
 // Event color (for events without tags)
-export const EVENT_COLOR = "#818cf8"; // indigo-400
+export const EVENT_COLOR = "#7fbbb3"; // muted aqua
 
 // Character color
-export const CHARACTER_COLOR = "#22d3ee"; // cyan-400
+export const CHARACTER_COLOR = "#83c092"; // soft green
 
 // Animation durations (ms)
 export const KILL_ANIMATION_DURATION = 500;

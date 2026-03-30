@@ -20,6 +20,13 @@ interface EnemyProps {
   isSelected?: boolean;
   isGhost?: boolean;
   isDraggingEnabled?: boolean;
+  themeColors?: {
+    defaultStroke: string;
+    selectedStroke: string;
+    killStroke: string;
+    label: string;
+    eventLabel: string;
+  };
 }
 
 export const Enemy = ({
@@ -31,6 +38,7 @@ export const Enemy = ({
   isSelected = false,
   isGhost = false,
   isDraggingEnabled = false,
+  themeColors,
 }: EnemyProps) => {
   const groupRef = useRef<Konva.Group>(null);
 
@@ -48,6 +56,11 @@ export const Enemy = ({
   const color = isTask(todo) ? TAG_COLORS[todo.tag] : EVENT_COLOR;
   const emoji = isTask(todo) ? tagsMapping[todo.tag].emoji : "⏰";
   const opacity = isGhost ? 0.3 : 1;
+  const defaultStrokeColor = themeColors?.defaultStroke ?? "#1e293b";
+  const selectedStrokeColor = themeColors?.selectedStroke ?? "#22d3ee";
+  const killStrokeColor = themeColors?.killStroke ?? "#ef4444";
+  const labelColor = themeColors?.label ?? "#0f172a";
+  const eventLabelColor = themeColors?.eventLabel ?? "#f472b6";
 
   const getMinutesLeft = (): number | null => {
     return isEvent(todo) ? calcMinutesLeft((todo as Event).rawTime) : null;
@@ -73,7 +86,13 @@ export const Enemy = ({
       <Circle
         radius={ENEMY_RADIUS}
         fill={color}
-        stroke={isKillMode ? "#ef4444" : isSelected ? "#22d3ee" : "#1e293b"} // red in kill mode, cyan if selected, slate otherwise
+        stroke={
+          isKillMode
+            ? killStrokeColor
+            : isSelected
+              ? selectedStrokeColor
+              : defaultStrokeColor
+        }
         strokeWidth={isKillMode || isSelected ? 4 : 2}
         shadowColor="black"
         shadowBlur={10}
@@ -99,6 +118,7 @@ export const Enemy = ({
           text={todo.name}
           y={ENEMY_RADIUS + 10}
           fontSize={14}
+          fill={labelColor}
           wrap="word"
           ellipsis={true}
         />
@@ -109,7 +129,7 @@ export const Enemy = ({
             text={`${(todo as Event).rawTime} - ${todo.name}`}
             y={ENEMY_RADIUS + 10}
             fontSize={14}
-            fill="#f472b6"
+            fill={eventLabelColor}
             wrap="word"
             ellipsis={true}
           />
@@ -118,7 +138,7 @@ export const Enemy = ({
             text={`(in ${getMinutesLeft()} minutes)`}
             y={ENEMY_RADIUS + 28}
             fontSize={12}
-            fill="#f472b6"
+            fill={eventLabelColor}
           />
         </>
       ) : null}

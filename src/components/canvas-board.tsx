@@ -20,9 +20,14 @@ import { Circle, Layer, Stage, Text } from "react-konva";
 import { Enemy } from "./canvas-enemy";
 import { helpCommands } from "./help";
 import { SelectionRectangle } from "./selection-rectangle";
+import { useTheme } from "./theme-provider";
 import { TodoForm } from "./todos/todo-form";
 
 export const CanvasBoard = () => {
+  const { theme } = useTheme();
+  const [prefersDark, setPrefersDark] = useState(
+    () => window.matchMedia("(prefers-color-scheme: dark)").matches
+  );
   const [dimensions, setDimensions] = useState({
     width: window.innerWidth,
     height: window.innerHeight,
@@ -43,6 +48,36 @@ export const CanvasBoard = () => {
   const [isMouseDown, setIsMouseDown] = useState(false);
 
   const stageRef = useRef<Konva.Stage>(null);
+
+  const isDarkMode = theme === "dark" || (theme === "system" && prefersDark);
+
+  const canvasTheme = isDarkMode
+    ? {
+        startFill: "#a7c080",
+        startStroke: "#83c092",
+        startText: "#333c43",
+        killIndicator: "#e67e80",
+        enemyStroke: "#2d353b",
+        enemySelectedStroke: "#7fbbb3",
+        enemyKillStroke: "#e67e80",
+        enemyLabel: "#d3c6aa",
+        eventLabel: "#e69875",
+        selectionFill: "rgba(127, 187, 179, 0.2)",
+        selectionStroke: "#7fbbb3",
+      }
+    : {
+        startFill: "#10b981",
+        startStroke: "#047857",
+        startText: "#ffffff",
+        killIndicator: "#ef4444",
+        enemyStroke: "#1e293b",
+        enemySelectedStroke: "#22d3ee",
+        enemyKillStroke: "#ef4444",
+        enemyLabel: "#0f172a",
+        eventLabel: "#f472b6",
+        selectionFill: "rgba(34, 211, 238, 0.2)",
+        selectionStroke: "#22d3ee",
+      };
 
   const todos = useTodosStore((s) => s.todos);
   const editTodo = useTodosStore((s) => s.editTodo);
@@ -139,6 +174,18 @@ export const CanvasBoard = () => {
       window.removeEventListener("keydown", handleKeyDown);
       window.removeEventListener("keyup", handleKeyUp);
     };
+  }, []);
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
+
+    const handleMediaThemeChange = (event: MediaQueryListEvent) => {
+      setPrefersDark(event.matches);
+    };
+
+    mediaQuery.addEventListener("change", handleMediaThemeChange);
+    return () =>
+      mediaQuery.removeEventListener("change", handleMediaThemeChange);
   }, []);
 
   // Handle canvas right-click to spawn enemy
@@ -298,8 +345,8 @@ export const CanvasBoard = () => {
             x={STARTING_POINT.x}
             y={STARTING_POINT.y}
             radius={20}
-            fill="#10b981" // emerald-500
-            stroke="#047857" // emerald-700
+            fill={canvasTheme.startFill}
+            stroke={canvasTheme.startStroke}
             strokeWidth={3}
           />
           <Text
@@ -307,7 +354,7 @@ export const CanvasBoard = () => {
             y={STARTING_POINT.y - 40}
             text="START"
             fontSize={16}
-            fill="white"
+            fill={canvasTheme.startText}
             fontStyle="bold"
             offsetX={25}
           />
@@ -321,6 +368,13 @@ export const CanvasBoard = () => {
               isSelected={selectedEnemyIds.has(todo.id)}
               isGhost={todo.completed || false}
               isDraggingEnabled={true}
+              themeColors={{
+                defaultStroke: canvasTheme.enemyStroke,
+                selectedStroke: canvasTheme.enemySelectedStroke,
+                killStroke: canvasTheme.enemyKillStroke,
+                label: canvasTheme.enemyLabel,
+                eventLabel: canvasTheme.eventLabel,
+              }}
               onClick={() => handleEnemyClick(todo.id, todo.x, todo.y)}
               onRightClick={() => handleEnemyRightClick(todo.id)}
               onDragEnd={(x, y) => handleEnemyDrag(todo.id, x, y)}
@@ -334,6 +388,8 @@ export const CanvasBoard = () => {
               y={selectionStart.y}
               width={selectionEnd.x - selectionStart.x}
               height={selectionEnd.y - selectionStart.y}
+              fillColor={canvasTheme.selectionFill}
+              strokeColor={canvasTheme.selectionStroke}
               visible={true}
             />
           )}
@@ -345,7 +401,7 @@ export const CanvasBoard = () => {
               y={50}
               text="🎯 KILL MODE - Click enemy to complete"
               fontSize={24}
-              fill="#ef4444" // red-500
+              fill={canvasTheme.killIndicator}
               fontStyle="bold"
               align="center"
               offsetX={200}
