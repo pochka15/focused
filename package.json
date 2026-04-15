@@ -1,12 +1,12 @@
 {
-  "name": "bun-react-template",
+  "name": "focused",
   "version": "0.1.0",
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "bun --hot src/index.ts",
-    "start": "NODE_ENV=production bun src/index.ts",
-    "build": "bun run build.ts",
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
     "format:nofix": "prettier . --check --cache",
     "format": "prettier . --write --cache"
   },
@@ -26,7 +26,6 @@
     "@tanstack/react-table": "^8.21.3",
     "@types/lodash": "^4.17.20",
     "@uidotdev/usehooks": "^2.4.1",
-    "bun-plugin-tailwind": "^0.1.2",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "immer": "^10.1.3",
@@ -43,13 +42,18 @@
     "zod": "^4.1.13",
     "zustand": "^5.0.8"
   },
+  "pnpm": {
+    "onlyBuiltDependencies": ["esbuild"]
+  },
   "devDependencies": {
+    "@tailwindcss/vite": "^4.1.11",
     "@types/react": "^19",
     "@types/react-dom": "^19",
-    "@types/bun": "latest",
+    "@vitejs/plugin-react": "^4.5.2",
     "prettier": "^3.6.2",
     "prettier-plugin-tailwindcss": "^0.6.14",
     "tailwindcss": "^4.1.11",
-    "tw-animate-css": "^1.4.0"
+    "tw-animate-css": "^1.4.0",
+    "vite": "^6.3.3"
   }
 }

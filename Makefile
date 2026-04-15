@@ -1,11 +1,11 @@
 start:
-	bun dev
+	pnpm dev
 
 check-formatting:
-	npm run format:nofix
+	pnpm format:nofix
 
 format:
-	npm run format
+	pnpm format
 
 build-and-run:
-	bun run build.ts && bunx serve dist
+	pnpm build && pnpm preview
