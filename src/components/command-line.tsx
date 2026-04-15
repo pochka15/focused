@@ -18,7 +18,6 @@ export const CommandLine = ({ className }: CommandLineProps) => {
   const { enabled } = useShortcutsMode("showingCommand");
   const reorder = useTodosStore((it) => it.reorder);
   const getTodos = useTodosStore((it) => it.getTodos);
-  const getHistory = useTodosStore((it) => it.getHistory);
   const clearHistory = useTodosStore((it) => it.clearHistory);
   const clear = useTodosStore((it) => it.clear);
 
@@ -59,15 +58,15 @@ export const CommandLine = ({ className }: CommandLineProps) => {
       case "rm":
         enableMode("selectingTodos", { order: [], operation: "delete" });
         break;
-      case "history":
-        const history = getHistory();
-        if (history.length === 0) {
-          console.log("No deleted todos in history");
+      case "copy":
+        const todos = getTodos();
+        if (todos.length === 0) {
+          console.log("No todos so far");
         } else {
           navigator.clipboard
-            .writeText(formatHistory(history))
+            .writeText(formatHistory(todos))
             .then(() => console.log("History copied to clipboard"))
-            .catch(() => console.log("Failed to copy history"));
+            .catch(() => console.log("Failed to copy todos"));
         }
         break;
       case "clear-history":
