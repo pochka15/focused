@@ -17,11 +17,40 @@ import { useShortcuts } from "@/shared-lib/shortcuts/use-shortcuts";
 import type Konva from "konva";
 import { useEffect, useRef, useState } from "react";
 import { Circle, Layer, Stage, Text } from "react-konva";
+import { QueueIndicator } from "./capture/queue-indicator";
+import { StructuredTaskForm } from "./capture/structured-task-form";
 import { Enemy } from "./canvas-enemy";
 import { helpCommands } from "./help";
+import { PlanningForm } from "./planning/planning-form";
 import { SelectionRectangle } from "./selection-rectangle";
 import { useTheme } from "./theme-provider";
 import { TodoForm } from "./todos/todo-form";
+
+const AI_SETUP_PROMPT = `You are a planning assistant. I use you to help me decide what to work on next during a given time block.
+
+Here is how I work:
+- I keep a structured task backlog in a text file. Each task looks like:
+    - #42 Fix auth refresh [work|next|medium|deep]
+      - Optional description or context about the task
+- Tags mean: scope (work/personal), urgency (next/few-hours/today), size (quick <30m / medium 1-2h / big 2h+), energy required (deep focus / normal / light)
+- I place tasks on a canvas and work through them. Completed tasks and past/upcoming meetings will be provided as context.
+- I will tell you how much time I have and my current energy level.
+- I may also tell you a goal for the session.
+
+When I ask for a plan, I will paste context in this format:
+  Current time: HH:MM
+  I have Xh, energy: [tired/normal/focused].
+  Goal: ...
+
+  Completed today: ...
+  Meetings: ...
+  Backlog: ...
+
+Respond according to the mode I specify:
+- Dictatorship: tell me exactly what to work on, in order. No options, no caveats.
+- Democratic: give me 2-3 strategies with a brief explanation for each, so I can pick.
+
+Reference task IDs (e.g. #42) in your response so I can match them back to my backlog.`;
 
 export const CanvasBoard = () => {
   const { theme } = useTheme();
@@ -83,6 +112,8 @@ export const CanvasBoard = () => {
   const editTodo = useTodosStore((s) => s.editTodo);
 
   const { enabled: isFormOpen } = useShortcutsMode("editingTodo");
+  const { enabled: isStructuredTaskOpen } = useShortcutsMode("structuredTask");
+  const { enabled: isPlanningOpen } = useShortcutsMode("planningSession");
   const { enabled: isEditingNotifications } = useShortcutsMode(
     "editingNotifications"
   );
@@ -97,7 +128,19 @@ export const CanvasBoard = () => {
         return true;
       }
 
-      if (key == helpCommands.newTodo.key && !isFormOpen) {
+      if (key === helpCommands.structuredTask.key && !isFormOpen) {
+        event.preventDefault();
+        enableMode("structuredTask");
+        return true;
+      }
+
+      if (key === helpCommands.planWithAI.key && !isFormOpen) {
+        event.preventDefault();
+        enableMode("planningSession");
+        return true;
+      }
+
+      if (key === helpCommands.newTodo.key && !isFormOpen) {
         event.preventDefault();
         const rightMostTodo = findRightMostTodo(todos);
         const spawnPosition =
@@ -424,6 +467,50 @@ export const CanvasBoard = () => {
           <TodoForm />
         </DialogContent>
       </Dialog>
+
+      <Dialog
+        open={isStructuredTaskOpen}
+        onOpenChange={(open) => {
+          if (!open) disableModes(["structuredTask"]);
+        }}
+      >
+        <DialogContent className="min-w-1/3">
+          <DialogHeader>
+            <DialogTitle>Structured Task</DialogTitle>
+            <DialogDescription />
+          </DialogHeader>
+          <StructuredTaskForm />
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={isPlanningOpen}
+        onOpenChange={(open) => {
+          if (!open) disableModes(["planningSession"]);
+        }}
+      >
+        <DialogContent className="min-w-1/2">
+          <DialogHeader>
+            <DialogTitle>Plan with AI</DialogTitle>
+            <DialogDescription />
+          </DialogHeader>
+          <PlanningForm />
+        </DialogContent>
+      </Dialog>
+
+      {/* AI button — top-left, copies conversation setup prompt */}
+      <button
+        type="button"
+        onClick={() => {
+          navigator.clipboard.writeText(AI_SETUP_PROMPT).catch(() => {});
+        }}
+        title="Copy AI setup prompt"
+        className="text-muted-foreground hover:text-foreground fixed top-3 left-3 z-50 font-mono text-xs opacity-50 transition-opacity hover:opacity-100"
+      >
+        AI
+      </button>
+
+      <QueueIndicator />
     </>
   );
 };

@@ -5,6 +5,8 @@ export const shortcutsPriorities = {
   command: next(), // handled first
   notesPanel: next(),
   help: next(),
+  structuredTask: next(),
+  planningSession: next(),
   notificationsPanel: next(),
   canvasBoard: next(),
   addTodo: next(),

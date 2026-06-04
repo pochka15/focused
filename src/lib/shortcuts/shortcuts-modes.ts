@@ -15,6 +15,8 @@ export type Modes = {
   editingTodo: Mode<EditedTodoData>;
   syncing: Mode<{ lastUpdated: number }>;
   showingNotes: Mode;
+  structuredTask: Mode;
+  planningSession: Mode;
 };
 
 export type ModeName = keyof Modes;
@@ -27,4 +29,6 @@ export const getDefaultModes = (): Modes => ({
   syncing: { enabled: false, data: { lastUpdated: 0 } },
   showingNotes: { enabled: false, data: {} },
   editingNotifications: { enabled: false, data: {} },
+  structuredTask: { enabled: false, data: {} },
+  planningSession: { enabled: false, data: {} },
 });

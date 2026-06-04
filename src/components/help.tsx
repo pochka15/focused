@@ -27,6 +27,14 @@ export const helpCommands = {
     key: "n",
     description: "New todo",
   },
+  structuredTask: {
+    key: "t",
+    description: "Structured task",
+  },
+  planWithAI: {
+    key: "p",
+    description: "Plan with AI",
+  },
   notes: {
     key: "j",
     description: "Quick note",
