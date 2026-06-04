@@ -19,6 +19,8 @@ export type Modes = {
   structuredTaskStep: Mode;
   planningSession: Mode;
   editingBacklog: Mode;
+  backlogTaskForm: Mode;
+  backlogTaskFormStep: Mode;
 };
 
 export type ModeName = keyof Modes;
@@ -35,4 +37,6 @@ export const getDefaultModes = (): Modes => ({
   structuredTaskStep: { enabled: false, data: {} },
   planningSession: { enabled: false, data: {} },
   editingBacklog: { enabled: false, data: {} },
+  backlogTaskForm: { enabled: false, data: {} },
+  backlogTaskFormStep: { enabled: false, data: {} },
 });

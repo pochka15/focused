@@ -2,21 +2,21 @@ import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
 import { immer } from "zustand/middleware/immer";
 
-export type CapturedTaskScope = "work" | "personal";
-export type CapturedTaskUrgency = "next" | "few-hours" | "today";
-export type CapturedTaskSize = "quick" | "medium" | "big";
-export type CapturedTaskEnergy = "deep" | "normal" | "light";
-export type CapturedTaskCompletion = "final" | "splittable";
+export type BacklogTaskScope = "work" | "personal";
+export type BacklogTaskUrgency = "next" | "few-hours" | "today";
+export type BacklogTaskSize = "quick" | "medium" | "big";
+export type BacklogTaskEnergy = "deep" | "normal" | "light";
+export type BacklogTaskCompletion = "final" | "splittable";
 
-export type CapturedTask = {
+export type BacklogTask = {
   id: number;
   name: string;
   description: string;
-  scope: CapturedTaskScope;
-  urgency: CapturedTaskUrgency;
-  size: CapturedTaskSize;
-  energy: CapturedTaskEnergy;
-  completion: CapturedTaskCompletion;
+  scope: BacklogTaskScope;
+  urgency: BacklogTaskUrgency;
+  size: BacklogTaskSize;
+  energy: BacklogTaskEnergy;
+  completion: BacklogTaskCompletion;
 };
 
 type CaptureState = {
@@ -24,7 +24,7 @@ type CaptureState = {
   consumeNextId: () => number;
 };
 
-export const formatCapturedTask = (t: CapturedTask): string => {
+export const formatBacklogTask = (t: BacklogTask): string => {
   const tags: string[] = [t.scope, t.urgency, t.size, t.energy];
   if (t.completion === "splittable") tags.push("splittable");
   const line = `- #${t.id} ${t.name} [${tags.join("|")}]`;

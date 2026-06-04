@@ -9,7 +9,7 @@ import {
   type FTodo,
 } from "@/lib/schemas/todo-schema";
 import { useForm, useStore } from "@tanstack/react-form";
-import { useEffect, useRef } from "react";
+import { useEffect, useMemo, useRef } from "react";
 
 import { Button } from "@/components/ui/button";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
@@ -22,6 +22,7 @@ import {
   todoType,
 } from "@/lib/todos/mappings";
 import type { TodoItem } from "@/lib/todos/todo-models";
+import { isTask } from "@/lib/todos/todo-utils";
 import { findKey } from "lodash";
 import { ArrowRight } from "lucide-react";
 import { useShortcutsMode } from "@/shared-lib/shortcuts/shortcuts-store";
@@ -34,6 +35,14 @@ const tags = orderedTags
 const getDefaultValues = (editedTodo?: TodoItem, x = 0, y = 0) => {
   const base = editedTodo ? fromTodoItem(editedTodo) : getDefaultTodo();
   return { ...base, x: editedTodo?.x ?? x, y: editedTodo?.y ?? y };
+};
+
+// Returns the numeric/string id if the last word of `name` is "#<id>", else null.
+const parseRefId = (name: string): string | null => {
+  const lastWord = name.trimEnd().split(/\s+/).at(-1) ?? "";
+  if (!lastWord.startsWith("#")) return null;
+  const id = lastWord.slice(1);
+  return id || null;
 };
 
 export const TodoForm = () => {
@@ -53,6 +62,12 @@ export const TodoForm = () => {
     : undefined;
   const { x, y } = editedTodoData?.spawnPosition ?? { x: 0, y: 0 };
 
+  const taskMap = useMemo(() => {
+    const map = new Map<string, string>();
+    todos.filter(isTask).forEach((t) => map.set(t.id, t.name));
+    return map;
+  }, [todos]);
+
   const form = useForm({
     defaultValues: getDefaultValues(editedTodo, x, y),
     validators: { onChange: todoSchema },
@@ -65,6 +80,14 @@ export const TodoForm = () => {
       disableModes(["editingTodo", "selectingTodos"]);
     },
   });
+
+  const currentName = useStore(form.store, (s) => s.values.name);
+
+  const matchedTaskName = useMemo(() => {
+    const refId = parseRefId(currentName);
+    if (!refId) return null;
+    return taskMap.get(refId) ?? null;
+  }, [currentName, taskMap]);
 
   const editingTask =
     useStore(form.store, (state) => state.values.todoKind) === "task";
@@ -92,6 +115,23 @@ export const TodoForm = () => {
         event.preventDefault();
       }
 
+      if (key === "Tab" && matchedTaskName != null) {
+        const name = form.state.values.name;
+        const refId = parseRefId(name);
+        if (refId) {
+          const prefix = name
+            .trimEnd()
+            .slice(0, -(refId.length + 1))
+            .trimEnd();
+          form.setFieldValue(
+            "name",
+            prefix ? `${prefix} ${matchedTaskName}` : matchedTaskName
+          );
+        }
+        event.preventDefault();
+        return true;
+      }
+
       if (document.activeElement === nameInputRef.current && key !== "Enter") {
         return true;
       }
@@ -110,7 +150,7 @@ export const TodoForm = () => {
       const typeKey = findKeyByHint(todoType);
       if (typeKey) {
         form.setFieldValue("todoKind", typeKey as FTodo["todoKind"]);
-        event.preventDefault(); // eat event, otherwise it'll append char to the input
+        event.preventDefault();
         return true;
       }
 
@@ -147,25 +187,39 @@ export const TodoForm = () => {
         form.handleSubmit(v);
       }}
     >
-      <div className="flex">
-        <form.Field
-          name="name"
-          children={(field) => (
-            <Input
-              data-focusable
-              autoComplete="off"
-              ref={nameInputRef}
-              id={field.name}
-              name={field.name}
-              value={field.state.value}
-              onBlur={field.handleBlur}
-              onChange={(e) => field.handleChange(e.target.value)}
-            />
+      <div className="flex flex-col gap-1">
+        <div className="flex">
+          <form.Field
+            name="name"
+            children={(field) => (
+              <Input
+                data-focusable
+                autoComplete="off"
+                ref={nameInputRef}
+                id={field.name}
+                name={field.name}
+                value={field.state.value}
+                onBlur={field.handleBlur}
+                onChange={(e) => field.handleChange(e.target.value)}
+              />
+            )}
+          />
+          <Button variant="ghost" type="submit" size="icon">
+            <ArrowRight className="size-4 h-full" />
+          </Button>
+        </div>
+        {/* Always reserve space to prevent layout shift */}
+        <p
+          className={cn(
+            "text-muted-foreground font-mono text-xs transition-opacity",
+            matchedTaskName ? "opacity-100" : "invisible"
           )}
-        />
-        <Button variant="ghost" type="submit" size="icon">
-          <ArrowRight className="size-4 h-full" />
-        </Button>
+        >
+          {matchedTaskName ?? "placeholder"}
+          {matchedTaskName && (
+            <span className="ml-2 opacity-50">tab to complete</span>
+          )}
+        </p>
       </div>
 
       <div className="flex gap-12">

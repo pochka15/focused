@@ -9,6 +9,8 @@ export const shortcutsPriorities = {
   structuredTask: next(),
   planningSession: next(),
   editingBacklog: next(),
+  backlogTaskFormStep: next(),
+  backlogTaskForm: next(),
   // ------ Panels
   notesPanel: next(),
   notificationsPanel: next(),

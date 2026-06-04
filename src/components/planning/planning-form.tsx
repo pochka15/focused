@@ -2,6 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { cn } from "@/lib/random/utils";
+import { formatBacklogTask } from "@/lib/stores/capture-store";
 import { usePlanningStore } from "@/lib/stores/planning-store";
 import { useTodosStore } from "@/lib/stores/todos-store";
 import { findTag } from "@/lib/todos/mappings";
@@ -31,7 +32,6 @@ const getDefaultValues = (goal: string): FormValues => ({
   aiMode: "dictatorship",
 });
 
-// Number row: time block=1,2,3,4
 const timeBlockOptions: [FormValues["timeBlock"], string, string][] = [
   ["1h", "1h", "1"],
   ["2h", "2h", "2"],
@@ -39,14 +39,12 @@ const timeBlockOptions: [FormValues["timeBlock"], string, string][] = [
   ["half-day", "Half-day", "4"],
 ];
 
-// Row 1 (top keyboard row): brainFuel=u,i,o
 const brainFuelOptions: [FormValues["brainFuel"], string, string][] = [
   ["low", "Low", "u"],
   ["med", "Med", "i"],
   ["full", "Full", "o"],
 ];
 
-// Row 2 (middle keyboard row): AI mode=a,s
 const aiModeOptions: [FormValues["aiMode"], string, string][] = [
   ["dictatorship", "Dictatorship", "a"],
   ["democratic", "Democratic", "s"],
@@ -147,7 +145,7 @@ export const PlanningForm = () => {
   const todos = useTodosStore((s) => s.todos);
   const goal = usePlanningStore((s) => s.goal);
   const setGoal = usePlanningStore((s) => s.setGoal);
-  const backlog = usePlanningStore((s) => s.backlog);
+  const tasks = usePlanningStore((s) => s.tasks);
 
   const { enabled } = useShortcutsMode("planningSession");
 
@@ -163,6 +161,7 @@ export const PlanningForm = () => {
     defaultValues: getDefaultValues(goal),
     validators: { onChange: schema },
     onSubmit: ({ value }) => {
+      const backlog = tasks.map(formatBacklogTask).join("\n\n");
       const prompt = buildPrompt(value, contextPreview, backlog);
       navigator.clipboard.writeText(prompt).catch(() => {});
       form.reset();
@@ -170,8 +169,6 @@ export const PlanningForm = () => {
       disableModes(["planningSession"]);
     },
   });
-
-  const handlePullContext = () => setContextPreview(buildCurrentContext());
 
   const { disableModes } = useShortcuts({
     name: "planningSession",
@@ -371,34 +368,6 @@ export const PlanningForm = () => {
           </div>
         )}
       />
-
-      <div className="flex flex-col gap-1.5">
-        <div className="flex items-center justify-between">
-          <p className="text-pink-500">Context</p>
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            onClick={handlePullContext}
-          >
-            Refresh
-          </Button>
-        </div>
-        {contextPreview && (
-          <pre className="bg-muted text-muted-foreground rounded p-2 font-mono text-xs whitespace-pre-wrap">
-            {contextPreview}
-          </pre>
-        )}
-      </div>
-
-      {backlog.trim() && (
-        <div className="flex flex-col gap-1.5">
-          <p className="text-pink-500">Backlog</p>
-          <pre className="bg-muted text-muted-foreground max-h-40 overflow-y-auto rounded p-2 font-mono text-xs whitespace-pre-wrap">
-            {backlog}
-          </pre>
-        </div>
-      )}
 
       <Button type="submit" variant="ghost" className="gap-1 self-end">
         Copy prompt

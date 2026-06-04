@@ -2,18 +2,20 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/random/utils";
 import {
-  formatCapturedTask,
   useCaptureStore,
-  type CapturedTaskCompletion,
-  type CapturedTaskEnergy,
-  type CapturedTaskScope,
-  type CapturedTaskSize,
-  type CapturedTaskUrgency,
+  type BacklogTask,
+  type BacklogTaskCompletion,
+  type BacklogTaskEnergy,
+  type BacklogTaskScope,
+  type BacklogTaskSize,
+  type BacklogTaskUrgency,
 } from "@/lib/stores/capture-store";
 import { usePlanningStore } from "@/lib/stores/planning-store";
+import type { ModeName } from "@/lib/shortcuts/shortcuts-modes";
+import type { KnownShortcutsListener } from "@/shared-lib/shortcuts/shortcuts-glue";
 import { useShortcutsMode } from "@/shared-lib/shortcuts/shortcuts-store";
 import { useShortcuts } from "@/shared-lib/shortcuts/use-shortcuts";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { z } from "zod";
 import { useAppForm } from "./structured-task-form-context";
 
@@ -30,14 +32,14 @@ const schema = z.object({
 type FormValues = {
   name: string;
   description: string;
-  scope: CapturedTaskScope;
-  urgency: CapturedTaskUrgency;
-  size: CapturedTaskSize;
-  energy: CapturedTaskEnergy;
-  completion: CapturedTaskCompletion;
+  scope: BacklogTaskScope;
+  urgency: BacklogTaskUrgency;
+  size: BacklogTaskSize;
+  energy: BacklogTaskEnergy;
+  completion: BacklogTaskCompletion;
 };
 
-const defaultValues: FormValues = {
+const blankValues: FormValues = {
   name: "",
   description: "",
   scope: "work",
@@ -46,6 +48,16 @@ const defaultValues: FormValues = {
   energy: "deep",
   completion: "final",
 };
+
+const taskToFormValues = (t: BacklogTask): FormValues => ({
+  name: t.name,
+  description: t.description,
+  scope: t.scope,
+  urgency: t.urgency,
+  size: t.size,
+  energy: t.energy,
+  completion: t.completion,
+});
 
 const PICK_KEYS = ["j", "k", "l"] as const;
 
@@ -56,34 +68,40 @@ type Step = {
 };
 
 const STEPS: readonly Step[] = [
-  {
-    field: "scope",
-    label: "Scope",
-    values: ["work", "personal"],
-  },
+  { field: "scope", label: "Scope", values: ["work", "personal"] },
   {
     field: "urgency",
     label: "Urgency",
     values: ["next", "few-hours", "today"],
   },
-  {
-    field: "size",
-    label: "Size",
-    values: ["quick", "medium", "big"],
-  },
-  {
-    field: "energy",
-    label: "Energy",
-    values: ["deep", "normal", "light"],
-  },
-  {
-    field: "completion",
-    label: "Completion",
-    values: ["final", "splittable"],
-  },
+  { field: "size", label: "Size", values: ["quick", "medium", "big"] },
+  { field: "energy", label: "Energy", values: ["deep", "normal", "light"] },
+  { field: "completion", label: "Completion", values: ["final", "splittable"] },
 ] as const;
 
-export const StructuredTaskForm = () => {
+type ShortcutNames = {
+  form: KnownShortcutsListener;
+  step: KnownShortcutsListener;
+  disableOnDone: ModeName[];
+};
+
+const DEFAULT_SHORTCUT_NAMES: ShortcutNames = {
+  form: "structuredTask",
+  step: "structuredTaskStep",
+  disableOnDone: ["structuredTask"],
+};
+
+type Props = {
+  editedTask?: BacklogTask;
+  onDone?: () => void;
+  shortcutNames?: ShortcutNames;
+};
+
+export const StructuredTaskForm = ({
+  editedTask,
+  onDone,
+  shortcutNames = DEFAULT_SHORTCUT_NAMES,
+}: Props) => {
   const formRef = useRef<HTMLFormElement>(null);
   const nameInputRef = useRef<HTMLInputElement>(null);
   const descriptionInputRef = useRef<HTMLInputElement>(null);
@@ -91,10 +109,10 @@ export const StructuredTaskForm = () => {
   const [currentStep, setCurrentStep] = useState(0);
 
   const consumeNextId = useCaptureStore((s) => s.consumeNextId);
-  const backlog = usePlanningStore((s) => s.backlog);
-  const setBacklog = usePlanningStore((s) => s.setBacklog);
+  const addTask = usePlanningStore((s) => s.addTask);
+  const updateTask = usePlanningStore((s) => s.updateTask);
 
-  const { enabled } = useShortcutsMode("structuredTask");
+  const { enabled } = useShortcutsMode(shortcutNames.form as ModeName);
 
   const goNext = () => setCurrentStep((s) => Math.min(s + 1, STEPS.length - 1));
   const goPrev = () => setCurrentStep((s) => Math.max(s - 1, 0));
@@ -104,25 +122,34 @@ export const StructuredTaskForm = () => {
     document.activeElement === descriptionInputRef.current;
 
   const form = useAppForm({
-    defaultValues,
+    defaultValues: editedTask ? taskToFormValues(editedTask) : blankValues,
     validators: { onChange: schema },
     onSubmit: ({ value }) => {
-      const id = consumeNextId();
-      const formatted = formatCapturedTask({ ...value, id });
-      const separator = backlog.trimEnd() ? "\n\n" : "";
-      setBacklog(`${backlog.trimEnd()}${separator}${formatted}`);
+      if (editedTask) {
+        updateTask({ ...value, id: editedTask.id });
+      } else {
+        const id = consumeNextId();
+        addTask({ ...value, id });
+      }
       form.reset();
       setCurrentStep(0);
-      disableModes(["structuredTask"]);
+      disableModes(shortcutNames.disableOnDone);
+      onDone?.();
     },
   });
 
+  // Re-sync form when editedTask changes (different task selected for editing)
+  useEffect(() => {
+    form.reset();
+  }, [editedTask?.id]);
+
   const { disableModes } = useShortcuts({
-    name: "structuredTask",
+    name: shortcutNames.form,
     enabled,
     keys: (key, event) => {
       if (key === "Escape") {
-        disableModes(["structuredTask"]);
+        disableModes(shortcutNames.disableOnDone);
+        onDone?.();
         return true;
       }
 
@@ -132,7 +159,6 @@ export const StructuredTaskForm = () => {
           formRef.current?.querySelectorAll('input[data-focusable="true"]') ||
             []
         ) as HTMLInputElement[];
-        console.log(inputs);
         inputsCounter.current += direction;
         inputs[inputsCounter.current % inputs.length]?.focus();
         event.preventDefault();
@@ -151,10 +177,10 @@ export const StructuredTaskForm = () => {
   const step = STEPS[currentStep]!;
 
   useShortcuts({
-    name: "structuredTaskStep",
+    name: shortcutNames.step,
     enabled,
     keys: (key) => {
-      if (isInputFocused()) return false; // pass to the structuredTask shortcuts
+      if (isInputFocused()) return false;
       if (key === "n") {
         goNext();
         return true;
@@ -200,7 +226,7 @@ export const StructuredTaskForm = () => {
           )}
         />
         <Button variant="ghost" type="submit" size="sm" className="shrink-0">
-          Add
+          {editedTask ? "Save" : "Add"}
         </Button>
       </div>
 
