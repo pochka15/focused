@@ -21,8 +21,8 @@ import {
   pushFrontVariants,
   todoType,
 } from "@/lib/todos/mappings";
+import { usePlanningStore } from "@/lib/stores/planning-store";
 import type { TodoItem } from "@/lib/todos/todo-models";
-import { isTask } from "@/lib/todos/todo-utils";
 import { findKey } from "lodash";
 import { ArrowRight } from "lucide-react";
 import { useShortcutsMode } from "@/shared-lib/shortcuts/shortcuts-store";
@@ -62,11 +62,13 @@ export const TodoForm = () => {
     : undefined;
   const { x, y } = editedTodoData?.spawnPosition ?? { x: 0, y: 0 };
 
+  const backlogTasks = usePlanningStore((s) => s.tasks);
+
   const taskMap = useMemo(() => {
     const map = new Map<string, string>();
-    todos.filter(isTask).forEach((t) => map.set(t.id, t.name));
+    backlogTasks.forEach((t) => map.set(String(t.id), t.name));
     return map;
-  }, [todos]);
+  }, [backlogTasks]);
 
   const form = useForm({
     defaultValues: getDefaultValues(editedTodo, x, y),
