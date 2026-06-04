@@ -2,6 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { cn } from "@/lib/random/utils";
+import { usePlanningStore } from "@/lib/stores/planning-store";
 import { useTodosStore } from "@/lib/stores/todos-store";
 import { findTag } from "@/lib/todos/mappings";
 import type { Event, Task } from "@/lib/todos/todo-models";
@@ -14,7 +15,8 @@ import { z } from "zod";
 
 const schema = z.object({
   timeBlock: z.enum(["1h", "2h", "3h", "half-day"]),
-  energy: z.enum(["tired", "normal", "focused"]),
+  brainFuel: z.enum(["low", "med", "full"]),
+  note: z.string(),
   goal: z.string(),
   aiMode: z.enum(["dictatorship", "democratic"]),
   backlog: z.string(),
@@ -22,13 +24,14 @@ const schema = z.object({
 
 type FormValues = z.infer<typeof schema>;
 
-const defaultValues: FormValues = {
+const getDefaultValues = (goal: string): FormValues => ({
   timeBlock: "2h",
-  energy: "normal",
-  goal: "",
+  brainFuel: "med",
+  note: "",
+  goal,
   aiMode: "dictatorship",
   backlog: "",
-};
+});
 
 // Number row: time block=1,2,3,4
 const timeBlockOptions: [FormValues["timeBlock"], string, string][] = [
@@ -38,11 +41,11 @@ const timeBlockOptions: [FormValues["timeBlock"], string, string][] = [
   ["half-day", "Half-day", "4"],
 ];
 
-// Row 1 (top keyboard row): energy=u,i,o
-const energyOptions: [FormValues["energy"], string, string][] = [
-  ["tired", "Tired", "u"],
-  ["normal", "Normal", "i"],
-  ["focused", "Focused", "o"],
+// Row 1 (top keyboard row): brainFuel=u,i,o
+const brainFuelOptions: [FormValues["brainFuel"], string, string][] = [
+  ["low", "Low", "u"],
+  ["med", "Med", "i"],
+  ["full", "Full", "o"],
 ];
 
 // Row 2 (middle keyboard row): AI mode=a,s
@@ -70,7 +73,8 @@ const buildPrompt = (values: FormValues, context: string): string => {
   });
 
   const lines: string[] = [`Current time: ${currentTime}`, ""];
-  lines.push(`I have ${values.timeBlock}, energy: ${values.energy}.`);
+  lines.push(`I have ${values.timeBlock}, brain fuel: ${values.brainFuel}.`);
+  if (values.note) lines.push(values.note);
   if (values.goal) lines.push(`Goal: ${values.goal}`);
   lines.push("");
 
@@ -135,33 +139,37 @@ const buildContext = (completedTasks: Task[], allEvents: Event[]): string => {
 
 export const PlanningForm = () => {
   const formRef = useRef<HTMLFormElement>(null);
+  const noteInputRef = useRef<HTMLInputElement>(null);
   const goalInputRef = useRef<HTMLInputElement>(null);
+  const textareInputRef = useRef<HTMLTextAreaElement>(null);
   const inputsCounter = useRef(0);
-  const [contextPreview, setContextPreview] = useState("");
-
   const todos = useTodosStore((s) => s.todos);
+  const goal = usePlanningStore((s) => s.goal);
+  const setGoal = usePlanningStore((s) => s.setGoal);
 
   const { enabled } = useShortcutsMode("planningSession");
 
+  const buildCurrentContext = () => {
+    const completedTasks = todos.filter(isTask).filter((it) => it.completed);
+    const allEvents = todos.filter(isEvent);
+    return buildContext(completedTasks, allEvents);
+  };
+
+  const [contextPreview, setContextPreview] = useState(buildCurrentContext);
+
   const form = useForm({
-    defaultValues,
+    defaultValues: getDefaultValues(goal),
     validators: { onChange: schema },
     onSubmit: ({ value }) => {
       const prompt = buildPrompt(value, contextPreview);
       navigator.clipboard.writeText(prompt).catch(() => {});
       form.reset();
-      setContextPreview("");
+      setContextPreview(buildCurrentContext());
       disableModes(["planningSession"]);
     },
   });
 
-  const handlePullContext = () => {
-    const completedTasks = todos
-      .filter((it) => isTask(it))
-      .filter((it) => it.completed);
-    const allEvents = todos.filter(isEvent);
-    setContextPreview(buildContext(completedTasks, allEvents));
-  };
+  const handlePullContext = () => setContextPreview(buildCurrentContext());
 
   const { disableModes } = useShortcuts({
     name: "planningSession",
@@ -175,16 +183,22 @@ export const PlanningForm = () => {
       const direction = key === "ctrl+n" ? 1 : key === "ctrl+p" ? -1 : 0;
       if (direction) {
         const inputs = Array.from(
-          formRef.current?.querySelectorAll('input[data-focusable="true"]') ||
-            []
-        ) as HTMLInputElement[];
+          formRef.current?.querySelectorAll(
+            'input[data-focusable="true"], textarea[data-focusable="true"]'
+          ) || []
+        ) as (HTMLInputElement | HTMLTextAreaElement)[];
         inputsCounter.current += direction;
         inputs[inputsCounter.current % inputs.length]?.focus();
         event.preventDefault();
         return true;
       }
 
-      if (document.activeElement === goalInputRef.current && key !== "Enter") {
+      if (
+        (document.activeElement === noteInputRef.current ||
+          document.activeElement === goalInputRef.current ||
+          document.activeElement === textareInputRef.current) &&
+        key !== "Enter"
+      ) {
         return true;
       }
 
@@ -194,9 +208,9 @@ export const PlanningForm = () => {
         return true;
       }
 
-      const energyMatch = energyOptions.find(([, , hint]) => hint === key);
-      if (energyMatch) {
-        form.setFieldValue("energy", energyMatch[0]);
+      const brainFuelMatch = brainFuelOptions.find(([, , hint]) => hint === key);
+      if (brainFuelMatch) {
+        form.setFieldValue("brainFuel", brainFuelMatch[0]);
         return true;
       }
 
@@ -256,19 +270,19 @@ export const PlanningForm = () => {
         />
 
         <form.Field
-          name="energy"
+          name="brainFuel"
           children={(field) => (
             <div className="flex flex-col gap-1.5">
-              <p className="text-pink-500">Energy</p>
+              <p className="text-pink-500">Brain fuel</p>
               <ToggleGroup
                 type="single"
                 spacing={2}
                 value={field.state.value}
                 onValueChange={(v) =>
-                  v && field.handleChange(v as FormValues["energy"])
+                  v && field.handleChange(v as FormValues["brainFuel"])
                 }
               >
-                {energyOptions.map(([value, label, hint]) => (
+                {brainFuelOptions.map(([value, label, hint]) => (
                   <ToggleGroupItem
                     key={value}
                     value={value}
@@ -314,38 +328,52 @@ export const PlanningForm = () => {
         )}
       />
 
-      <div className="flex items-end gap-2">
-        <form.Field
-          name="goal"
-          children={(field) => (
-            <div className="flex flex-1 flex-col gap-1.5">
-              <p className="text-pink-500">Goal (optional)</p>
-              <Input
-                data-focusable="true"
-                autoComplete="off"
-                ref={goalInputRef}
-                id={field.name}
-                name={field.name}
-                value={field.state.value}
-                placeholder="What do you want to achieve?"
-                onBlur={field.handleBlur}
-                onChange={(e) => field.handleChange(e.target.value)}
-              />
-            </div>
-          )}
-        />
-      </div>
+      <form.Field
+        name="note"
+        children={(field) => (
+          <div className="flex flex-col gap-1.5">
+            <p className="text-pink-500">Note for AI (optional)</p>
+            <Input
+              data-focusable="true"
+              autoComplete="off"
+              ref={noteInputRef}
+              id={field.name}
+              name={field.name}
+              value={field.state.value}
+              placeholder="e.g. finishing in 2h, skip deep tasks"
+              onBlur={field.handleBlur}
+              onChange={(e) => field.handleChange(e.target.value)}
+            />
+          </div>
+        )}
+      />
+
+      <form.Field
+        name="goal"
+        listeners={{ onChange: ({ value }) => setGoal(value) }}
+        children={(field) => (
+          <div className="flex flex-col gap-1.5">
+            <p className="text-pink-500">Goal (optional)</p>
+            <Input
+              data-focusable="true"
+              autoComplete="off"
+              ref={goalInputRef}
+              id={field.name}
+              name={field.name}
+              value={field.state.value}
+              placeholder="What do you want to achieve?"
+              onBlur={field.handleBlur}
+              onChange={(e) => field.handleChange(e.target.value)}
+            />
+          </div>
+        )}
+      />
 
       <div className="flex flex-col gap-1.5">
         <div className="flex items-center justify-between">
           <p className="text-pink-500">Context</p>
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            onClick={handlePullContext}
-          >
-            Pull from tasks
+          <Button type="button" variant="ghost" size="sm" onClick={handlePullContext}>
+            Refresh
           </Button>
         </div>
         {contextPreview && (
@@ -361,6 +389,8 @@ export const PlanningForm = () => {
           <div className="flex flex-col gap-1.5">
             <p className="text-pink-500">Backlog</p>
             <textarea
+              data-focusable="true"
+              ref={textareInputRef}
               id={field.name}
               name={field.name}
               value={field.state.value}
