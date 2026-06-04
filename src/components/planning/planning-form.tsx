@@ -19,7 +19,6 @@ const schema = z.object({
   note: z.string(),
   goal: z.string(),
   aiMode: z.enum(["dictatorship", "democratic"]),
-  backlog: z.string(),
 });
 
 type FormValues = z.infer<typeof schema>;
@@ -30,7 +29,6 @@ const getDefaultValues = (goal: string): FormValues => ({
   note: "",
   goal,
   aiMode: "dictatorship",
-  backlog: "",
 });
 
 // Number row: time block=1,2,3,4
@@ -65,7 +63,7 @@ const formatTaskLine = (task: Task): string => {
 const formatEventLine = (event: Event): string =>
   `- [${event.rawTime}] ${event.name}`;
 
-const buildPrompt = (values: FormValues, context: string): string => {
+const buildPrompt = (values: FormValues, context: string, backlog: string): string => {
   const now = new Date();
   const currentTime = now.toLocaleTimeString([], {
     hour: "2-digit",
@@ -82,8 +80,8 @@ const buildPrompt = (values: FormValues, context: string): string => {
     lines.push(context, "");
   }
 
-  if (values.backlog.trim()) {
-    lines.push("Backlog:", values.backlog.trim(), "");
+  if (backlog.trim()) {
+    lines.push("Backlog:", backlog.trim(), "");
   }
 
   if (values.aiMode === "dictatorship") {
@@ -141,11 +139,11 @@ export const PlanningForm = () => {
   const formRef = useRef<HTMLFormElement>(null);
   const noteInputRef = useRef<HTMLInputElement>(null);
   const goalInputRef = useRef<HTMLInputElement>(null);
-  const textareInputRef = useRef<HTMLTextAreaElement>(null);
   const inputsCounter = useRef(0);
   const todos = useTodosStore((s) => s.todos);
   const goal = usePlanningStore((s) => s.goal);
   const setGoal = usePlanningStore((s) => s.setGoal);
+  const backlog = usePlanningStore((s) => s.backlog);
 
   const { enabled } = useShortcutsMode("planningSession");
 
@@ -161,7 +159,7 @@ export const PlanningForm = () => {
     defaultValues: getDefaultValues(goal),
     validators: { onChange: schema },
     onSubmit: ({ value }) => {
-      const prompt = buildPrompt(value, contextPreview);
+      const prompt = buildPrompt(value, contextPreview, backlog);
       navigator.clipboard.writeText(prompt).catch(() => {});
       form.reset();
       setContextPreview(buildCurrentContext());
@@ -195,8 +193,7 @@ export const PlanningForm = () => {
 
       if (
         (document.activeElement === noteInputRef.current ||
-          document.activeElement === goalInputRef.current ||
-          document.activeElement === textareInputRef.current) &&
+          document.activeElement === goalInputRef.current) &&
         key !== "Enter"
       ) {
         return true;
@@ -383,26 +380,14 @@ export const PlanningForm = () => {
         )}
       </div>
 
-      <form.Field
-        name="backlog"
-        children={(field) => (
-          <div className="flex flex-col gap-1.5">
-            <p className="text-pink-500">Backlog</p>
-            <textarea
-              data-focusable="true"
-              ref={textareInputRef}
-              id={field.name}
-              name={field.name}
-              value={field.state.value}
-              placeholder="Paste your structured tasks here..."
-              onBlur={field.handleBlur}
-              onChange={(e) => field.handleChange(e.target.value)}
-              className="border-input bg-background placeholder:text-muted-foreground focus-visible:ring-ring min-h-24 w-full rounded-md border px-3 py-2 text-sm focus-visible:ring-1 focus-visible:outline-none"
-              rows={5}
-            />
-          </div>
-        )}
-      />
+      {backlog.trim() && (
+        <div className="flex flex-col gap-1.5">
+          <p className="text-pink-500">Backlog</p>
+          <pre className="bg-muted text-muted-foreground max-h-40 overflow-y-auto rounded p-2 font-mono text-xs whitespace-pre-wrap">
+            {backlog}
+          </pre>
+        </div>
+      )}
 
       <Button type="submit" variant="ghost" className="gap-1 self-end">
         Copy prompt

@@ -17,7 +17,6 @@ import { useShortcuts } from "@/shared-lib/shortcuts/use-shortcuts";
 import type Konva from "konva";
 import { useEffect, useRef, useState } from "react";
 import { Circle, Layer, Stage, Text } from "react-konva";
-import { QueueIndicator } from "./capture/queue-indicator";
 import { StructuredTaskForm } from "./capture/structured-task-form";
 import { Enemy } from "./canvas-enemy";
 import { helpCommands } from "./help";
@@ -114,9 +113,7 @@ export const CanvasBoard = () => {
   const { enabled: isFormOpen } = useShortcutsMode("editingTodo");
   const { enabled: isStructuredTaskOpen } = useShortcutsMode("structuredTask");
   const { enabled: isPlanningOpen } = useShortcutsMode("planningSession");
-  const { enabled: isEditingNotifications } = useShortcutsMode(
-    "editingNotifications"
-  );
+  const { enabled: isEditingNotifications } = useShortcutsMode("editingNotifications");
 
   const { enableMode, disableModes } = useShortcuts({
     name: "canvasBoard",
@@ -137,6 +134,12 @@ export const CanvasBoard = () => {
       if (key === helpCommands.planWithAI.key && !isFormOpen) {
         event.preventDefault();
         enableMode("planningSession");
+        return true;
+      }
+
+      if (key === helpCommands.editBacklog.key && !isFormOpen) {
+        event.preventDefault();
+        enableMode("editingBacklog");
         return true;
       }
 
@@ -498,19 +501,25 @@ export const CanvasBoard = () => {
         </DialogContent>
       </Dialog>
 
-      {/* AI button — top-left, copies conversation setup prompt */}
-      <button
-        type="button"
-        onClick={() => {
-          navigator.clipboard.writeText(AI_SETUP_PROMPT).catch(() => {});
-        }}
-        title="Copy AI setup prompt"
-        className="text-muted-foreground hover:text-foreground fixed top-3 left-3 z-50 font-mono text-xs opacity-50 transition-opacity hover:opacity-100"
-      >
-        AI
-      </button>
-
-      <QueueIndicator />
+      {/* Top-left overlay buttons */}
+      <div className="fixed top-3 left-3 z-50 flex gap-3">
+        <button
+          type="button"
+          onClick={() => { navigator.clipboard.writeText(AI_SETUP_PROMPT).catch(() => {}); }}
+          title="Copy AI setup prompt"
+          className="text-muted-foreground hover:text-foreground font-mono text-xs opacity-50 transition-opacity hover:opacity-100"
+        >
+          AI
+        </button>
+        <button
+          type="button"
+          onClick={() => enableMode("editingBacklog")}
+          title="Edit backlog (b)"
+          className="text-muted-foreground hover:text-foreground font-mono text-xs opacity-50 transition-opacity hover:opacity-100"
+        >
+          backlog
+        </button>
+      </div>
     </>
   );
 };

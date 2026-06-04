@@ -1,6 +1,7 @@
 import { CanvasBoard } from "@/components/canvas-board";
 import { CommandLine } from "@/components/command-line";
 import { Help } from "@/components/help";
+import { BacklogPanel } from "@/components/planning/backlog-panel";
 import { ThemeProvider } from "@/components/theme-provider";
 import { RootController } from "@/lib/shortcuts/root-controller";
 import { NotesPanel } from "@/shared-lib/notes-panel";
@@ -21,6 +22,7 @@ export function App() {
           <Stats />
           <NotesPanel />
           <NotificationsPanel />
+          <BacklogPanel />
         </RootController>
         <Toaster />
       </ShortcutsProvider>

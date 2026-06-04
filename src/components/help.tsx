@@ -35,6 +35,10 @@ export const helpCommands = {
     key: "p",
     description: "Plan with AI",
   },
+  editBacklog: {
+    key: "b",
+    description: "Edit backlog",
+  },
   notes: {
     key: "j",
     description: "Quick note",

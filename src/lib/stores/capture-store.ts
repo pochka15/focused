@@ -18,10 +18,7 @@ export type CapturedTask = {
 };
 
 type CaptureState = {
-  queue: CapturedTask[];
   nextId: number;
-  addToQueue: (t: Omit<CapturedTask, "id">) => void;
-  clearQueue: () => void;
   consumeNextId: () => number;
 };
 
@@ -33,20 +30,7 @@ export const formatCapturedTask = (t: CapturedTask): string => {
 export const useCaptureStore = create<CaptureState>()(
   persist(
     immer((set, get) => ({
-      queue: [],
       nextId: 1,
-
-      addToQueue: (t) =>
-        set((state) => {
-          const id = state.nextId;
-          state.nextId += 1;
-          state.queue.push({ ...t, id });
-        }),
-
-      clearQueue: () =>
-        set((state) => {
-          state.queue = [];
-        }),
 
       consumeNextId: () => {
         const id = get().nextId;
@@ -59,7 +43,7 @@ export const useCaptureStore = create<CaptureState>()(
     {
       name: "capture-storage",
       storage: createJSONStorage(() => localStorage),
-      partialize: (state) => ({ queue: state.queue, nextId: state.nextId }),
+      partialize: (state) => ({ nextId: state.nextId }),
     }
   )
 );

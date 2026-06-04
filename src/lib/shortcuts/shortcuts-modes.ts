@@ -17,6 +17,7 @@ export type Modes = {
   showingNotes: Mode;
   structuredTask: Mode;
   planningSession: Mode;
+  editingBacklog: Mode;
 };
 
 export type ModeName = keyof Modes;
@@ -31,4 +32,5 @@ export const getDefaultModes = (): Modes => ({
   editingNotifications: { enabled: false, data: {} },
   structuredTask: { enabled: false, data: {} },
   planningSession: { enabled: false, data: {} },
+  editingBacklog: { enabled: false, data: {} },
 });
