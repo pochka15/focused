@@ -3,7 +3,6 @@ const next = () => priority++;
 
 export const shortcutsPriorities = {
   command: next(), // handled first
-  notesPanel: next(),
   help: next(),
   // ------ Modals
   structuredTaskStep: next(), // inside modal
@@ -11,10 +10,10 @@ export const shortcutsPriorities = {
   planningSession: next(),
   editingBacklog: next(),
   // ------ Panels
+  notesPanel: next(),
   notificationsPanel: next(),
   addTodo: next(),
   // ------ Rest
   canvasBoard: next(),
-  tablePanel: next(),
   root: next(),
 } as const;

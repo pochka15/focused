@@ -47,22 +47,21 @@ const defaultValues: FormValues = {
   completion: "final",
 };
 
+const PICK_KEYS = ["j", "k", "l"] as const;
+
 type Step = {
   field: "scope" | "urgency" | "size" | "energy" | "completion";
   label: string;
   question: string;
+  values: readonly string[];
 };
 
 const STEPS: readonly Step[] = [
-  { field: "scope", label: "Scope", question: "Is it a work task?" },
-  { field: "urgency", label: "Urgency", question: "How urgent is it?" },
-  { field: "size", label: "Size", question: "▪ <30m    ▬▬ 1-2h    ▬▬▬▬ 2h+" },
-  { field: "energy", label: "Energy", question: "How is your energy?" },
-  {
-    field: "completion",
-    label: "Completion",
-    question: "Will it be done in one go?",
-  },
+  { field: "scope",      label: "Scope",      question: "Is it a work task?",       values: ["work", "personal"] },
+  { field: "urgency",    label: "Urgency",    question: "How urgent is it?",         values: ["next", "few-hours", "today"] },
+  { field: "size",       label: "Size",       question: "▪ <30m    ▬▬ 1-2h    ▬▬▬▬ 2h+", values: ["quick", "medium", "big"] },
+  { field: "energy",     label: "Energy",     question: "How is your energy?",       values: ["deep", "normal", "light"] },
+  { field: "completion", label: "Completion", question: "Will it be done in one go?", values: ["final", "splittable"] },
 ] as const;
 
 export const StructuredTaskForm = () => {
@@ -113,6 +112,7 @@ export const StructuredTaskForm = () => {
         const inputs = Array.from(
           formRef.current?.querySelectorAll('input[data-focusable="true"]') || []
         ) as HTMLInputElement[];
+        console.log(inputs);
         inputsCounter.current += direction;
         inputs[inputsCounter.current % inputs.length]?.focus();
         event.preventDefault();
@@ -124,18 +124,28 @@ export const StructuredTaskForm = () => {
         form.handleSubmit();
         return true;
       }
-      return false;
+      return true;
     },
   });
 
   const step = STEPS[currentStep]!;
 
-  const stepProps = {
-    onNext: goNext,
-    onPrev: goPrev,
-    isLast: currentStep === STEPS.length - 1,
-    isInputFocused,
-  };
+  useShortcuts({
+    name: "structuredTaskStep",
+    enabled,
+    keys: (key) => {
+      if (isInputFocused()) return false; // pass to the structuredTask shortcuts
+      if (key === "n") { goNext(); return true; }
+      if (key === "p") { goPrev(); return true; }
+      const pickIdx = PICK_KEYS.indexOf(key as typeof PICK_KEYS[number]);
+      if (pickIdx !== -1 && pickIdx < step.values.length) {
+        form.setFieldValue(step.field, step.values[pickIdx] as never);
+        if (currentStep < STEPS.length - 1) goNext();
+        return true;
+      }
+      return false;
+    },
+  });
 
   return (
     <form
@@ -213,10 +223,7 @@ export const StructuredTaskForm = () => {
         <form.AppField name="scope">
           {(field) => (
             <div className={cn(step.field !== "scope" && "hidden")}>
-              <field.ScopeField
-                {...stepProps}
-                enabled={step.field === "scope"}
-              />
+              <field.ScopeField />
             </div>
           )}
         </form.AppField>
@@ -224,10 +231,7 @@ export const StructuredTaskForm = () => {
         <form.AppField name="urgency">
           {(field) => (
             <div className={cn(step.field !== "urgency" && "hidden")}>
-              <field.UrgencyField
-                {...stepProps}
-                enabled={step.field === "urgency"}
-              />
+              <field.UrgencyField />
             </div>
           )}
         </form.AppField>
@@ -235,7 +239,7 @@ export const StructuredTaskForm = () => {
         <form.AppField name="size">
           {(field) => (
             <div className={cn(step.field !== "size" && "hidden")}>
-              <field.SizeField {...stepProps} enabled={step.field === "size"} />
+              <field.SizeField />
             </div>
           )}
         </form.AppField>
@@ -243,10 +247,7 @@ export const StructuredTaskForm = () => {
         <form.AppField name="energy">
           {(field) => (
             <div className={cn(step.field !== "energy" && "hidden")}>
-              <field.EnergyField
-                {...stepProps}
-                enabled={step.field === "energy"}
-              />
+              <field.EnergyField />
             </div>
           )}
         </form.AppField>
@@ -254,10 +255,7 @@ export const StructuredTaskForm = () => {
         <form.AppField name="completion">
           {(field) => (
             <div className={cn(step.field !== "completion" && "hidden")}>
-              <field.CompletionField
-                {...stepProps}
-                enabled={step.field === "completion"}
-              />
+              <field.CompletionField />
             </div>
           )}
         </form.AppField>
