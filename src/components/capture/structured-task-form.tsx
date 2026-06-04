@@ -48,8 +48,8 @@ const scopeOptions: [CapturedTaskScope, string, string][] = [
 
 const urgencyOptions: [CapturedTaskUrgency, string, string][] = [
   ["next", "Next", "e"],
-  ["few-hours", "Few hours", "r"],
-  ["today", "Today anytime", "t"],
+  ["few-hours", "In few hours", "r"],
+  ["today", "Just today", "t"],
 ];
 
 // Row 2 (middle keyboard row): size=a,s,d  energy=j,k,l
