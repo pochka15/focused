@@ -6,7 +6,7 @@ import type { Event } from "@/lib/todos/todo-models";
 /**
  * Calculate new position for an event based on time elapsed
  * Events move toward the starting point proportionally to how much time has passed
- * 
+ *
  * @param event The event to calculate position for
  * @param currentX Current X position of the event
  * @param currentY Current Y position of the event
@@ -20,7 +20,7 @@ export const calculateEventPosition = (
   previousMinutesLeft: number
 ): { x: number; y: number } | null => {
   const currentMinutesLeft = calcMinutesLeft(event.rawTime);
-  
+
   if (currentMinutesLeft === null || previousMinutesLeft <= 0) {
     return null;
   }
@@ -28,7 +28,7 @@ export const calculateEventPosition = (
   // Calculate how much time has passed as a ratio
   // If time went from 60min to 30min, ratio is 0.5 (move halfway to target)
   const timePassedRatio = 1 - currentMinutesLeft / previousMinutesLeft;
-  
+
   // Clamp ratio between 0 and 1
   const clampedRatio = Math.max(0, Math.min(1, timePassedRatio));
 

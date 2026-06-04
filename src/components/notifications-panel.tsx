@@ -134,14 +134,12 @@ const NotificationsForm = () => {
                   onClick={() => {
                     form.setFieldValue(
                       "rows",
-                      form
-                        .getFieldValue("rows")
-                        .map((row) => ({
-                          ...row,
-                          isComplete: false,
-                          timeH: 11,
-                          timeM: 0,
-                        }))
+                      form.getFieldValue("rows").map((row) => ({
+                        ...row,
+                        isComplete: false,
+                        timeH: 11,
+                        timeM: 0,
+                      }))
                     );
                   }}
                   size="sm"
