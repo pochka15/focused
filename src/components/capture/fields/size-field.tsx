@@ -1,17 +1,17 @@
 import type { CapturedTaskSize } from "@/lib/stores/capture-store";
 import { useFieldContext } from "../structured-task-form-context";
-import { StepToggle } from "./step-field-utils";
+import { StepSlider } from "./step-field-utils";
 
 const options = [
-  ["quick", "<30m", "j", "▪"],
-  ["medium", "1-2h", "k", "▬▬"],
-  ["big", "2h+", "l", "▬▬▬▬"],
-] as const satisfies readonly [CapturedTaskSize, string, string, string][];
+  ["quick", "▪", "<30m"],
+  ["medium", "▬▬", "1-2h"],
+  ["big", "▬▬▬▬", "2h+"],
+] as const satisfies readonly [CapturedTaskSize, string, string][];
 
 export const SizeField = () => {
   const field = useFieldContext<CapturedTaskSize>();
   return (
-    <StepToggle
+    <StepSlider
       value={field.state.value}
       options={options}
       onPick={(v) => field.handleChange(v as CapturedTaskSize)}

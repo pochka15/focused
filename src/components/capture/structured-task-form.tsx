@@ -52,7 +52,6 @@ const PICK_KEYS = ["j", "k", "l"] as const;
 type Step = {
   field: "scope" | "urgency" | "size" | "energy" | "completion";
   label: string;
-  question: string;
   values: readonly string[];
 };
 
@@ -60,31 +59,26 @@ const STEPS: readonly Step[] = [
   {
     field: "scope",
     label: "Scope",
-    question: "Is it a work task?",
     values: ["work", "personal"],
   },
   {
     field: "urgency",
     label: "Urgency",
-    question: "How urgent is it?",
     values: ["next", "few-hours", "today"],
   },
   {
     field: "size",
     label: "Size",
-    question: "▪ <30m    ▬▬ 1-2h    ▬▬▬▬ 2h+",
     values: ["quick", "medium", "big"],
   },
   {
     field: "energy",
     label: "Energy",
-    question: "How is your energy?",
     values: ["deep", "normal", "light"],
   },
   {
     field: "completion",
     label: "Completion",
-    question: "Will it be done in one go?",
     values: ["final", "splittable"],
   },
 ] as const;
@@ -247,10 +241,6 @@ export const StructuredTaskForm = () => {
             ))}
           </div>
         </div>
-
-        <p className="text-muted-foreground font-mono text-xs">
-          {step.question}
-        </p>
 
         <form.AppField name="scope">
           {(field) => (
