@@ -5,12 +5,16 @@ export const shortcutsPriorities = {
   command: next(), // handled first
   notesPanel: next(),
   help: next(),
+  // ------ Modals
+  structuredTaskStep: next(), // inside modal
   structuredTask: next(),
   planningSession: next(),
   editingBacklog: next(),
+  // ------ Panels
   notificationsPanel: next(),
-  canvasBoard: next(),
   addTodo: next(),
+  // ------ Rest
+  canvasBoard: next(),
   tablePanel: next(),
   root: next(),
 } as const;

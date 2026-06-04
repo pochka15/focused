@@ -16,6 +16,7 @@ export type Modes = {
   syncing: Mode<{ lastUpdated: number }>;
   showingNotes: Mode;
   structuredTask: Mode;
+  structuredTaskStep: Mode;
   planningSession: Mode;
   editingBacklog: Mode;
 };
@@ -31,6 +32,7 @@ export const getDefaultModes = (): Modes => ({
   showingNotes: { enabled: false, data: {} },
   editingNotifications: { enabled: false, data: {} },
   structuredTask: { enabled: false, data: {} },
+  structuredTaskStep: { enabled: false, data: {} },
   planningSession: { enabled: false, data: {} },
   editingBacklog: { enabled: false, data: {} },
 });
