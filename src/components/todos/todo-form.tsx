@@ -121,14 +121,7 @@ export const TodoForm = () => {
         const name = form.state.values.name;
         const refId = parseRefId(name);
         if (refId) {
-          const prefix = name
-            .trimEnd()
-            .slice(0, -(refId.length + 1))
-            .trimEnd();
-          form.setFieldValue(
-            "name",
-            prefix ? `${prefix} ${matchedTaskName}` : matchedTaskName
-          );
+          form.setFieldValue("name", `${name} ${matchedTaskName}`);
         }
         event.preventDefault();
         return true;
