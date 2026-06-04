@@ -1,10 +1,12 @@
 import { cn } from "@/lib/random/utils";
+import { usePlanningStore } from "@/lib/stores/planning-store";
 import { useTodosStore } from "@/lib/stores/todos-store";
 import { formatHistory } from "@/lib/todos/history-utils";
 import { sortByPriority } from "@/lib/todos/todo-utils";
 import { useShortcutsMode } from "@/shared-lib/shortcuts/shortcuts-store";
 import { useShortcuts } from "@/shared-lib/shortcuts/use-shortcuts";
 import { useEffect, useRef, useState } from "react";
+import { toast } from "sonner";
 import { useTheme } from "./theme-provider";
 
 interface CommandLineProps {
@@ -20,6 +22,9 @@ export const CommandLine = ({ className }: CommandLineProps) => {
   const getTodos = useTodosStore((it) => it.getTodos);
   const clearHistory = useTodosStore((it) => it.clearHistory);
   const clear = useTodosStore((it) => it.clear);
+  const planningTasks = usePlanningStore((s) => s.tasks);
+  const removeTask = usePlanningStore((s) => s.removeTask);
+  const addTask = usePlanningStore((s) => s.addTask);
 
   const { enableMode, disableModes } = useShortcuts({
     name: "command",
@@ -36,6 +41,23 @@ export const CommandLine = ({ className }: CommandLineProps) => {
   });
 
   const submit = () => {
+    const doneMatch = command.match(/^done\s+(\d+)$/);
+    if (doneMatch) {
+      const id = Number(doneMatch[1]);
+      const task = planningTasks.find((t) => t.id === id);
+      if (task) {
+        removeTask(id);
+        toast(`Removed #${id} ${task.name}`, {
+          position: "bottom-left",
+          action: {
+            label: "Undo",
+            onClick: () => addTask(task),
+          },
+        });
+      }
+      return;
+    }
+
     switch (command) {
       case "theme-dark":
         setTheme("dark");

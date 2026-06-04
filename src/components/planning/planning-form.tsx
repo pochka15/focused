@@ -25,8 +25,8 @@ const schema = z.object({
 type FormValues = z.infer<typeof schema>;
 
 const getDefaultValues = (goal: string): FormValues => ({
-  timeBlock: "2h",
-  brainFuel: "med",
+  timeBlock: "1h",
+  brainFuel: "full",
   note: "",
   goal,
   aiMode: "dictatorship",

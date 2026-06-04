@@ -17,9 +17,8 @@ const BacklogEditor = () => {
   const tasks = usePlanningStore((s) => s.tasks);
   const removeTask = usePlanningStore((s) => s.removeTask);
 
-  const [mode, setMode] = useState<"normal" | "edit">("normal");
+  const [mode, setMode] = useState<"normal" | "edit" | "delete">("normal");
   const [editedTask, setEditedTask] = useState<BacklogTask | undefined>();
-  const [showDeleteButtons, setShowDeleteButtons] = useState(false);
 
   const enterEdit = (task?: BacklogTask) => {
     setEditedTask(task);
@@ -35,14 +34,22 @@ const BacklogEditor = () => {
     name: "editingBacklog",
     enabled: true,
     keys: (key) => {
-      if (mode === "edit") return false; // let backlogTaskForm handle it
+      if (mode === "edit") return false;
       if (key === "Escape") {
+        if (mode === "delete") {
+          setMode("normal");
+          return true;
+        }
         disableModes(["editingBacklog"]);
         return true;
       }
       if (key === "e") {
         enableMode("backlogTaskForm");
         enterEdit(undefined);
+        return true;
+      }
+      if (key === "d" && mode === "normal") {
+        setMode("delete");
         return true;
       }
       return false;
@@ -73,11 +80,15 @@ const BacklogEditor = () => {
           {tasks.map((task) => (
             <div
               key={task.id}
+              onClick={() => mode === "delete" && removeTask(task.id)}
               className={cn(
-                "group rounded border p-3 font-mono text-xs",
+                "group rounded border p-3 font-mono text-xs transition-colors",
                 editedTask?.id === task.id
                   ? "border-foreground"
-                  : "border-border"
+                  : "border-border",
+                mode === "delete"
+                  ? "hover:border-destructive hover:bg-destructive/10 cursor-pointer"
+                  : "cursor-default"
               )}
             >
               <pre className="whitespace-pre-wrap">
@@ -97,7 +108,7 @@ const BacklogEditor = () => {
                   enableMode("backlogTaskForm");
                   enterEdit(undefined);
                 }}
-                className="text-muted-foreground hover:text-foreground rounded border px-3 py-1.5 font-mono text-xs text-left"
+                className="text-muted-foreground hover:text-foreground rounded border px-3 py-1.5 text-left font-mono text-xs"
               >
                 + add task <span className="opacity-50">e</span>
               </button>
@@ -107,15 +118,6 @@ const BacklogEditor = () => {
                   <p className="text-muted-foreground font-mono text-xs">
                     Edit tasks:
                   </p>
-                  <button
-                    type="button"
-                    onClick={() => setShowDeleteButtons((v) => !v)}
-                    className="text-muted-foreground hover:text-foreground w-fit rounded border px-2 py-1 font-mono text-xs"
-                  >
-                    {showDeleteButtons
-                      ? "hide delete buttons"
-                      : "show delete buttons"}
-                  </button>
                   {tasks.map((task) => (
                     <div
                       key={task.id}
@@ -125,31 +127,43 @@ const BacklogEditor = () => {
                         #{task.id}
                       </span>
                       <span className="flex-1 truncate">{task.name}</span>
-                      <div className="flex items-center gap-4">
-                        <button
-                          type="button"
-                          onClick={() => {
-                            enableMode("backlogTaskForm");
-                            enterEdit(task);
-                          }}
-                          className="text-muted-foreground hover:text-foreground"
-                        >
-                          edit
-                        </button>
-                        {showDeleteButtons && (
-                          <button
-                            type="button"
-                            onClick={() => removeTask(task.id)}
-                            className="text-muted-foreground hover:text-destructive"
-                          >
-                            ✕
-                          </button>
-                        )}
-                      </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          enableMode("backlogTaskForm");
+                          enterEdit(task);
+                        }}
+                        className="text-muted-foreground hover:text-foreground"
+                      >
+                        edit
+                      </button>
                     </div>
                   ))}
+
+                  <button
+                    type="button"
+                    onClick={() => setMode("delete")}
+                    className="text-muted-foreground hover:text-destructive mt-2 w-fit font-mono text-xs"
+                  >
+                    enter delete mode
+                  </button>
                 </>
               )}
+            </div>
+          )}
+
+          {mode === "delete" && (
+            <div className="flex flex-col gap-3">
+              <p className="text-destructive font-mono text-xs">
+                Click a task to delete it.
+              </p>
+              <button
+                type="button"
+                onClick={() => setMode("normal")}
+                className="text-muted-foreground hover:text-foreground w-fit font-mono text-xs"
+              >
+                ← exit delete mode
+              </button>
             </div>
           )}
 

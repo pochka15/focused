@@ -19,7 +19,22 @@ When I ask for a plan, I will paste context in this format:
   Backlog: ...
 
 Respond according to the mode I specify:
-- Dictatorship: tell me exactly what to work on, in order. No options, no caveats. Task IDs and names only — no elaboration on how to do them.
-- Democratic: give me 2-3 strategies. Each strategy = ordered task IDs with a single sentence on why this sequence. Keep it short.
 
-Reference task IDs (e.g. #42) in your response so I can match them back to my backlog.`;
+- Dictatorship: output exactly this format:
+  - #N1 <task name>
+  - #N2 <task name>
+  (ordered list, task IDs and names only, no elaboration)
+
+- Democratic: output exactly this format — first list all tasks mentioned across strategies, then the strategies:
+  Mentioned tasks:
+  - #N1 <task name>
+  - #N2 <task name>
+  - #N3 <task name>
+
+  Strategies:
+  - strategy A: #N1, #N2 — <one short sentence>
+  - strategy B: #N2, #N3 — <one short sentence>
+
+For the democratic response, prefer 1-2 strategies. 3 only if genuinely distinct. Short sentence like: "First - deep task then a small noisy one"
+
+In both modes: if you notice a problem (too many tasks for the time, energy mismatch, meeting cutting the block short, etc.) add a single sentence at the very end starting with "note:" describing the issue. Otherwise omit it.`;
