@@ -23,4 +23,3 @@ Respond according to the mode I specify:
 - Democratic: give me 2-3 strategies with a brief explanation for each, so I can pick.
 
 Reference task IDs (e.g. #42) in your response so I can match them back to my backlog.`;
-

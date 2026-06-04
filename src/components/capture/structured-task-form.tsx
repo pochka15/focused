@@ -57,11 +57,36 @@ type Step = {
 };
 
 const STEPS: readonly Step[] = [
-  { field: "scope",      label: "Scope",      question: "Is it a work task?",       values: ["work", "personal"] },
-  { field: "urgency",    label: "Urgency",    question: "How urgent is it?",         values: ["next", "few-hours", "today"] },
-  { field: "size",       label: "Size",       question: "▪ <30m    ▬▬ 1-2h    ▬▬▬▬ 2h+", values: ["quick", "medium", "big"] },
-  { field: "energy",     label: "Energy",     question: "How is your energy?",       values: ["deep", "normal", "light"] },
-  { field: "completion", label: "Completion", question: "Will it be done in one go?", values: ["final", "splittable"] },
+  {
+    field: "scope",
+    label: "Scope",
+    question: "Is it a work task?",
+    values: ["work", "personal"],
+  },
+  {
+    field: "urgency",
+    label: "Urgency",
+    question: "How urgent is it?",
+    values: ["next", "few-hours", "today"],
+  },
+  {
+    field: "size",
+    label: "Size",
+    question: "▪ <30m    ▬▬ 1-2h    ▬▬▬▬ 2h+",
+    values: ["quick", "medium", "big"],
+  },
+  {
+    field: "energy",
+    label: "Energy",
+    question: "How is your energy?",
+    values: ["deep", "normal", "light"],
+  },
+  {
+    field: "completion",
+    label: "Completion",
+    question: "Will it be done in one go?",
+    values: ["final", "splittable"],
+  },
 ] as const;
 
 export const StructuredTaskForm = () => {
@@ -110,7 +135,8 @@ export const StructuredTaskForm = () => {
       const direction = key === "ctrl+n" ? 1 : key === "ctrl+p" ? -1 : 0;
       if (direction) {
         const inputs = Array.from(
-          formRef.current?.querySelectorAll('input[data-focusable="true"]') || []
+          formRef.current?.querySelectorAll('input[data-focusable="true"]') ||
+            []
         ) as HTMLInputElement[];
         console.log(inputs);
         inputsCounter.current += direction;
@@ -135,9 +161,15 @@ export const StructuredTaskForm = () => {
     enabled,
     keys: (key) => {
       if (isInputFocused()) return false; // pass to the structuredTask shortcuts
-      if (key === "n") { goNext(); return true; }
-      if (key === "p") { goPrev(); return true; }
-      const pickIdx = PICK_KEYS.indexOf(key as typeof PICK_KEYS[number]);
+      if (key === "n") {
+        goNext();
+        return true;
+      }
+      if (key === "p") {
+        goPrev();
+        return true;
+      }
+      const pickIdx = PICK_KEYS.indexOf(key as (typeof PICK_KEYS)[number]);
       if (pickIdx !== -1 && pickIdx < step.values.length) {
         form.setFieldValue(step.field, step.values[pickIdx] as never);
         if (currentStep < STEPS.length - 1) goNext();

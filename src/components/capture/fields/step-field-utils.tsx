@@ -16,7 +16,9 @@ export const StepToggle = ({ value, options, onPick }: StepToggleProps) => (
     type="single"
     spacing={6}
     value={value}
-    onValueChange={(v) => { if (v) onPick(v); }}
+    onValueChange={(v) => {
+      if (v) onPick(v);
+    }}
   >
     {options.map(([optValue, label, hint, emoji]) => (
       <ToggleGroupItem

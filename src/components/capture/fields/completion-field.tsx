@@ -5,7 +5,12 @@ import { StepToggle } from "./step-field-utils";
 const options = [
   ["final", "■  done in one go", "j", ""],
   ["splittable", "○ → ○ → ○  in rounds", "k", ""],
-] as const satisfies readonly [CapturedTaskCompletion, string, string, string][];
+] as const satisfies readonly [
+  CapturedTaskCompletion,
+  string,
+  string,
+  string,
+][];
 
 export const CompletionField = () => {
   const field = useFieldContext<CapturedTaskCompletion>();

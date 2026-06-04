@@ -63,7 +63,11 @@ const formatTaskLine = (task: Task): string => {
 const formatEventLine = (event: Event): string =>
   `- [${event.rawTime}] ${event.name}`;
 
-const buildPrompt = (values: FormValues, context: string, backlog: string): string => {
+const buildPrompt = (
+  values: FormValues,
+  context: string,
+  backlog: string
+): string => {
   const now = new Date();
   const currentTime = now.toLocaleTimeString([], {
     hour: "2-digit",
@@ -205,7 +209,9 @@ export const PlanningForm = () => {
         return true;
       }
 
-      const brainFuelMatch = brainFuelOptions.find(([, , hint]) => hint === key);
+      const brainFuelMatch = brainFuelOptions.find(
+        ([, , hint]) => hint === key
+      );
       if (brainFuelMatch) {
         form.setFieldValue("brainFuel", brainFuelMatch[0]);
         return true;
@@ -369,7 +375,12 @@ export const PlanningForm = () => {
       <div className="flex flex-col gap-1.5">
         <div className="flex items-center justify-between">
           <p className="text-pink-500">Context</p>
-          <Button type="button" variant="ghost" size="sm" onClick={handlePullContext}>
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={handlePullContext}
+          >
             Refresh
           </Button>
         </div>

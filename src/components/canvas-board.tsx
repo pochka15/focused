@@ -88,7 +88,9 @@ export const CanvasBoard = () => {
   const { enabled: isFormOpen } = useShortcutsMode("editingTodo");
   const { enabled: isStructuredTaskOpen } = useShortcutsMode("structuredTask");
   const { enabled: isPlanningOpen } = useShortcutsMode("planningSession");
-  const { enabled: isEditingNotifications } = useShortcutsMode("editingNotifications");
+  const { enabled: isEditingNotifications } = useShortcutsMode(
+    "editingNotifications"
+  );
 
   const { enableMode, disableModes } = useShortcuts({
     name: "canvasBoard",
@@ -480,7 +482,9 @@ export const CanvasBoard = () => {
       <div className="fixed top-3 left-3 z-50 flex gap-3">
         <button
           type="button"
-          onClick={() => { navigator.clipboard.writeText(AI_SETUP_PROMPT).catch(() => {}); }}
+          onClick={() => {
+            navigator.clipboard.writeText(AI_SETUP_PROMPT).catch(() => {});
+          }}
           title="Copy AI setup prompt"
           className="text-muted-foreground hover:text-foreground font-mono text-xs opacity-50 transition-opacity hover:opacity-100"
         >
