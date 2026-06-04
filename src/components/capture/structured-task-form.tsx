@@ -4,6 +4,7 @@ import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import {
   formatCapturedTask,
   useCaptureStore,
+  type CapturedTaskCompletion,
   type CapturedTaskEnergy,
   type CapturedTaskScope,
   type CapturedTaskSize,
@@ -24,6 +25,7 @@ const schema = z.object({
   urgency: z.enum(["next", "few-hours", "today"]),
   size: z.enum(["quick", "medium", "big"]),
   energy: z.enum(["deep", "normal", "light"]),
+  completion: z.enum(["final", "splittable"]),
 });
 
 type FormValues = z.infer<typeof schema>;
@@ -35,6 +37,7 @@ const defaultValues: FormValues = {
   urgency: "next",
   size: "medium",
   energy: "deep",
+  completion: "final",
 };
 
 // Row 1 (top keyboard row): scope=q,w  urgency=e,r,t
@@ -60,6 +63,12 @@ const energyOptions: [CapturedTaskEnergy, string, string][] = [
   ["deep", "Deep focus", "j"],
   ["normal", "Normal", "k"],
   ["light", "Light", "l"],
+];
+
+// Row 3 (bottom keyboard row): completion=z,x
+const completionOptions: [CapturedTaskCompletion, string, string][] = [
+  ["final", "Final", "z"],
+  ["splittable", "Splittable", "x"],
 ];
 
 const hintStyles =
@@ -102,7 +111,8 @@ export const StructuredTaskForm = () => {
       const direction = key === "ctrl+n" ? 1 : key === "ctrl+p" ? -1 : 0;
       if (direction) {
         const inputs = Array.from(
-          formRef.current?.querySelectorAll('input[data-focusable="true"]') || []
+          formRef.current?.querySelectorAll('input[data-focusable="true"]') ||
+            []
         ) as HTMLInputElement[];
         inputsCounter.current += direction;
         inputs[inputsCounter.current % inputs.length]?.focus();
@@ -118,16 +128,36 @@ export const StructuredTaskForm = () => {
       }
 
       const scopeMatch = scopeOptions.find(([, , hint]) => hint === key);
-      if (scopeMatch) { form.setFieldValue("scope", scopeMatch[0]); return true; }
+      if (scopeMatch) {
+        form.setFieldValue("scope", scopeMatch[0]);
+        return true;
+      }
 
       const urgencyMatch = urgencyOptions.find(([, , hint]) => hint === key);
-      if (urgencyMatch) { form.setFieldValue("urgency", urgencyMatch[0]); return true; }
+      if (urgencyMatch) {
+        form.setFieldValue("urgency", urgencyMatch[0]);
+        return true;
+      }
 
       const sizeMatch = sizeOptions.find(([, , hint]) => hint === key);
-      if (sizeMatch) { form.setFieldValue("size", sizeMatch[0]); return true; }
+      if (sizeMatch) {
+        form.setFieldValue("size", sizeMatch[0]);
+        return true;
+      }
 
       const energyMatch = energyOptions.find(([, , hint]) => hint === key);
-      if (energyMatch) { form.setFieldValue("energy", energyMatch[0]); return true; }
+      if (energyMatch) {
+        form.setFieldValue("energy", energyMatch[0]);
+        return true;
+      }
+
+      const completionMatch = completionOptions.find(
+        ([, , hint]) => hint === key
+      );
+      if (completionMatch) {
+        form.setFieldValue("completion", completionMatch[0]);
+        return true;
+      }
 
       if (key === "Enter") {
         event.preventDefault();
@@ -143,7 +173,10 @@ export const StructuredTaskForm = () => {
     <form
       ref={formRef}
       className={cn("flex flex-col gap-4", !enabled && "hidden")}
-      onSubmit={(e) => { e.preventDefault(); form.handleSubmit(e); }}
+      onSubmit={(e) => {
+        e.preventDefault();
+        form.handleSubmit(e);
+      }}
     >
       <div className="flex">
         <form.Field
@@ -166,7 +199,6 @@ export const StructuredTaskForm = () => {
           Add
         </Button>
       </div>
-
       <form.Field
         name="description"
         children={(field) => (
@@ -183,7 +215,6 @@ export const StructuredTaskForm = () => {
           />
         )}
       />
-
       <div className="flex flex-wrap gap-6">
         <form.Field
           name="scope"
@@ -194,10 +225,17 @@ export const StructuredTaskForm = () => {
                 type="single"
                 spacing={2}
                 value={field.state.value}
-                onValueChange={(v) => v && field.handleChange(v as CapturedTaskScope)}
+                onValueChange={(v) =>
+                  v && field.handleChange(v as CapturedTaskScope)
+                }
               >
                 {scopeOptions.map(([value, label, hint]) => (
-                  <ToggleGroupItem key={value} value={value} aria-label={value} className="relative">
+                  <ToggleGroupItem
+                    key={value}
+                    value={value}
+                    aria-label={value}
+                    className="relative"
+                  >
                     <span>{label}</span>
                     <span className={hintStyles}>{hint}</span>
                   </ToggleGroupItem>
@@ -216,10 +254,17 @@ export const StructuredTaskForm = () => {
                 type="single"
                 spacing={2}
                 value={field.state.value}
-                onValueChange={(v) => v && field.handleChange(v as CapturedTaskUrgency)}
+                onValueChange={(v) =>
+                  v && field.handleChange(v as CapturedTaskUrgency)
+                }
               >
                 {urgencyOptions.map(([value, label, hint]) => (
-                  <ToggleGroupItem key={value} value={value} aria-label={value} className="relative">
+                  <ToggleGroupItem
+                    key={value}
+                    value={value}
+                    aria-label={value}
+                    className="relative"
+                  >
                     <span>{label}</span>
                     <span className={hintStyles}>{hint}</span>
                   </ToggleGroupItem>
@@ -230,51 +275,90 @@ export const StructuredTaskForm = () => {
         />
       </div>
 
-      <div className="flex flex-wrap gap-6">
-        <form.Field
-          name="size"
-          children={(field) => (
-            <div className="flex flex-col gap-1.5">
-              <p className="text-pink-500">Size</p>
-              <ToggleGroup
-                type="single"
-                spacing={2}
-                value={field.state.value}
-                onValueChange={(v) => v && field.handleChange(v as CapturedTaskSize)}
-              >
-                {sizeOptions.map(([value, label, hint]) => (
-                  <ToggleGroupItem key={value} value={value} aria-label={value} className="relative">
-                    <span>{label}</span>
-                    <span className={hintStyles}>{hint}</span>
-                  </ToggleGroupItem>
-                ))}
-              </ToggleGroup>
-            </div>
-          )}
-        />
-
-        <form.Field
-          name="energy"
-          children={(field) => (
-            <div className="flex flex-col gap-1.5">
-              <p className="text-pink-500">Energy</p>
-              <ToggleGroup
-                type="single"
-                spacing={2}
-                value={field.state.value}
-                onValueChange={(v) => v && field.handleChange(v as CapturedTaskEnergy)}
-              >
-                {energyOptions.map(([value, label, hint]) => (
-                  <ToggleGroupItem key={value} value={value} aria-label={value} className="relative">
-                    <span>{label}</span>
-                    <span className={hintStyles}>{hint}</span>
-                  </ToggleGroupItem>
-                ))}
-              </ToggleGroup>
-            </div>
-          )}
-        />
-      </div>
+      <form.Field
+        name="size"
+        children={(field) => (
+          <div className="flex flex-col gap-1.5">
+            <p className="text-pink-500">Size</p>
+            <ToggleGroup
+              type="single"
+              spacing={2}
+              value={field.state.value}
+              onValueChange={(v) =>
+                v && field.handleChange(v as CapturedTaskSize)
+              }
+            >
+              {sizeOptions.map(([value, label, hint]) => (
+                <ToggleGroupItem
+                  key={value}
+                  value={value}
+                  aria-label={value}
+                  className="relative"
+                >
+                  <span>{label}</span>
+                  <span className={hintStyles}>{hint}</span>
+                </ToggleGroupItem>
+              ))}
+            </ToggleGroup>
+          </div>
+        )}
+      />
+      <form.Field
+        name="completion"
+        children={(field) => (
+          <div className="flex flex-col gap-1.5">
+            <p className="text-pink-500">Completion</p>
+            <ToggleGroup
+              type="single"
+              spacing={2}
+              value={field.state.value}
+              onValueChange={(v) =>
+                v && field.handleChange(v as CapturedTaskCompletion)
+              }
+            >
+              {completionOptions.map(([value, label, hint]) => (
+                <ToggleGroupItem
+                  key={value}
+                  value={value}
+                  aria-label={value}
+                  className="relative"
+                >
+                  <span>{label}</span>
+                  <span className={hintStyles}>{hint}</span>
+                </ToggleGroupItem>
+              ))}
+            </ToggleGroup>
+          </div>
+        )}
+      />
+      <form.Field
+        name="energy"
+        children={(field) => (
+          <div className="flex flex-col gap-1.5">
+            <p className="text-pink-500">Energy</p>
+            <ToggleGroup
+              type="single"
+              spacing={2}
+              value={field.state.value}
+              onValueChange={(v) =>
+                v && field.handleChange(v as CapturedTaskEnergy)
+              }
+            >
+              {energyOptions.map(([value, label, hint]) => (
+                <ToggleGroupItem
+                  key={value}
+                  value={value}
+                  aria-label={value}
+                  className="relative"
+                >
+                  <span>{label}</span>
+                  <span className={hintStyles}>{hint}</span>
+                </ToggleGroupItem>
+              ))}
+            </ToggleGroup>
+          </div>
+        )}
+      />
     </form>
   );
 };

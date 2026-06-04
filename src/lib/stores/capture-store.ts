@@ -6,6 +6,7 @@ export type CapturedTaskScope = "work" | "personal";
 export type CapturedTaskUrgency = "next" | "few-hours" | "today";
 export type CapturedTaskSize = "quick" | "medium" | "big";
 export type CapturedTaskEnergy = "deep" | "normal" | "light";
+export type CapturedTaskCompletion = "final" | "splittable";
 
 export type CapturedTask = {
   id: number;
@@ -15,6 +16,7 @@ export type CapturedTask = {
   urgency: CapturedTaskUrgency;
   size: CapturedTaskSize;
   energy: CapturedTaskEnergy;
+  completion: CapturedTaskCompletion;
 };
 
 type CaptureState = {
@@ -23,7 +25,9 @@ type CaptureState = {
 };
 
 export const formatCapturedTask = (t: CapturedTask): string => {
-  const line = `- #${t.id} ${t.name} [${t.scope}|${t.urgency}|${t.size}|${t.energy}]`;
+  const tags: string[] = [t.scope, t.urgency, t.size, t.energy];
+  if (t.completion === "splittable") tags.push("splittable");
+  const line = `- #${t.id} ${t.name} [${tags.join("|")}]`;
   return t.description ? `${line}\n  - ${t.description}` : line;
 };
 
