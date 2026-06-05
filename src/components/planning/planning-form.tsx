@@ -1,13 +1,14 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import {
+  buildPlanningContext,
+  buildPlanningPrompt,
+} from "@/lib/random/prompts";
 import { cn } from "@/lib/random/utils";
 import { formatBacklogTask } from "@/lib/stores/capture-store";
 import { usePlanningStore } from "@/lib/stores/planning-store";
 import { useTodosStore } from "@/lib/stores/todos-store";
-import { findTag } from "@/lib/todos/mappings";
-import type { Event, Task } from "@/lib/todos/todo-models";
-import { isEvent, isTask } from "@/lib/todos/todo-utils";
 import { useShortcutsMode } from "@/shared-lib/shortcuts/shortcuts-store";
 import { useShortcuts } from "@/shared-lib/shortcuts/use-shortcuts";
 import { useForm } from "@tanstack/react-form";
@@ -53,90 +54,6 @@ const aiModeOptions: [FormValues["aiMode"], string, string][] = [
 const hintStyles =
   "text-muted-foreground absolute right-0 bottom-0 font-mono text-xs";
 
-const formatTaskLine = (task: Task): string => {
-  const tag = findTag(task.tag);
-  return `- ${task.name}${tag ? `; ${tag.emoji}` : ""}`;
-};
-
-const formatEventLine = (event: Event): string =>
-  `- [${event.rawTime}] ${event.name}`;
-
-const buildPrompt = (
-  values: FormValues,
-  context: string,
-  backlog: string
-): string => {
-  const now = new Date();
-  const currentTime = now.toLocaleTimeString([], {
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-
-  const lines: string[] = [`Current time: ${currentTime}`, ""];
-  lines.push(`I have ${values.timeBlock}, brain fuel: ${values.brainFuel}.`);
-  if (values.note) lines.push(values.note);
-  if (values.goal) lines.push(`Goal: ${values.goal}`);
-  lines.push("");
-
-  if (context) {
-    lines.push(context, "");
-  }
-
-  if (backlog.trim()) {
-    lines.push("Backlog:", backlog.trim(), "");
-  }
-
-  if (values.aiMode === "dictatorship") {
-    lines.push(
-      "Tell me exactly what to work on during this time block. Be direct — no options, no caveats."
-    );
-  } else {
-    lines.push(
-      "Give me 2-3 strategies for this time block. For each: list tasks in order and explain in 1-2 sentences why this sequence makes sense."
-    );
-  }
-
-  return lines.join("\n");
-};
-
-const buildContext = (completedTasks: Task[], allEvents: Event[]): string => {
-  const parts: string[] = [];
-
-  if (completedTasks.length > 0) {
-    parts.push("Completed today:");
-    completedTasks.forEach((t) => parts.push(formatTaskLine(t)));
-  }
-
-  if (allEvents.length > 0) {
-    const now = new Date();
-    const currentMinutes = now.getHours() * 60 + now.getMinutes();
-
-    const pastEvents: Event[] = [];
-    const upcomingEvents: Event[] = [];
-
-    allEvents.forEach((e) => {
-      const [h, m] = e.rawTime.split(":").map(Number);
-      const eventMinutes = (h ?? 0) * 60 + (m ?? 0);
-      if (eventMinutes <= currentMinutes) {
-        pastEvents.push(e);
-      } else {
-        upcomingEvents.push(e);
-      }
-    });
-
-    if (pastEvents.length > 0 || upcomingEvents.length > 0) {
-      if (parts.length > 0) parts.push("");
-      parts.push("Meetings:");
-      pastEvents.forEach((e) => parts.push(`${formatEventLine(e)} (past)`));
-      upcomingEvents.forEach((e) =>
-        parts.push(`${formatEventLine(e)} (upcoming)`)
-      );
-    }
-  }
-
-  return parts.join("\n");
-};
-
 export const PlanningForm = () => {
   const formRef = useRef<HTMLFormElement>(null);
   const noteInputRef = useRef<HTMLInputElement>(null);
@@ -149,11 +66,7 @@ export const PlanningForm = () => {
 
   const { enabled } = useShortcutsMode("planningSession");
 
-  const buildCurrentContext = () => {
-    const completedTasks = todos.filter(isTask).filter((it) => it.completed);
-    const allEvents = todos.filter(isEvent);
-    return buildContext(completedTasks, allEvents);
-  };
+  const buildCurrentContext = () => buildPlanningContext(todos);
 
   const [contextPreview, setContextPreview] = useState(buildCurrentContext);
 
@@ -162,7 +75,7 @@ export const PlanningForm = () => {
     validators: { onChange: schema },
     onSubmit: ({ value }) => {
       const backlog = tasks.map(formatBacklogTask).join("\n\n");
-      const prompt = buildPrompt(value, contextPreview, backlog);
+      const prompt = buildPlanningPrompt(value, contextPreview, backlog);
       navigator.clipboard.writeText(prompt).catch(() => {});
       form.reset();
       setContextPreview(buildCurrentContext());
