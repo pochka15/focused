@@ -26,11 +26,11 @@ const schema = z.object({
 type FormValues = z.infer<typeof schema>;
 
 const getDefaultValues = (goal: string): FormValues => ({
-  timeBlock: "1h",
+  timeBlock: "2h",
   brainFuel: "full",
   note: "",
   goal,
-  aiMode: "dictatorship",
+  aiMode: "democratic",
 });
 
 const timeBlockOptions: [FormValues["timeBlock"], string, string][] = [
@@ -47,8 +47,8 @@ const brainFuelOptions: [FormValues["brainFuel"], string, string][] = [
 ];
 
 const aiModeOptions: [FormValues["aiMode"], string, string][] = [
-  ["dictatorship", "Dictatorship", "a"],
-  ["democratic", "Democratic", "s"],
+  ["democratic", "Democratic", "j"],
+  ["dictatorship", "Dictatorship", "k"],
 ];
 
 const hintStyles =
