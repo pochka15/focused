@@ -15,7 +15,10 @@ export const BacklogPanel = () => {
 
 const BacklogEditor = () => {
   const tasks = usePlanningStore((s) => s.tasks);
+  const postponedTasks = usePlanningStore((s) => s.postponedTasks);
   const removeTask = usePlanningStore((s) => s.removeTask);
+  const postponeTask = usePlanningStore((s) => s.postponeTask);
+  const activateTask = usePlanningStore((s) => s.activateTask);
 
   const [mode, setMode] = useState<"normal" | "edit" | "delete">("normal");
   const [editedTask, setEditedTask] = useState<BacklogTask | undefined>();
@@ -70,100 +73,174 @@ const BacklogEditor = () => {
       </div>
 
       <div className="grid min-h-0 flex-1 grid-cols-2 gap-8">
-        {/* Left: task list */}
-        <div className="flex min-w-0 flex-col gap-2 overflow-y-auto">
-          {tasks.length === 0 && (
-            <p className="text-muted-foreground font-mono text-xs">
-              No tasks yet. Press e to add one.
-            </p>
-          )}
-          {tasks.map((task) => (
-            <div
-              key={task.id}
-              onClick={() => mode === "delete" && removeTask(task.id)}
-              className={cn(
-                "group rounded border p-3 font-mono text-xs transition-colors",
-                editedTask?.id === task.id
-                  ? "border-foreground"
-                  : "border-border",
-                mode === "delete"
-                  ? "hover:border-destructive hover:bg-destructive/10 cursor-pointer"
-                  : "cursor-default"
-              )}
-            >
-              <pre className="whitespace-pre-wrap">
-                {formatBacklogTask(task)}
-              </pre>
+        {/* Left: both task lists */}
+        <div className="flex min-w-0 flex-col gap-4 overflow-y-auto">
+          {/* Active backlog */}
+          <div className="flex flex-col gap-2">
+            {tasks.length === 0 && postponedTasks.length === 0 && (
+              <p className="text-muted-foreground font-mono text-xs">
+                No tasks yet. Press e to add one.
+              </p>
+            )}
+            {tasks.map((task) => (
+              <div
+                key={task.id}
+                className={cn(
+                  "rounded border p-3 font-mono text-xs transition-colors",
+                  editedTask?.id === task.id
+                    ? "border-foreground"
+                    : "border-border"
+                )}
+              >
+                <pre className="whitespace-pre-wrap">
+                  {formatBacklogTask(task)}
+                </pre>
+              </div>
+            ))}
+          </div>
+
+          {/* Postponed */}
+          {postponedTasks.length > 0 && (
+            <div className="flex flex-col gap-2">
+              <p className="text-muted-foreground font-mono text-xs">
+                Postponed
+              </p>
+              {postponedTasks.map((task) => (
+                <div
+                  key={task.id}
+                  className="border-border rounded border p-3 font-mono text-xs opacity-50"
+                >
+                  <pre className="whitespace-pre-wrap">
+                    {formatBacklogTask(task)}
+                  </pre>
+                </div>
+              ))}
             </div>
-          ))}
+          )}
         </div>
 
         {/* Right: utils panel */}
         <div className="flex min-w-0 flex-col gap-4">
-          {mode === "normal" && (
+          {(mode === "normal" || mode === "delete") && (
             <div className="flex flex-col gap-2">
-              <button
-                type="button"
-                onClick={() => {
-                  enableMode("backlogTaskForm");
-                  enterEdit(undefined);
-                }}
-                className="text-muted-foreground hover:text-foreground rounded border px-3 py-1.5 text-left font-mono text-xs"
-              >
-                + add task <span className="opacity-50">e</span>
-              </button>
+              {mode === "normal" && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    enableMode("backlogTaskForm");
+                    enterEdit(undefined);
+                  }}
+                  className="text-muted-foreground hover:text-foreground rounded border px-3 py-1.5 text-left font-mono text-xs"
+                >
+                  + add task <span className="opacity-50">e</span>
+                </button>
+              )}
+
+              {mode === "delete" && (
+                <>
+                  <p className="text-destructive font-mono text-xs">
+                    Click a task to delete it.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => setMode("normal")}
+                    className="text-muted-foreground hover:text-foreground w-fit font-mono text-xs"
+                  >
+                    ← exit delete mode
+                  </button>
+                </>
+              )}
 
               {tasks.length > 0 && (
                 <>
-                  <p className="text-muted-foreground font-mono text-xs">
-                    Edit tasks:
+                  <p className="text-muted-foreground mt-1 font-mono text-xs">
+                    {mode === "delete" ? "Tasks:" : "Edit tasks:"}
                   </p>
                   {tasks.map((task) => (
                     <div
                       key={task.id}
-                      className="flex items-center gap-2 font-mono text-xs"
+                      onClick={() => mode === "delete" && removeTask(task.id)}
+                      className={cn(
+                        "flex items-center gap-2 rounded px-1 py-0.5 font-mono text-xs transition-colors",
+                        mode === "delete"
+                          ? "hover:bg-destructive/10 hover:text-destructive cursor-pointer"
+                          : "cursor-default"
+                      )}
                     >
                       <span className="text-muted-foreground min-w-8">
                         #{task.id}
                       </span>
                       <span className="flex-1 truncate">{task.name}</span>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          enableMode("backlogTaskForm");
-                          enterEdit(task);
-                        }}
-                        className="text-muted-foreground hover:text-foreground"
-                      >
-                        edit
-                      </button>
+                      {mode === "normal" && (
+                        <div className="flex gap-2">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              enableMode("backlogTaskForm");
+                              enterEdit(task);
+                            }}
+                            className="text-muted-foreground hover:text-foreground"
+                          >
+                            edit
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => postponeTask(task.id)}
+                            className="text-muted-foreground hover:text-foreground"
+                          >
+                            postpone
+                          </button>
+                        </div>
+                      )}
                     </div>
                   ))}
 
-                  <button
-                    type="button"
-                    onClick={() => setMode("delete")}
-                    className="text-muted-foreground hover:text-destructive mt-2 w-fit font-mono text-xs"
-                  >
-                    enter delete mode
-                  </button>
+                  {mode === "normal" && (
+                    <button
+                      type="button"
+                      onClick={() => setMode("delete")}
+                      className="text-muted-foreground hover:text-destructive mt-2 w-fit font-mono text-xs"
+                    >
+                      enter delete mode
+                    </button>
+                  )}
                 </>
               )}
-            </div>
-          )}
 
-          {mode === "delete" && (
-            <div className="flex flex-col gap-3">
-              <p className="text-destructive font-mono text-xs">
-                Click a task to delete it.
-              </p>
-              <button
-                type="button"
-                onClick={() => setMode("normal")}
-                className="text-muted-foreground hover:text-foreground w-fit font-mono text-xs"
-              >
-                ← exit delete mode
-              </button>
+              {postponedTasks.length > 0 && mode === "normal" && (
+                <>
+                  <p className="text-muted-foreground mt-2 font-mono text-xs">
+                    Postponed:
+                  </p>
+                  {postponedTasks.map((task) => (
+                    <div
+                      key={task.id}
+                      className="flex items-center gap-2 font-mono text-xs opacity-60"
+                    >
+                      <span className="text-muted-foreground min-w-8">
+                        #{task.id}
+                      </span>
+                      <span className="flex-1 truncate">{task.name}</span>
+                      <div className="flex gap-2">
+                        <button
+                          type="button"
+                          onClick={() => activateTask(task.id)}
+                          className="text-muted-foreground hover:text-foreground opacity-100"
+                        >
+                          for today
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => removeTask(task.id)}
+                          className="text-muted-foreground hover:text-destructive opacity-100"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </>
+              )}
             </div>
           )}
 
