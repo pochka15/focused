@@ -1,11 +1,3 @@
-@import "../styles/globals.css";
-
-@layer base {
-  :root {
-    @apply font-sans;
-  }
-}
-
 @media (prefers-reduced-motion) {
   *,
   ::before,

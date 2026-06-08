@@ -1,0 +1,261 @@
+.stepArea {
+  min-height: 200px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 8px 0;
+}
+
+.question {
+  font-size: var(--mantine-font-size-sm);
+  color: var(--mantine-color-dimmed);
+  font-weight: 500;
+  text-align: center;
+}
+
+.emojiBox {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100px;
+}
+
+@keyframes optIn {
+  from {
+    transform: translateY(-20px) scale(0.7);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+  }
+}
+
+.optAnim {
+  animation: optIn 200ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.circle {
+  border-radius: 50%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid var(--mantine-color-blue-5);
+  background: light-dark(var(--mantine-color-blue-0), rgba(34, 139, 230, 0.12));
+  transition:
+    width 280ms cubic-bezier(0.34, 1.56, 0.64, 1),
+    height 280ms cubic-bezier(0.34, 1.56, 0.64, 1);
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.circleLabel {
+  font-weight: 700;
+  line-height: 1;
+  transition: font-size 280ms ease;
+}
+
+.circleSub {
+  color: var(--mantine-color-dimmed);
+  line-height: 1;
+  margin-top: 3px;
+  transition: font-size 280ms ease;
+}
+
+.stepNav {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-top: 4px;
+}
+
+.dots {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--mantine-color-default-border);
+  transition:
+    background 200ms,
+    transform 200ms;
+}
+
+.dotActive {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--mantine-color-blue-5);
+  transform: scale(1.4);
+  transition:
+    background 200ms,
+    transform 200ms;
+}
+
+@keyframes stepIn {
+  from {
+    opacity: 0;
+    transform: translateX(24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.stepIn {
+  animation: stepIn 180ms ease;
+}
+
+.urgencyTrack {
+  position: relative;
+  width: 240px;
+  height: 6px;
+  border-radius: 3px;
+  background: var(--mantine-color-default-border);
+}
+
+.urgencyFill {
+  position: absolute;
+  left: 0;
+  top: 0;
+  height: 100%;
+  border-radius: 3px;
+  background: var(--mantine-color-blue-5);
+  transition: width 300ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.urgencyDot {
+  position: absolute;
+  top: 50%;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--mantine-color-blue-5);
+  transform: translate(-50%, -50%);
+  transition: left 300ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.energyBars {
+  display: flex;
+  align-items: flex-end;
+  gap: 6px;
+}
+
+.energyBar {
+  width: 20px;
+  border-radius: 4px 4px 0 0;
+  background: var(--mantine-color-blue-5);
+  transition: height 280ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.completionCols {
+  display: flex;
+  gap: 12px;
+  width: 100%;
+}
+
+.completionCol,
+.completionColActive {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 16px 8px;
+  border-radius: 8px;
+  border: 1px solid var(--mantine-color-default-border);
+  transition:
+    border-color 200ms,
+    background 200ms;
+}
+
+.completionColActive {
+  border-color: var(--mantine-color-blue-5);
+  background: light-dark(var(--mantine-color-blue-0), rgba(34, 139, 230, 0.12));
+}
+
+.lockedMsg {
+  color: var(--mantine-color-dimmed);
+  font-size: var(--mantine-font-size-sm);
+  text-align: center;
+  font-style: italic;
+}
+
+/* SVG chart animations */
+@keyframes chartLineIn {
+  from {
+    stroke-dashoffset: 300;
+    opacity: 0;
+  }
+  to {
+    stroke-dashoffset: 0;
+    opacity: 1;
+  }
+}
+
+@keyframes chartDotIn {
+  from {
+    r: 0;
+    opacity: 0;
+  }
+  to {
+    r: 2;
+    opacity: 1;
+  }
+}
+
+@keyframes chartDotScatterIn {
+  from {
+    r: 0;
+    opacity: 0;
+  }
+  to {
+    r: 3;
+    opacity: 1;
+  }
+}
+
+.chartLine {
+  stroke-dasharray: 300;
+  stroke-dashoffset: 300;
+  animation: chartLineIn 400ms cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+.chartDot {
+  animation: chartDotIn 200ms ease forwards;
+}
+
+.chartDotScatter {
+  animation: chartDotScatterIn 250ms cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+.chunkDots {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100px;
+  height: 28px;
+}
+
+.chunkDot {
+  position: absolute;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--mantine-color-blue-5);
+  transition:
+    transform 340ms cubic-bezier(0.34, 1.56, 0.64, 1),
+    opacity 260ms ease,
+    width 340ms cubic-bezier(0.34, 1.56, 0.64, 1),
+    height 340ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}

@@ -1,0 +1,68 @@
+.stickyHeader {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: var(--mantine-color-body);
+  padding-bottom: 8px;
+}
+
+.selectedRow {
+  background: light-dark(
+    var(--mantine-color-blue-0),
+    var(--mantine-color-dark-6)
+  ) !important;
+}
+
+.movingRow {
+  background: light-dark(
+    var(--mantine-color-orange-0),
+    var(--mantine-color-dark-6)
+  ) !important;
+  outline: 1px dashed var(--mantine-color-orange-5);
+}
+
+.cell {
+  border: 1px solid var(--mantine-color-default-border);
+  border-radius: var(--mantine-radius-md);
+  padding: 10px;
+  min-height: 280px;
+}
+
+.cellFocused {
+  border: 1px solid var(--mantine-color-blue-5);
+  border-radius: var(--mantine-radius-md);
+  padding: 10px;
+  min-height: 280px;
+}
+
+.filterPill,
+.filterPillActive {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--mantine-color-default-border);
+  font-size: var(--mantine-font-size-sm);
+  font-weight: 500;
+  line-height: 1;
+  cursor: pointer;
+  transition:
+    border-color 150ms,
+    background 150ms,
+    color 150ms;
+  white-space: nowrap;
+  color: var(--mantine-color-dimmed);
+  background: transparent;
+}
+
+.filterPill:hover {
+  border-color: var(--mantine-color-blue-4);
+  color: var(--mantine-color-text);
+}
+
+.filterPillActive {
+  border-color: var(--mantine-color-blue-5);
+  background: var(--mantine-color-blue-5);
+  color: #fff;
+}

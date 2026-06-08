@@ -9,19 +9,18 @@ import { immer } from "zustand/middleware/immer";
 interface NotificationsState {
   notifications: Notification[];
 
-  getNotifications: () => Notification[];
   addNotification: (n: NewNotification) => void;
   editNotification: (n: Notification) => void;
+  removeNotification: (id: string) => void;
+  moveNotification: (id: string, direction: -1 | 1) => void;
   setNotifications: (notifications: Notification[]) => void;
   clear: () => void;
 }
 
 export const useNotificationsStore = create<NotificationsState>()(
   persist(
-    immer((set, get) => ({
+    immer((set) => ({
       notifications: [],
-
-      getNotifications: () => get().notifications,
 
       addNotification: (notification: NewNotification) =>
         set((state) => {
@@ -40,6 +39,21 @@ export const useNotificationsStore = create<NotificationsState>()(
           if (index !== -1) {
             state.notifications[index] = notification;
           }
+        }),
+
+      removeNotification: (id: string) =>
+        set((state) => {
+          state.notifications = state.notifications.filter((n) => n.id !== id);
+        }),
+
+      moveNotification: (id: string, direction: -1 | 1) =>
+        set((state) => {
+          const index = state.notifications.findIndex((n) => n.id === id);
+          const next = index + direction;
+          if (next < 0 || next >= state.notifications.length) return;
+          const a = state.notifications[index]!;
+          state.notifications[index] = state.notifications[next]!;
+          state.notifications[next] = a;
         }),
 
       setNotifications: (notifications: Notification[]) =>

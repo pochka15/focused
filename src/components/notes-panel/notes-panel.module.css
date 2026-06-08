@@ -1,0 +1,19 @@
+.panel {
+  width: 100%;
+  border-top: 1px solid var(--mantine-color-default-border);
+  padding: 6px 12px;
+  background: var(--mantine-color-body);
+}
+
+.input {
+  font-size: var(--mantine-font-size-xs);
+  font-family: var(--mantine-font-family-monospace);
+  resize: none;
+  border: none;
+  background: transparent;
+  padding: 2px 0;
+}
+
+.input:focus {
+  outline: none;
+}

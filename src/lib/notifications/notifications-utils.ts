@@ -1,6 +1,6 @@
 import type { Notification } from "@/lib/notifications/notifications-models";
 
-const getMinutesUntil = (timeH: number, timeM: number): number => {
+export const getMinutesUntil = (timeH: number, timeM: number): number => {
   const now = new Date();
   const target = new Date();
   target.setHours(timeH, timeM, 0, 0);
@@ -54,27 +54,6 @@ export const getDueNotifications = (
   notifications.filter((notification) =>
     isNotificationDue(notification, thresholdInMinutes)
   );
-
-export const postponeNotification = (
-  notification: Notification,
-  postponeInMinutes = 30
-): Notification => {
-  const minutesUntil = getMinutesUntil(notification.timeH, notification.timeM);
-  const nextTime =
-    minutesUntil < 0
-      ? addMinutesFromNow(postponeInMinutes)
-      : addMinutesToTime(
-          notification.timeH,
-          notification.timeM,
-          postponeInMinutes
-        );
-
-  return {
-    ...notification,
-    ...nextTime,
-    isComplete: false,
-  };
-};
 
 export const acknowledgeNotification = (
   notification: Notification

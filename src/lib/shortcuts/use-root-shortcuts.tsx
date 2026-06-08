@@ -1,47 +1,39 @@
 import { useShortcuts } from "@/shared-lib/shortcuts/use-shortcuts";
-import type { ModeName, SelectOperation } from "./shortcuts-modes";
-import { helpCommands, type HelpCommandKey } from "@/components/help";
+import { useNavigate } from "@tanstack/react-router";
+import { notesPanelRef } from "@/components/notes-panel/notes-panel-ref";
 
 export const useRootShortcuts = () => {
+  const navigate = useNavigate();
   const { enableMode } = useShortcuts({
     name: "root",
     enabled: true,
     keys: (key, event) => {
-      const keyModeMap: Record<HelpCommandKey, ModeName> = {
-        [helpCommands.command.key]: "showingCommand",
-        [helpCommands.archive.key]: "selectingTodos",
-        [helpCommands.edit.key]: "selectingTodos",
-        [helpCommands.sync.key]: "syncing",
-        [helpCommands.help.key]: "showingHelp",
-        [helpCommands.notes.key]: "showingNotes",
-        [helpCommands.notifications.key]: "editingNotifications",
-      };
-
-      const name = keyModeMap[key];
-      if (name) {
+      if (key === "r") {
         event.preventDefault();
-
-        if (name === "syncing") {
-          enableMode(name, { lastUpdated: Date.now() });
-        } else if (name === "selectingTodos") {
-          const operationMap: Record<HelpCommandKey, SelectOperation> = {
-            [helpCommands.edit.key]: "edit",
-            // [helpCommands.reorder.key]: "reorder",
-            [helpCommands.archive.key]: "archive",
-          };
-
-          const operation = operationMap[key];
-          if (!operation) {
-            throw new Error("Invalid operation");
-          }
-
-          enableMode(name, { order: [], operation });
-        } else {
-          enableMode(name);
-        }
+        void navigate({ to: "/notifications" });
+        return true;
       }
-
-      return !!name;
+      if (key === "b") {
+        event.preventDefault();
+        void navigate({ to: "/backlog" });
+        return true;
+      }
+      if (key === "t") {
+        event.preventDefault();
+        void navigate({ to: "/" });
+        return true;
+      }
+      if (key === "s") {
+        event.preventDefault();
+        enableMode("syncing", { lastUpdated: Date.now() });
+        return true;
+      }
+      if (key === ":") {
+        event.preventDefault();
+        notesPanelRef.current?.focus();
+        return true;
+      }
+      return false;
     },
   });
 };

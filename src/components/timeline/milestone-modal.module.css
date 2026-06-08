@@ -1,0 +1,22 @@
+.tag {
+  padding: 6px 8px;
+  border-radius: var(--mantine-radius-sm);
+  border: 1px solid var(--mantine-color-default-border);
+  cursor: pointer;
+  transition: background 80ms;
+}
+
+.tag:hover {
+  background: var(--mantine-color-default-hover);
+}
+
+.tagSelected {
+  padding: 6px 8px;
+  border-radius: var(--mantine-radius-sm);
+  border: 1px solid var(--mantine-color-blue-5);
+  background: light-dark(
+    var(--mantine-color-blue-0),
+    var(--mantine-color-dark-6)
+  );
+  cursor: pointer;
+}

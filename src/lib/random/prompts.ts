@@ -1,6 +1,8 @@
-import { findTag } from "@/lib/todos/mappings";
-import type { Event, Task, TodoItem } from "@/lib/todos/todo-models";
-import { isEvent, isTask } from "@/lib/todos/todo-utils";
+import {
+  isMilestone,
+  isTimelineEvent,
+  type TimelineItem,
+} from "@/lib/timeline/timeline-models";
 
 export const BACKTICKS = "```";
 
@@ -14,7 +16,7 @@ Here is how I work:
     - #42 Fix auth refresh [work|next|medium|deep]
       - Optional description or context about the task
 - Tags mean: scope (work/personal), urgency (next/few-hours/today), size (quick <30m / medium 1-2h / big 2h+), energy required (deep focus / normal / light), and optionally "splittable" if the task is ongoing work done in rounds (no fixed end in one session — schedule one round, then I'll create a follow-up if still WIP)
-- I place tasks on a canvas and work through them. Completed tasks and past/upcoming meetings will be provided as context.
+- I place tasks on a timeline and work through them. Completed tasks and past/upcoming events will be provided as context.
 - I will tell you how much time I have (1h / 2h / 3h / half-day) and my brain fuel level (low / med / full).
 - I may also tell you a note or a goal for the session.
 
@@ -25,7 +27,7 @@ I have Xh, brain fuel: [low/med/full].
 Goal for today: ...
 
 Completed today: ...
-Meetings: ...
+Events today: ...
 Backlog: ...
 ${BACKTICKS}
 
@@ -48,7 +50,7 @@ Respond according to the mode I specify:
 
 For the democratic response, prefer 1-2 strategies. 3 only if genuinely distinct. Short sentence like: "First - deep task then a small noisy one"
 
-In both modes: if you notice a problem (too many tasks for the time, energy mismatch, meeting cutting the block short, etc.) add a single sentence at the very end starting with "note:" describing the issue. Otherwise omit it.`;
+In both modes: if you notice a problem (too many tasks for the time, energy mismatch, event cutting the block short, etc.) add a single sentence at the very end starting with "note:" describing the issue. Otherwise omit it.`;
 
 export type PlanningPromptValues = {
   timeBlock: "1h" | "2h" | "3h" | "half-day";
@@ -58,13 +60,21 @@ export type PlanningPromptValues = {
   aiMode: "dictatorship" | "democratic";
 };
 
-const formatTaskLine = (task: Task): string => {
-  const tag = findTag(task.tag);
-  return `- ${task.name}${tag ? `; ${tag.emoji}` : ""}`;
+// formatMilestoneLine used inline in buildPlanningContext below
+
+const formatDuration = (minutes: number): string => {
+  if (minutes < 60) return `${minutes}m`;
+  const h = Math.floor(minutes / 60);
+  const m = minutes % 60;
+  return m > 0 ? `${h}h ${m}m` : `${h}h`;
 };
 
-const formatEventLine = (event: Event): string =>
-  `- [${event.rawTime}] ${event.name}`;
+const formatEventLine = (item: {
+  rawTime: string;
+  name: string;
+  durationMinutes: number;
+}): string =>
+  `- [${item.rawTime}] ${item.name} (${formatDuration(item.durationMinutes)})`;
 
 export const buildPlanningPrompt = (
   values: PlanningPromptValues,
@@ -106,41 +116,39 @@ export const buildPlanningPrompt = (
   return lines.join("\n");
 };
 
-export const buildPlanningContext = (todos: TodoItem[]): string => {
+export const buildPlanningContext = (items: TimelineItem[]): string => {
   const parts: string[] = [];
-  const completedTasks = todos.filter(isTask).filter((it) => it.completed);
-  const allEvents = todos.filter(isEvent);
+  const completedMilestones = items
+    .filter(isMilestone)
+    .filter((it) => it.completed);
+  const allEvents = items.filter(isTimelineEvent);
 
-  if (completedTasks.length > 0) {
+  if (completedMilestones.length > 0) {
     parts.push("Completed today:");
-    completedTasks.forEach((task) => parts.push(formatTaskLine(task)));
+    completedMilestones.forEach((item) => {
+      parts.push(`- ${item.name} [mode=${item.mode}|tag=${item.tag}]`);
+    });
   }
 
   if (allEvents.length > 0) {
     const now = new Date();
     const currentMinutes = now.getHours() * 60 + now.getMinutes();
 
-    const pastEvents: Event[] = [];
-    const upcomingEvents: Event[] = [];
-
-    allEvents.forEach((event) => {
-      const [h, m] = event.rawTime.split(":").map(Number);
-      const eventMinutes = (h ?? 0) * 60 + (m ?? 0);
-      if (eventMinutes <= currentMinutes) {
-        pastEvents.push(event);
-      } else {
-        upcomingEvents.push(event);
-      }
+    const pastEvents = allEvents.filter((ev) => {
+      const [h, m] = ev.rawTime.split(":").map(Number);
+      return (h ?? 0) * 60 + (m ?? 0) <= currentMinutes;
+    });
+    const upcomingEvents = allEvents.filter((ev) => {
+      const [h, m] = ev.rawTime.split(":").map(Number);
+      return (h ?? 0) * 60 + (m ?? 0) > currentMinutes;
     });
 
     if (pastEvents.length > 0 || upcomingEvents.length > 0) {
       if (parts.length > 0) parts.push("");
-      parts.push("Meetings:");
-      pastEvents.forEach((event) =>
-        parts.push(`${formatEventLine(event)} (past)`)
-      );
-      upcomingEvents.forEach((event) =>
-        parts.push(`${formatEventLine(event)} (upcoming)`)
+      parts.push("Events today:");
+      pastEvents.forEach((ev) => parts.push(`${formatEventLine(ev)} (past)`));
+      upcomingEvents.forEach((ev) =>
+        parts.push(`${formatEventLine(ev)} (upcoming)`)
       );
     }
   }

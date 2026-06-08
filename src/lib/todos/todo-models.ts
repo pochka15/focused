@@ -9,22 +9,3 @@ export type NewTask = {
   y: number;
   completed?: boolean;
 };
-
-export type Task = NewTask & {
-  id: string;
-};
-
-export type NewEvent = {
-  name: string;
-  rawTime: string;
-  x: number;
-  y: number;
-  completed?: boolean;
-};
-
-export type Event = NewEvent & {
-  id: string;
-};
-
-export type NewTodoItem = NewTask | NewEvent;
-export type TodoItem = Task | Event;

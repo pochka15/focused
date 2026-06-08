@@ -2,13 +2,38 @@ import {
   acknowledgeNotification,
   getDueNotifications,
   getRepeatSuffix,
-  postponeNotification,
 } from "@/lib/notifications/notifications-utils";
 import { useRootShortcuts } from "@/lib/shortcuts/use-root-shortcuts";
 import { useNotificationsStore } from "@/lib/stores/notifications-store";
 import { useShortcutsMode } from "@/shared-lib/shortcuts/shortcuts-store";
+import type { Notification } from "@/lib/notifications/notifications-models";
+import { Button, Text } from "@mantine/core";
+import { notifications } from "@mantine/notifications";
 import { useEffect, type FC, type PropsWithChildren } from "react";
-import { toast } from "sonner";
+
+function NotificationMessage({
+  notification,
+  onAck,
+}: {
+  notification: Notification;
+  onAck: () => void;
+}) {
+  const descr = notification.notificationDescription?.trim() || "";
+  const suffix = getRepeatSuffix(notification);
+  return (
+    <div>
+      {(descr || suffix) && (
+        <Text size="sm" mb="xs">
+          {descr}
+          {suffix}
+        </Text>
+      )}
+      <Button size="xs" variant="filled" onClick={onAck}>
+        OK
+      </Button>
+    </div>
+  );
+}
 
 export const RootController: FC<PropsWithChildren> = ({ children }) => {
   const { data } = useShortcutsMode("syncing");
@@ -18,36 +43,30 @@ export const RootController: FC<PropsWithChildren> = ({ children }) => {
   useRootShortcuts();
 
   useEffect(() => {
-    if (!data?.lastUpdated) {
-      return;
-    }
+    if (!data?.lastUpdated) return;
 
-    const notifications = useNotificationsStore.getState().notifications;
-    const dueNotifications = getDueNotifications(notifications, 10);
+    const allNotifications = useNotificationsStore.getState().notifications;
+    const dueNotifications = getDueNotifications(allNotifications, 20);
 
     dueNotifications.forEach((notification) => {
-      const descr = notification.notificationDescription?.trim() || "";
-      const toastDescription = `${descr}${getRepeatSuffix(notification)}`;
+      const id = `notification-${notification.id}`;
 
-      toast(notification.notificationName, {
-        id: `notification-${notification.id}`,
-        description: toastDescription,
-        duration: Infinity,
-        closeButton: true,
-        action: {
-          label: "OK",
-          onClick: () => {
-            editNotification(acknowledgeNotification(notification));
-          },
-        },
-        cancel: {
-          label: "+30m",
-          onClick: () => {
-            editNotification(postponeNotification(notification, 30));
-          },
-        },
+      const ack = () => {
+        editNotification(acknowledgeNotification(notification));
+        notifications.hide(id);
+      };
+
+      notifications.show({
+        id,
+        title: notification.notificationName,
+        message: (
+          <NotificationMessage notification={notification} onAck={ack} />
+        ),
+        autoClose: false,
+        withCloseButton: true,
       });
     });
   }, [data?.lastUpdated, editNotification]);
-  return children;
+
+  return <>{children}</>;
 };

@@ -1,0 +1,33 @@
+.selectedItem {
+  border-color: var(--mantine-color-blue-5) !important;
+}
+
+.dragHandle {
+  cursor: grab;
+  color: var(--mantine-color-dimmed);
+  display: flex;
+  align-items: center;
+}
+
+.dragHandle:active {
+  cursor: grabbing;
+}
+
+.eventCard {
+  border: 1px solid var(--mantine-color-default-border);
+  border-radius: var(--mantine-radius-sm);
+}
+
+.overdueEvent {
+  opacity: 0.35;
+}
+
+.ghostItem {
+  opacity: 0.72;
+  border-style: dashed !important;
+  background: var(--mantine-color-gray-0);
+}
+
+.completedItem {
+  opacity: 0.5;
+}

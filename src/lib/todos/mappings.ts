@@ -1,5 +1,4 @@
 import type { NewTask } from "@/lib/todos/todo-models";
-import { find } from "lodash";
 
 export type Tag = {
   key: string;
@@ -19,11 +18,9 @@ export const orderedTags = [
   "other",
 ] as const;
 
-export const todoKinds = ["event", "task"] as const;
 export const todoModes = ["deep", "light"] as const;
 
 export type TagName = (typeof orderedTags)[number];
-export type TodoKind = (typeof todoKinds)[number];
 export type TodoMode = (typeof todoModes)[number];
 
 export const tagsMapping: Record<TagName, Tag> = {
@@ -107,28 +104,4 @@ export const tagsMapping: Record<TagName, Tag> = {
       mode: "light",
     },
   },
-};
-
-export const findTag = (tagName: string): Tag | undefined => {
-  return tagsMapping[tagName as TagName];
-};
-
-export const findTagByKey = (key: string): Tag | undefined => {
-  return find(tagsMapping, (tag) => tag.key === key);
-};
-
-export const todoType: Record<TodoKind, [string, string]> = {
-  event: ["Event", "Q"],
-  task: ["Task", "W"],
-} as const;
-
-export const pushFrontVariants: Record<string, [string, string]> = {
-  true: ["⬆️", "A"],
-  false: ["⬇️", "S"],
-} as const;
-
-export const colors = {
-  editing: "text-green-500",
-  deleting: "text-red-300",
-  soonEvent: "text-pink-500",
 };

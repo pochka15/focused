@@ -1,42 +1,13 @@
 export type Mode<T = unknown> = { enabled: boolean; data: T };
 
-export type SelectOperation = "archive" | "delete" | "reorder" | "edit";
-type Position = { x: number; y: number };
-type EditedTodoData = { id?: string; spawnPosition?: Position };
-
 export type Modes = {
-  showingHelp: Mode;
-  showingCommand: Mode;
-  editingNotifications: Mode;
-  selectingTodos: Mode<{
-    order: number[];
-    operation: SelectOperation;
-  }>;
-  editingTodo: Mode<EditedTodoData>;
   syncing: Mode<{ lastUpdated: number }>;
-  showingNotes: Mode;
-  structuredTask: Mode;
-  structuredTaskStep: Mode;
   planningSession: Mode;
-  editingBacklog: Mode;
-  backlogTaskForm: Mode;
-  backlogTaskFormStep: Mode;
 };
 
 export type ModeName = keyof Modes;
 
 export const getDefaultModes = (): Modes => ({
-  showingHelp: { enabled: false, data: {} },
-  showingCommand: { enabled: false, data: {} },
-  selectingTodos: { enabled: false, data: { order: [], operation: "archive" } },
-  editingTodo: { enabled: false, data: {} },
   syncing: { enabled: false, data: { lastUpdated: 0 } },
-  showingNotes: { enabled: false, data: {} },
-  editingNotifications: { enabled: false, data: {} },
-  structuredTask: { enabled: false, data: {} },
-  structuredTaskStep: { enabled: false, data: {} },
   planningSession: { enabled: false, data: {} },
-  editingBacklog: { enabled: false, data: {} },
-  backlogTaskForm: { enabled: false, data: {} },
-  backlogTaskFormStep: { enabled: false, data: {} },
 });

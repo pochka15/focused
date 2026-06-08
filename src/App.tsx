@@ -1,33 +1,3 @@
-import { CanvasBoard } from "@/components/canvas-board";
-import { CommandLine } from "@/components/command-line";
-import { Help } from "@/components/help";
-import { BacklogPanel } from "@/components/planning/backlog-panel";
-import { ThemeProvider } from "@/components/theme-provider";
-import { RootController } from "@/lib/shortcuts/root-controller";
-import { NotesPanel } from "@/shared-lib/notes-panel";
-import { ShortcutsProvider } from "@/shared-lib/shortcuts/shortcuts-provider";
-import { Stats } from "./components/stats";
-import "./index.css";
-import { NotificationsPanel } from "./components/notifications-panel";
-import { Toaster } from "./components/ui/sonner";
-
-export function App() {
-  return (
-    <ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme">
-      <ShortcutsProvider>
-        <RootController>
-          <CanvasBoard />
-          <CommandLine />
-          <Help />
-          <Stats />
-          <NotesPanel />
-          <NotificationsPanel />
-          <BacklogPanel />
-        </RootController>
-        <Toaster />
-      </ShortcutsProvider>
-    </ThemeProvider>
-  );
-}
-
-export default App;
+// Entry point is now src/frontend.tsx → TanStack Router
+// This file is kept as a re-export for backwards compat with any tooling.
+export { router } from "./router";
