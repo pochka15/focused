@@ -1,24 +1,26 @@
-import type { BacklogTask, BacklogTaskKind } from "@/lib/stores/planning-store";
-import { ActionIcon, Badge, Card, Group, Stack, Text } from "@mantine/core";
-import { Pencil, RotateCcw, Trash2, Zap } from "lucide-react";
+import { getBacklogTagPreset } from "@/lib/backlog/backlog-tag-presets";
+import { SNOOZE_PRESETS } from "@/lib/backlog/snooze-presets";
+import { isTaskSnoozed } from "@/lib/backlog/backlog-task-utils";
+import type { BacklogTask } from "@/lib/stores/planning-store";
+import {
+  ActionIcon,
+  Badge,
+  Card,
+  Group,
+  Menu,
+  Stack,
+  Text,
+} from "@mantine/core";
+import {
+  AlarmClock,
+  Flame,
+  Pencil,
+  Plus,
+  RotateCcw,
+  Trash2,
+  Zap,
+} from "lucide-react";
 import classes from "./backlog-view.module.css";
-
-export const KIND_META: Record<
-  BacklogTaskKind,
-  { emoji: string; label: string; color: string }
-> = {
-  "doing-it-today": { emoji: "🔨", label: "Let's get it done", color: "blue" },
-  "they-asked-me-to": {
-    emoji: "📨",
-    label: "They asked me to check",
-    color: "gray",
-  },
-  "thank-yourself-later": {
-    emoji: "🤩",
-    label: "Thank yourself later",
-    color: "teal",
-  },
-};
 
 type Props = {
   task: BacklogTask;
@@ -28,6 +30,10 @@ type Props = {
   onSelect: () => void;
   onEdit: () => void;
   onPostpone: () => void;
+  onPushToTimeline?: () => void;
+  onToggleNext?: () => void;
+  onSnooze?: (minutes: number) => void;
+  onClearSnooze?: () => void;
   onDelete: () => void;
 };
 
@@ -39,9 +45,14 @@ export function BacklogTaskCard({
   onSelect,
   onEdit,
   onPostpone,
+  onPushToTimeline,
+  onToggleNext,
+  onSnooze,
+  onClearSnooze,
   onDelete,
 }: Props) {
-  const kind = KIND_META[task.kind];
+  const tagPreset = getBacklogTagPreset(task.tag);
+  const snoozed = isTaskSnoozed(task);
 
   return (
     <Card
@@ -59,13 +70,15 @@ export function BacklogTaskCard({
     >
       <Group justify="space-between" wrap="nowrap" gap="sm">
         <Stack gap={4} style={{ flex: 1 }}>
-          <Group gap={6} wrap="nowrap">
-            <Text size="sm" lh={1}>
-              {kind.emoji}
-            </Text>
+          <Group gap={6} wrap="wrap">
             <Text size="sm" fw={500}>
               #{task.id} {task.name}
             </Text>
+            {tagPreset && (
+              <Text size="sm" lh={1}>
+                {tagPreset.emoji}
+              </Text>
+            )}
           </Group>
           {task.description && (
             <Text size="xs" c="dimmed">
@@ -78,30 +91,92 @@ export function BacklogTaskCard({
                 next
               </Badge>
             )}
-            <Badge size="xs" color={kind.color} variant="light">
-              {kind.label}
-            </Badge>
-            {task.chunkable && (
+            {task.tiny && (
               <Badge size="xs" variant="outline" color="orange">
-                ⚡ quick win
+                tiny
+              </Badge>
+            )}
+            {task.tag.trim() && (
+              <Badge
+                size="xs"
+                color={tagPreset?.color ?? "gray"}
+                variant="light"
+              >
+                {task.tag}
+              </Badge>
+            )}
+            {snoozed && (
+              <Badge size="xs" color="violet" variant="outline">
+                snoozed
               </Badge>
             )}
           </Group>
         </Stack>
 
-        <Group gap={4} wrap="nowrap">
+        <Group gap={8} wrap="nowrap">
+          {onPushToTimeline && (
+            <ActionIcon
+              variant="subtle"
+              color="blue"
+              title="Push to timeline"
+              onClick={(e) => {
+                e.stopPropagation();
+                onPushToTimeline();
+              }}
+            >
+              <Plus size={16} />
+            </ActionIcon>
+          )}
+          {onToggleNext && (
+            <ActionIcon
+              variant="subtle"
+              title="Toggle next"
+              onClick={(e) => {
+                e.stopPropagation();
+                onToggleNext();
+              }}
+            >
+              <Flame size={16} />
+            </ActionIcon>
+          )}
+          {onSnooze && (
+            <Menu withinPortal position="bottom-end">
+              <Menu.Target>
+                <ActionIcon
+                  variant="subtle"
+                  title="Snooze presets"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <AlarmClock size={16} />
+                </ActionIcon>
+              </Menu.Target>
+              <Menu.Dropdown onClick={(e) => e.stopPropagation()}>
+                {SNOOZE_PRESETS.map((preset) => (
+                  <Menu.Item
+                    key={preset.key}
+                    onClick={() => onSnooze(preset.minutes)}
+                  >
+                    {preset.label}
+                  </Menu.Item>
+                ))}
+                {snoozed && onClearSnooze && (
+                  <Menu.Item color="red" onClick={() => onClearSnooze()}>
+                    Clear snooze
+                  </Menu.Item>
+                )}
+              </Menu.Dropdown>
+            </Menu>
+          )}
           <ActionIcon
-            size="xs"
             variant="subtle"
             onClick={(e) => {
               e.stopPropagation();
               onEdit();
             }}
           >
-            <Pencil size={12} />
+            <Pencil size={16} />
           </ActionIcon>
           <ActionIcon
-            size="xs"
             variant="subtle"
             title="Postpone"
             onClick={(e) => {
@@ -109,18 +184,18 @@ export function BacklogTaskCard({
               onPostpone();
             }}
           >
-            <RotateCcw size={12} />
+            <RotateCcw size={16} />
           </ActionIcon>
           <ActionIcon
-            size="xs"
             variant="subtle"
             color="red"
+            style={{ marginLeft: 8 }}
             onClick={(e) => {
               e.stopPropagation();
               onDelete();
             }}
           >
-            <Trash2 size={12} />
+            <Trash2 size={16} />
           </ActionIcon>
         </Group>
       </Group>

@@ -24,14 +24,13 @@ export function getGroupOf(
 
 export function useTasksByGroups(
   tasks: BacklogTask[],
-  groupsList: GridGroup[],
-  showOnlyNext: boolean
+  groupsList: GridGroup[]
 ): Record<GridGroup, BacklogTask[]> {
   const getOrderedIds = useBacklogGridStore((s) => s.getOrderedIds);
   const groups = useBacklogGridStore((s) => s.groups);
 
   return useMemo(() => {
-    const base = showOnlyNext ? tasks.filter((t) => t.isNext) : tasks;
+    const base = tasks;
     const result = {} as Record<GridGroup, BacklogTask[]>;
 
     for (const group of groupsList) {
@@ -51,18 +50,15 @@ export function useTasksByGroups(
 
     return result;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tasks, showOnlyNext, groups, groupsList]);
+  }, [tasks, groups, groupsList]);
 }
 
-export function useAllTasksSorted(
-  tasks: BacklogTask[],
-  showOnlyNext: boolean
-): BacklogTask[] {
+export function useAllTasksSorted(tasks: BacklogTask[]): BacklogTask[] {
   const getOrderedIds = useBacklogGridStore((s) => s.getOrderedIds);
   const groups = useBacklogGridStore((s) => s.groups);
 
   return useMemo(() => {
-    const base = showOnlyNext ? tasks.filter((t) => t.isNext) : tasks;
+    const base = tasks;
     const validIds = new Set(base.map((t) => t.id));
     const ordered = getOrderedIds(1, validIds);
     const orderedSet = new Set(ordered);
@@ -74,5 +70,5 @@ export function useAllTasksSorted(
       .sort((a, b) => a.id - b.id);
     return [...orderedTasks, ...rest];
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tasks, showOnlyNext, groups]);
+  }, [tasks, groups]);
 }

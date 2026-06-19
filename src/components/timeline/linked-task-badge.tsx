@@ -1,5 +1,5 @@
 import type { BacklogTask } from "@/lib/stores/planning-store";
-import { Badge, Flex, Group, UnstyledButton } from "@mantine/core";
+import { Flex, Group, Text, UnstyledButton } from "@mantine/core";
 import { ArchiveRestore, CheckCircle2, Circle } from "lucide-react";
 import classes from "./linked-task-badge.module.css";
 import type { ReactNode } from "react";
@@ -23,6 +23,7 @@ type Props = {
   displayState: LinkedTaskDisplayState;
   displayName: string;
   onCycle: () => void;
+  onEdit?: () => void;
 };
 
 export function LinkedTaskBadge({
@@ -30,6 +31,7 @@ export function LinkedTaskBadge({
   displayState,
   displayName,
   onCycle,
+  onEdit,
 }: Props) {
   return (
     <Group gap={4} wrap="nowrap">
@@ -51,9 +53,26 @@ export function LinkedTaskBadge({
           {STATE_ICONS[displayState]}
         </Flex>
       </UnstyledButton>
-      <Badge size="xs" variant="outline" color={STATE_COLORS[displayState]}>
-        #{task.id} {displayName}
-      </Badge>
+      <UnstyledButton
+        onClick={(e) => {
+          e.stopPropagation();
+          onEdit?.();
+        }}
+        title="Edit task"
+        style={{ cursor: onEdit ? "pointer" : undefined }}
+      >
+        <Text
+          size="xs"
+          c={STATE_COLORS[displayState]}
+          span
+          style={{
+            textDecoration: onEdit ? "underline" : "none",
+            fontWeight: 500,
+          }}
+        >
+          #{task.id} {displayName}
+        </Text>
+      </UnstyledButton>
     </Group>
   );
 }

@@ -13,64 +13,20 @@ import {
 import { useTimelineStore } from "@/lib/stores/timeline-store";
 import { showUndoNotification } from "@/lib/notifications/show-undo-notification";
 import { Window as W, type UiWindow } from "@/shared-lib/shortcuts/window";
-import {
-  ActionIcon,
-  Box,
-  Button,
-  Grid,
-  Group,
-  Stack,
-  Text,
-  Title,
-} from "@mantine/core";
-import {
-  DragDropContext,
-  Draggable,
-  Droppable,
-  type DropResult,
-} from "@hello-pangea/dnd";
-import { Pencil, Plus, Trash2 } from "lucide-react";
+import { Box, Stack, Tabs, Text } from "@mantine/core";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useShortcuts } from "@/shared-lib/shortcuts/use-shortcuts";
+import type { BacklogTask } from "@/lib/stores/planning-store";
+import { usePlanningStore } from "@/lib/stores/planning-store";
+import { BacklogModal } from "@/components/backlog/backlog-modal";
 import { EventModal } from "./event-modal";
 import { MilestoneCard } from "./milestone-card";
 import { MilestoneModal } from "./milestone-modal";
+import { QuickNoteCard } from "./quick-note-card";
+import { TimelineEventRow } from "./timeline-event-row";
+import { TimelineSectionHeader } from "./timeline-section-header";
+import { CollapsedMilestonesCard } from "./collapsed-milestones-card";
+import { useTimelineShortcuts } from "./use-timeline-shortcuts";
 import classes from "./timeline-view.module.css";
-import { getMinutesUntil } from "@/lib/notifications/notifications-utils";
-
-function formatDuration(minutes: number): string {
-  if (minutes < 60) return `${minutes}m`;
-  const h = Math.floor(minutes / 60);
-  const m = minutes % 60;
-  return m > 0 ? `${h}h ${m}m` : `${h}h`;
-}
-
-const parseTimeComponent = (
-  rawTime: string
-): { h: number; m: number } | null => {
-  const match = rawTime.trim().match(/^(\d{1,2}):(\d{2})$/);
-  if (!match) return null;
-  const h = Number(match[1]);
-  const m = Number(match[2]);
-  if (
-    Number.isNaN(h) ||
-    Number.isNaN(m) ||
-    h < 0 ||
-    h > 23 ||
-    m < 0 ||
-    m > 59
-  ) {
-    return null;
-  }
-  return { h, m };
-};
-
-const isEventBehind = (event: TimelineEvent): boolean => {
-  if (event.completed) return false;
-  const time = parseTimeComponent(event.rawTime);
-  if (!time) return false;
-  return getMinutesUntil(time.h, time.m) < 0;
-};
 
 export function TimelineView() {
   const items = useTimelineStore((s) => s.items);
@@ -79,6 +35,8 @@ export function TimelineView() {
   const archiveItem = useTimelineStore((s) => s.archiveItem);
   const restoreItem = useTimelineStore((s) => s.restoreItem);
   const reorder = useTimelineStore((s) => s.reorder);
+  const quickNote = useTimelineStore((s) => s.quickNote);
+  const setQuickNote = useTimelineStore((s) => s.setQuickNote);
 
   const milestones = items.filter(isMilestone);
   const activeMilestones = milestones.filter((m) => !m.completed);
@@ -96,11 +54,26 @@ export function TimelineView() {
   const [editingMilestone, setEditingMilestone] = useState<
     Milestone | undefined
   >();
+  const showCompletedMilestones = useTimelineStore(
+    (s) => s.showCompletedMilestones
+  );
+  const toggleShowCompletedMilestones = useTimelineStore(
+    (s) => s.toggleShowCompletedMilestones
+  );
   const [editingEvent, setEditingEvent] = useState<TimelineEvent | undefined>();
+  const [editedBacklogTask, setEditedBacklogTask] = useState<
+    BacklogTask | undefined
+  >();
+
+  const showBacklogModal = editedBacklogTask !== undefined;
+  const updateTask = usePlanningStore((s) => s.updateTask);
+  const addTask = usePlanningStore((s) => s.addTask);
+  const consumeNextId = usePlanningStore((s) => s.consumeNextId);
 
   const windowRef = useRef(windowData);
   windowRef.current = windowData;
   const milestoneRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const quickNoteRef = useRef<HTMLTextAreaElement | null>(null);
 
   useEffect(() => {
     setWindowData((w) => W.shrinkTo(w, activeMilestones.length));
@@ -115,92 +88,31 @@ export function TimelineView() {
   const deleteWithUndo = (item: ReturnType<typeof items.find>) => {
     if (!item) return;
     archiveItem(item.id);
-    showUndoNotification(`del-${item.id}`, `"${item.name}" removed`, () =>
-      restoreItem(item)
+    showUndoNotification(
+      `del-${item.id}`,
+      `"${item.name}" removed`,
+      () => restoreItem(item),
+      "bottom-left"
     );
   };
 
-  useShortcuts({
-    name: "timelineView",
-    enabled: !milestoneModalOpen && !eventModalOpen,
-    keys: (key, event) => {
-      const n = activeMilestones.length;
-      if (key === "n") {
-        setEditingMilestone(undefined);
-        setMilestoneModalOpen(true);
-        return true;
-      }
-      if (key === "v") {
-        setEditingEvent(undefined);
-        setEventModalOpen(true);
-        return true;
-      }
-      if (key === "j" || key === "ArrowDown") {
-        event.preventDefault();
-        setWindowData((w) => W.moveSingle(w, 1, n));
-        return true;
-      }
-      if (key === "k" || key === "ArrowUp") {
-        event.preventDefault();
-        setWindowData((w) => W.moveSingle(w, -1, n));
-        return true;
-      }
-      if (key === "J") {
-        const cur = windowRef.current.cursor;
-        const item = activeMilestones[cur];
-        if (item && cur < n - 1) {
-          const nextItem = activeMilestones[cur + 1];
-          const fromIdx = items.findIndex((t) => t.id === item.id);
-          const toIdx = nextItem
-            ? items.findIndex((t) => t.id === nextItem.id)
-            : fromIdx;
-          reorder(fromIdx, toIdx);
-          setWindowData((w) => W.moveSingle(w, 1, n));
-        }
-        return true;
-      }
-      if (key === "K") {
-        const cur = windowRef.current.cursor;
-        const item = activeMilestones[cur];
-        if (item && cur > 0) {
-          const prevItem = activeMilestones[cur - 1];
-          const fromIdx = items.findIndex((t) => t.id === item.id);
-          const toIdx = prevItem
-            ? items.findIndex((t) => t.id === prevItem.id)
-            : fromIdx;
-          reorder(fromIdx, toIdx);
-          setWindowData((w) => W.moveSingle(w, -1, n));
-        }
-        return true;
-      }
-      if (key === "e") {
-        const item = activeMilestones[windowRef.current.cursor];
-        if (item) {
-          setEditingMilestone(item);
-          setMilestoneModalOpen(true);
-        }
-        return true;
-      }
-      if (key === "a") {
-        const item = activeMilestones[windowRef.current.cursor];
-        if (item) {
-          editItem({ ...item, completed: true });
-        }
-        return true;
-      }
-      return false;
-    },
+  useTimelineShortcuts({
+    milestoneModalOpen,
+    eventModalOpen,
+    quickNoteRef,
+    milestoneRefs,
+    windowRef,
+    setWindowData,
+    activeMilestones,
+    items,
+    reorder,
+    setEditingMilestone,
+    setMilestoneModalOpen,
+    setEditingEvent,
+    setEventModalOpen,
+    editItem,
+    toggleShowCompletedMilestones,
   });
-
-  const onDragEnd = (result: DropResult) => {
-    if (!result.destination) return;
-    const fromItem = milestones[result.source.index];
-    const toItem = milestones[result.destination.index];
-    if (!fromItem || !toItem) return;
-    const fromIdx = items.findIndex((t) => t.id === fromItem.id);
-    const toIdx = items.findIndex((t) => t.id === toItem.id);
-    reorder(fromIdx, toIdx);
-  };
 
   const handleMilestoneSubmit = (newItem: NewMilestone) => {
     if (editingMilestone) {
@@ -221,6 +133,22 @@ export function TimelineView() {
   };
 
   const selectedMilestone = activeMilestones[windowData.cursor];
+
+  const visibleActiveMilestones = useMemo(
+    () => milestones.filter((milestone) => !milestone.completed),
+    [milestones]
+  );
+
+  const visibleCompletedMilestones = useMemo(
+    () =>
+      showCompletedMilestones
+        ? milestones.filter((milestone) => milestone.completed)
+        : [],
+    [milestones, showCompletedMilestones]
+  );
+
+  const completedCount = milestones.length - activeMilestones.length;
+
   const {
     soonEvents: visibleSoonEvents,
     useSuggestedEvent,
@@ -244,6 +172,19 @@ export function TimelineView() {
         onSubmit={handleMilestoneSubmit}
         editing={editingMilestone}
       />
+      <BacklogModal
+        opened={showBacklogModal}
+        onClose={() => setEditedBacklogTask(undefined)}
+        onSubmit={(values) => {
+          if (editedBacklogTask) {
+            updateTask({ ...editedBacklogTask, ...values });
+          } else {
+            addTask({ id: consumeNextId(), ...values });
+          }
+          setEditedBacklogTask(undefined);
+        }}
+        editing={editedBacklogTask}
+      />
       <EventModal
         opened={eventModalOpen}
         onClose={() => {
@@ -254,27 +195,22 @@ export function TimelineView() {
         editing={editingEvent}
       />
 
-      <Grid>
-        <Grid.Col span={7}>
-          <Group justify="space-between" mb="md">
-            <Title order={3}>Timeline</Title>
-            <Group gap="xs">
-              <Text size="xs" c="dimmed">
-                n=new · e=edit · a=done · j/k=nav · J/K=move
-              </Text>
-              <Button
-                size="xs"
-                variant="light"
-                leftSection={<Plus size={14} />}
-                onClick={() => {
-                  setEditingMilestone(undefined);
-                  setMilestoneModalOpen(true);
-                }}
-              >
-                New
-              </Button>
-            </Group>
-          </Group>
+      <Tabs defaultValue="milestones">
+        <Tabs.List>
+          <Tabs.Tab value="milestones">Milestones</Tabs.Tab>
+          <Tabs.Tab value="events">Events</Tabs.Tab>
+        </Tabs.List>
+
+        <Tabs.Panel value="milestones" pt="md">
+          <TimelineSectionHeader
+            title="Milestones"
+            hint=""
+            buttonLabel="New"
+            onButtonClick={() => {
+              setEditingMilestone(undefined);
+              setMilestoneModalOpen(true);
+            }}
+          />
 
           {activeMilestones.length === 0 && (
             <Text c="dimmed" size="sm">
@@ -282,99 +218,117 @@ export function TimelineView() {
             </Text>
           )}
 
-          <DragDropContext onDragEnd={onDragEnd}>
-            <Droppable droppableId="milestones">
-              {(provided) => (
-                <Stack
-                  gap="xs"
-                  ref={provided.innerRef}
-                  {...provided.droppableProps}
-                >
-                  {milestones.map((item, idx) => {
-                    const isSelected =
-                      !item.completed && selectedMilestone?.id === item.id;
-                    const activeIdx = activeMilestones.findIndex(
-                      (m) => m.id === item.id
-                    );
-                    return (
-                      <Draggable
-                        key={item.id}
-                        draggableId={item.id}
-                        index={idx}
-                      >
-                        {(drag) => (
-                          <MilestoneCard
-                            item={item}
-                            drag={drag}
-                            isSelected={isSelected}
-                            activeIdx={activeIdx}
-                            milestoneRef={(el) => {
-                              milestoneRefs.current[activeIdx] = el;
-                            }}
-                            onSelect={() =>
-                              setWindowData((w) => W.withCursor(w, activeIdx))
-                            }
-                            onEdit={() => {
-                              setEditingMilestone(item);
-                              setMilestoneModalOpen(true);
-                            }}
-                            onToggleDone={() =>
-                              editItem({ ...item, completed: !item.completed })
-                            }
-                            onDelete={() => deleteWithUndo(item)}
-                          />
-                        )}
-                      </Draggable>
-                    );
-                  })}
-                  {provided.placeholder}
-                </Stack>
-              )}
-            </Droppable>
-          </DragDropContext>
+          <Stack gap="xs">
+            {visibleActiveMilestones.map((item) => {
+              const isSelected =
+                !item.completed && selectedMilestone?.id === item.id;
+              const activeIdx = activeMilestones.findIndex(
+                (m) => m.id === item.id
+              );
+              return (
+                <Box key={item.id} className={classes.cardContainer}>
+                  <MilestoneCard
+                    item={item}
+                    isSelected={isSelected}
+                    activeIdx={activeIdx}
+                    milestoneRef={(el) => {
+                      if (activeIdx >= 0) {
+                        milestoneRefs.current[activeIdx] = el;
+                      }
+                    }}
+                    onSelect={() =>
+                      setWindowData((w) => W.withCursor(w, activeIdx))
+                    }
+                    onEdit={() => {
+                      setEditingMilestone(item);
+                      setMilestoneModalOpen(true);
+                    }}
+                    onToggleDone={() =>
+                      editItem({ ...item, completed: !item.completed })
+                    }
+                    onDelete={() => deleteWithUndo(item)}
+                    onEditBacklogTask={setEditedBacklogTask}
+                  />
+                </Box>
+              );
+            })}
 
-          {visibleSoonEvents.length > 0 && (
-            <Stack gap="xs" mt="md">
-              {visibleSoonEvents.map(({ event }) => (
+            <Box className={classes.quickCardContainer}>
+              <QuickNoteCard
+                key="timeline-quick-note"
+                textareaRef={(el) => {
+                  quickNoteRef.current = el;
+                }}
+                value={quickNote}
+                onChange={setQuickNote}
+              />
+            </Box>
+
+            {!showCompletedMilestones && completedCount > 0 && (
+              <Box className={classes.cardContainer}>
+                <CollapsedMilestonesCard
+                  key="collapsed-milestones"
+                  count={completedCount}
+                  onClick={toggleShowCompletedMilestones}
+                />
+              </Box>
+            )}
+
+            {visibleCompletedMilestones.map((item) => (
+              <Box key={item.id} className={classes.cardContainer}>
                 <MilestoneCard
-                  key={event.id}
-                  variant="suggested"
-                  item={toSuggestedMilestone(event)}
+                  item={item}
                   isSelected={false}
                   activeIdx={-1}
                   milestoneRef={() => {}}
                   onSelect={() => {}}
-                  onEdit={() => {}}
-                  onToggleDone={() => {}}
-                  onDelete={() => {}}
-                  onUseSuggestion={() => addSuggestedEvent(event)}
-                  onDismissSuggestion={() => dismissSuggestedEvent(event.id)}
+                  onEdit={() => {
+                    setEditingMilestone(item);
+                    setMilestoneModalOpen(true);
+                  }}
+                  onToggleDone={() =>
+                    editItem({ ...item, completed: !item.completed })
+                  }
+                  onDelete={() => deleteWithUndo(item)}
+                  onEditBacklogTask={setEditedBacklogTask}
                 />
+              </Box>
+            ))}
+          </Stack>
+
+          {visibleSoonEvents.length > 0 && (
+            <Stack gap="xs" mt="md">
+              {visibleSoonEvents.map(({ event }) => (
+                <Box key={event.id} className={classes.cardContainer}>
+                  <MilestoneCard
+                    variant="suggested"
+                    item={toSuggestedMilestone(event)}
+                    isSelected={false}
+                    activeIdx={-1}
+                    milestoneRef={() => {}}
+                    onSelect={() => {}}
+                    onEdit={() => {}}
+                    onToggleDone={() => {}}
+                    onDelete={() => {}}
+                    onUseSuggestion={() => addSuggestedEvent(event)}
+                    onDismissSuggestion={() => dismissSuggestedEvent(event.id)}
+                  />
+                </Box>
               ))}
             </Stack>
           )}
-        </Grid.Col>
+        </Tabs.Panel>
 
-        <Grid.Col span={5}>
-          <Group justify="space-between" mb="md">
-            <Title order={3}>Events</Title>
-            <Group gap="xs">
-              <Text size="xs" c="dimmed">
-                v=new event
-              </Text>
-              <Button
-                size="xs"
-                variant="light"
-                leftSection={<Plus size={14} />}
-                onClick={() => {
-                  setEditingEvent(undefined);
-                  setEventModalOpen(true);
-                }}
-              >
-                Add
-              </Button>
-            </Group>
-          </Group>
+        <Tabs.Panel value="events" pt="md">
+          <TimelineSectionHeader
+            title="Events"
+            hint=""
+            buttonLabel="New"
+            onButtonClick={() => {
+              setEditingEvent(undefined);
+              setEventModalOpen(true);
+            }}
+          />
 
           {events.length === 0 && (
             <Text c="dimmed" size="sm">
@@ -384,46 +338,20 @@ export function TimelineView() {
 
           <Stack gap="xs">
             {events.map((ev) => (
-              <Box
-                key={ev.id}
-                className={`${classes.eventCard} ${isEventBehind(ev) ? classes.overdueEvent : ""}`}
-                p="sm"
-              >
-                <Group justify="space-between" wrap="nowrap">
-                  <Box>
-                    <Text size="sm" fw={500}>
-                      {ev.name}
-                    </Text>
-                    <Text size="xs" c="dimmed">
-                      {ev.rawTime} · {formatDuration(ev.durationMinutes)}
-                    </Text>
-                  </Box>
-                  <Group gap={4}>
-                    <ActionIcon
-                      size="xs"
-                      variant="subtle"
-                      onClick={() => {
-                        setEditingEvent(ev);
-                        setEventModalOpen(true);
-                      }}
-                    >
-                      <Pencil size={12} />
-                    </ActionIcon>
-                    <ActionIcon
-                      size="xs"
-                      variant="subtle"
-                      color="red"
-                      onClick={() => deleteWithUndo(ev)}
-                    >
-                      <Trash2 size={12} />
-                    </ActionIcon>
-                  </Group>
-                </Group>
+              <Box key={ev.id} className={classes.cardContainer}>
+                <TimelineEventRow
+                  event={ev}
+                  onEdit={(event) => {
+                    setEditingEvent(event);
+                    setEventModalOpen(true);
+                  }}
+                  onDelete={deleteWithUndo}
+                />
               </Box>
             ))}
           </Stack>
-        </Grid.Col>
-      </Grid>
+        </Tabs.Panel>
+      </Tabs>
     </Box>
   );
 }

@@ -1,10 +1,11 @@
 import { Button } from "@mantine/core";
-import { notifications } from "@mantine/notifications";
+import { notifications, type NotificationsProps } from "@mantine/notifications";
 
 export function showUndoNotification(
   id: string,
   message: string,
-  onUndo: () => void
+  onUndo: () => void,
+  position: NotificationsProps["position"] = "bottom-right"
 ) {
   notifications.show({
     id,
@@ -24,5 +25,6 @@ export function showUndoNotification(
     title: message,
     autoClose: 5000,
     withCloseButton: true,
+    position,
   });
 }

@@ -50,7 +50,7 @@ type Props = {
 export function MilestoneModal({ opened, onClose, onSubmit, editing }: Props) {
   const { values, field, setValues, reset } =
     useSimpleForm<MilestoneFormValues>(defaultValues(editing));
-  const backlogTasksRef = useRef<HTMLInputElement>(null);
+  const nameRef = useRef<HTMLInputElement>(null);
   const allTasks = usePlanningStore((s) => s.tasks);
 
   useEffect(() => {
@@ -97,15 +97,18 @@ export function MilestoneModal({ opened, onClose, onSubmit, editing }: Props) {
         return true;
       }
 
-      if (key === "ctrl+n" || key === "ctrl+p") {
-        event.preventDefault();
-        backlogTasksRef.current?.focus();
-        return true;
-      }
-
       const el = document.activeElement as HTMLElement | null;
       const inputFocused =
         el?.tagName === "INPUT" || el?.tagName === "TEXTAREA";
+      const isCtrlN = key === "ctrl+n";
+
+      if (isCtrlN) {
+        event.preventDefault();
+        if (inputFocused) el.blur();
+        else nameRef.current?.focus();
+        return true;
+      }
+
       if (inputFocused) return true;
 
       const match = orderedTags.find((t) => tagsMapping[t].key === key);
@@ -126,20 +129,20 @@ export function MilestoneModal({ opened, onClose, onSubmit, editing }: Props) {
     >
       <Stack gap="sm">
         <TextInput
-          ref={backlogTasksRef}
-          label="Linked backlog tasks"
-          placeholder="1, 4, 7"
-          description="Comma-separated task IDs"
-          value={values.taskIdsRaw}
-          onChange={(e) => field("taskIdsRaw").onChange(e.target.value)}
-        />
-
-        <TextInput
+          ref={nameRef}
           label="Name"
           placeholder="What are you working on?"
           value={values.name}
           onChange={(e) => field("name").onChange(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
+        />
+
+        <TextInput
+          label="Linked backlog tasks"
+          placeholder="1, 4, 7"
+          description="Comma-separated task IDs"
+          value={values.taskIdsRaw}
+          onChange={(e) => field("taskIdsRaw").onChange(e.target.value)}
         />
 
         {boundTasks.length > 0 && (

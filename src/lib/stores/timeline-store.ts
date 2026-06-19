@@ -10,12 +10,16 @@ import { immer } from "zustand/middleware/immer";
 interface TimelineState {
   items: TimelineItem[];
   history: TimelineItem[];
+  quickNote: string;
+  showCompletedMilestones: boolean;
 
   addItem: (item: NewTimelineItem, pushFront?: boolean) => void;
   editItem: (item: TimelineItem) => void;
   archiveItem: (id: string) => void;
   restoreItem: (item: TimelineItem) => void;
   reorder: (fromIndex: number, toIndex: number) => void;
+  setQuickNote: (note: string) => void;
+  toggleShowCompletedMilestones: () => void;
   clear: () => void;
 }
 
@@ -24,6 +28,8 @@ export const useTimelineStore = create<TimelineState>()(
     immer((set) => ({
       items: [],
       history: [],
+      quickNote: "",
+      showCompletedMilestones: true,
 
       addItem: (item, pushFront = false) =>
         set((state) => {
@@ -59,16 +65,33 @@ export const useTimelineStore = create<TimelineState>()(
           state.items.splice(toIndex, 0, item);
         }),
 
+      setQuickNote: (note) =>
+        set((state) => {
+          state.quickNote = note;
+        }),
+
+      toggleShowCompletedMilestones: () =>
+        set((state) => {
+          state.showCompletedMilestones = !state.showCompletedMilestones;
+        }),
+
       clear: () =>
         set((state) => {
           state.items = [];
           state.history = [];
+          state.quickNote = "";
+          state.showCompletedMilestones = true;
         }),
     })),
     {
       name: "timeline-storage",
       storage: createJSONStorage(() => localStorage),
-      partialize: (state) => ({ items: state.items, history: state.history }),
+      partialize: (state) => ({
+        items: state.items,
+        history: state.history,
+        quickNote: state.quickNote,
+        showCompletedMilestones: state.showCompletedMilestones,
+      }),
     }
   )
 );

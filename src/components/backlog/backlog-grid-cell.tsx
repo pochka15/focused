@@ -17,6 +17,10 @@ type Props = {
   onFocusGroup: (group: GridGroup) => void;
   onEdit: (task: BacklogTask) => void;
   onPostpone: (task: BacklogTask) => void;
+  onPushToTimeline: (task: BacklogTask) => void;
+  onToggleNext: (task: BacklogTask) => void;
+  onSnooze: (task: BacklogTask, minutes: number) => void;
+  onClearSnooze: (task: BacklogTask) => void;
   onDelete: (task: BacklogTask) => void;
 };
 
@@ -31,6 +35,10 @@ export function BacklogGridCell({
   onFocusGroup,
   onEdit,
   onPostpone,
+  onPushToTimeline,
+  onToggleNext,
+  onSnooze,
+  onClearSnooze,
   onDelete,
 }: Props) {
   const isFocused = group === focusedGroup;
@@ -63,6 +71,10 @@ export function BacklogGridCell({
             }}
             onEdit={() => onEdit(task)}
             onPostpone={() => onPostpone(task)}
+            onPushToTimeline={() => onPushToTimeline(task)}
+            onToggleNext={() => onToggleNext(task)}
+            onSnooze={(minutes) => onSnooze(task, minutes)}
+            onClearSnooze={() => onClearSnooze(task)}
             onDelete={() => onDelete(task)}
           />
         ))}

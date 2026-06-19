@@ -10,7 +10,6 @@ import {
   Text,
 } from "@mantine/core";
 import { Trash2 } from "lucide-react";
-import { KIND_META } from "./backlog-task-card";
 
 type Props = {
   tasks: BacklogTask[];
@@ -44,14 +43,23 @@ export function BacklogPostponed({
                     <Text size="sm" c="dimmed" truncate>
                       #{task.id} {task.name}
                     </Text>
-                    <Badge
-                      size="xs"
-                      color={KIND_META[task.kind].color}
-                      variant="light"
-                      w="fit-content"
-                    >
-                      {KIND_META[task.kind].emoji} {KIND_META[task.kind].label}
-                    </Badge>
+                    <Group gap={4} wrap="wrap">
+                      {task.isNext && (
+                        <Badge size="xs" color="red" variant="light">
+                          next
+                        </Badge>
+                      )}
+                      {task.tiny && (
+                        <Badge size="xs" color="orange" variant="outline">
+                          tiny
+                        </Badge>
+                      )}
+                      {task.tag.trim() && (
+                        <Badge size="xs" color="gray" variant="light">
+                          {task.tag}
+                        </Badge>
+                      )}
+                    </Group>
                   </Stack>
                   <Group gap={4}>
                     <Button

@@ -9,8 +9,16 @@
 .selectedRow {
   background: light-dark(
     var(--mantine-color-blue-0),
-    var(--mantine-color-dark-6)
+    rgba(34, 139, 230, 0.2)
   ) !important;
+
+  border-color: light-dark(
+    var(--mantine-color-blue-3),
+    rgba(34, 139, 230, 0.55)
+  ) !important;
+
+  box-shadow: 0 0 0 1px
+    light-dark(var(--mantine-color-blue-2), rgba(34, 139, 230, 0.35));
 }
 
 .movingRow {
@@ -65,4 +73,38 @@
   border-color: var(--mantine-color-blue-5);
   background: var(--mantine-color-blue-5);
   color: #fff;
+}
+
+.smartGroup,
+.smartGroupFocused,
+.smartGroupExpanded {
+  border: 1px solid var(--mantine-color-default-border);
+  border-radius: var(--mantine-radius-md);
+  padding: 10px 12px;
+  cursor: pointer;
+  transition:
+    border-color 120ms ease,
+    background 120ms ease,
+    box-shadow 120ms ease,
+    transform 120ms ease;
+}
+
+.smartGroupFocused {
+  border-color: var(--mantine-color-blue-6);
+  border-left: 4px solid var(--mantine-color-blue-6);
+  background: light-dark(var(--mantine-color-blue-0), rgba(34, 139, 230, 0.08));
+  box-shadow: 0 0 0 1px
+    color-mix(in srgb, var(--mantine-color-blue-6) 30%, transparent);
+  transform: translateX(2px);
+}
+
+.smartGroupExpanded {
+  border-color: var(--mantine-color-indigo-6);
+  border-left: 4px solid var(--mantine-color-indigo-6);
+  background: light-dark(
+    color-mix(in srgb, var(--mantine-color-indigo-0) 80%, white),
+    rgba(92, 124, 250, 0.22)
+  );
+  box-shadow: 0 0 0 1px
+    color-mix(in srgb, var(--mantine-color-indigo-6) 35%, transparent);
 }

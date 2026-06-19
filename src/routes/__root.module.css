@@ -34,3 +34,8 @@
   bottom: 0;
   z-index: 20;
 }
+
+.shortcutsDropdown {
+  max-height: min(70vh, 560px);
+  overflow-y: auto;
+}

@@ -2,27 +2,14 @@ import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
 import { immer } from "zustand/middleware/immer";
 
-// What kind of intention this task carries
-export type BacklogTaskKind =
-  | "doing-it-today" // Let's get it done — finite, ships
-  | "they-asked-me-to" // They asked me to check — unclear signal, just observing
-  | "thank-yourself-later"; // Thank yourself later — compound payoff, no ceiling
-
 export type BacklogTask = {
   id: number;
   name: string;
   description: string;
-  kind: BacklogTaskKind;
   isNext: boolean;
-  chunkable: boolean;
-};
-
-export const formatBacklogTask = (t: BacklogTask): string => {
-  const tags: string[] = [t.kind];
-  if (t.isNext) tags.push("next");
-  if (t.chunkable) tags.push("chunkable");
-  const line = `- #${t.id} ${t.name} [${tags.join("|")}]`;
-  return t.description ? `${line}\n  - ${t.description}` : line;
+  tiny: boolean;
+  tag: string;
+  snoozeUntil: string | null;
 };
 
 type PlanningState = {
@@ -31,7 +18,6 @@ type PlanningState = {
   goal: string;
   tasks: BacklogTask[];
   postponedTasks: BacklogTask[];
-  setGoal: (goal: string) => void;
   addTask: (task: BacklogTask) => void;
   updateTask: (task: BacklogTask) => void;
   removeTask: (id: number) => void;
@@ -56,10 +42,6 @@ export const usePlanningStore = create<PlanningState>()(
       goal: "",
       tasks: [],
       postponedTasks: [],
-      setGoal: (goal) =>
-        set((state) => {
-          state.goal = goal;
-        }),
       addTask: (task) =>
         set((state) => {
           state.tasks.push(task);

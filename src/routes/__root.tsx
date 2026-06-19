@@ -1,5 +1,3 @@
-import { PlanningForm } from "@/components/planning/planning-form";
-import { NotesPanel } from "@/components/notes-panel/notes-panel";
 import { RootController } from "@/lib/shortcuts/root-controller";
 import { ShortcutsProvider } from "@/shared-lib/shortcuts/shortcuts-provider";
 import "@mantine/core/styles.css";
@@ -23,15 +21,14 @@ import { useMantineColorScheme } from "@mantine/core";
 import type { FileRouteTypes } from "@/routeTree.gen";
 import {
   Bell,
-  BrainCircuit,
-  Bot,
   CalendarDays,
   ClipboardList,
   Moon,
   Sun,
   type LucideIcon,
 } from "lucide-react";
-import { useState } from "react";
+import { ShortcutsHover } from "./shortcuts-hover";
+import { StatsHover } from "./stats-hover.tsx";
 import classes from "./__root.module.css";
 
 type FullPath = FileRouteTypes["fullPaths"];
@@ -86,15 +83,10 @@ function ThemeToggle() {
 function NavbarContents() {
   const navigate = useNavigate();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
-  const [planningOpen, setPlanningOpen] = useState(false);
   const go = (to: FullPath) => void navigate({ to });
 
   return (
     <>
-      <PlanningForm
-        opened={planningOpen}
-        onClose={() => setPlanningOpen(false)}
-      />
       <Stack gap={4} p={6} h="100%" justify="space-between" align="center">
         <Stack gap={4} align="center">
           <NavItem
@@ -121,24 +113,11 @@ function NavbarContents() {
             pathname={pathname}
             onNavigate={go}
           />
-          <NavItem
-            to="/ai-setup"
-            icon={Bot}
-            label="AI Setup"
-            pathname={pathname}
-            onNavigate={go}
-          />
+          <StatsHover />
+          <ShortcutsHover pathname={pathname} />
         </Stack>
 
         <Stack gap={4} align="center" pb={6}>
-          <Tooltip label="Plan with AI" position="right" withArrow>
-            <UnstyledButton
-              className={classes.navItem}
-              onClick={() => setPlanningOpen(true)}
-            >
-              <BrainCircuit size={18} />
-            </UnstyledButton>
-          </Tooltip>
           <ThemeToggle />
         </Stack>
       </Stack>
@@ -154,8 +133,11 @@ function RootLayout() {
         <ShortcutsProvider>
           <RootController>
             <AppShell
-              navbar={{ width: 48, breakpoint: "sm" }}
-              footer={{ height: "auto" }}
+              navbar={{
+                width: 48,
+                breakpoint: "sm",
+                collapsed: { mobile: true },
+              }}
               padding="md"
             >
               <AppShell.Navbar>
@@ -164,9 +146,6 @@ function RootLayout() {
               <AppShell.Main>
                 <Outlet />
               </AppShell.Main>
-              <AppShell.Footer className={classes.notesFooter}>
-                <NotesPanel />
-              </AppShell.Footer>
             </AppShell>
           </RootController>
         </ShortcutsProvider>

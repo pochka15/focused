@@ -11,7 +11,6 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as NotificationsRouteImport } from './routes/notifications'
 import { Route as BacklogRouteImport } from './routes/backlog'
-import { Route as AiSetupRouteImport } from './routes/ai-setup'
 import { Route as IndexRouteImport } from './routes/index'
 
 const NotificationsRoute = NotificationsRouteImport.update({
@@ -24,11 +23,6 @@ const BacklogRoute = BacklogRouteImport.update({
   path: '/backlog',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AiSetupRoute = AiSetupRouteImport.update({
-  id: '/ai-setup',
-  path: '/ai-setup',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
@@ -37,34 +31,30 @@ const IndexRoute = IndexRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/ai-setup': typeof AiSetupRoute
   '/backlog': typeof BacklogRoute
   '/notifications': typeof NotificationsRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/ai-setup': typeof AiSetupRoute
   '/backlog': typeof BacklogRoute
   '/notifications': typeof NotificationsRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/ai-setup': typeof AiSetupRoute
   '/backlog': typeof BacklogRoute
   '/notifications': typeof NotificationsRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/ai-setup' | '/backlog' | '/notifications'
+  fullPaths: '/' | '/backlog' | '/notifications'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/ai-setup' | '/backlog' | '/notifications'
-  id: '__root__' | '/' | '/ai-setup' | '/backlog' | '/notifications'
+  to: '/' | '/backlog' | '/notifications'
+  id: '__root__' | '/' | '/backlog' | '/notifications'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  AiSetupRoute: typeof AiSetupRoute
   BacklogRoute: typeof BacklogRoute
   NotificationsRoute: typeof NotificationsRoute
 }
@@ -85,13 +75,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof BacklogRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/ai-setup': {
-      id: '/ai-setup'
-      path: '/ai-setup'
-      fullPath: '/ai-setup'
-      preLoaderRoute: typeof AiSetupRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/': {
       id: '/'
       path: '/'
@@ -104,7 +87,6 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  AiSetupRoute: AiSetupRoute,
   BacklogRoute: BacklogRoute,
   NotificationsRoute: NotificationsRoute,
 }

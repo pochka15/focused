@@ -2,15 +2,14 @@
   border-color: var(--mantine-color-blue-5) !important;
 }
 
-.dragHandle {
-  cursor: grab;
-  color: var(--mantine-color-dimmed);
-  display: flex;
-  align-items: center;
+.cardContainer {
+  width: 100%;
+  max-width: var(--mantine-breakpoint-md);
 }
 
-.dragHandle:active {
-  cursor: grabbing;
+.quickCardContainer {
+  width: 100%;
+  max-width: var(--mantine-breakpoint-md);
 }
 
 .eventCard {
@@ -28,6 +27,15 @@
   background: var(--mantine-color-gray-0);
 }
 
-.completedItem {
-  opacity: 0.5;
+.quickNoteCard {
+  border-style: dashed;
+  background: light-dark(
+    var(--mantine-color-gray-0),
+    rgba(255, 255, 255, 0.02)
+  );
+}
+
+.quickNoteInput {
+  max-height: 150px;
+  overflow-y: auto;
 }

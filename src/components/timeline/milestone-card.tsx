@@ -1,14 +1,5 @@
-import type { DraggableProvided } from "@hello-pangea/dnd";
-import {
-  ActionIcon,
-  Box,
-  Button,
-  Card,
-  Group,
-  Stack,
-  Text,
-} from "@mantine/core";
-import { Check, GripVertical, Pencil, Plus, Trash2, X } from "lucide-react";
+import { ActionIcon, Button, Card, Group, Stack, Text } from "@mantine/core";
+import { Check, Pencil, Plus, Trash2, X } from "lucide-react";
 import { useMemo } from "react";
 import type { BacklogTask } from "@/lib/stores/planning-store";
 import { usePlanningStore } from "@/lib/stores/planning-store";
@@ -30,7 +21,7 @@ type Props = {
   onEdit: () => void;
   onToggleDone: () => void;
   onDelete: () => void;
-  drag?: DraggableProvided;
+  onEditBacklogTask?: (task: BacklogTask) => void;
   variant?: "default" | "suggested";
   onUseSuggestion?: () => void;
   onDismissSuggestion?: () => void;
@@ -38,7 +29,6 @@ type Props = {
 
 export function MilestoneCard({
   item,
-  drag,
   isSelected,
   activeIdx,
   milestoneRef,
@@ -46,6 +36,7 @@ export function MilestoneCard({
   onEdit,
   onToggleDone,
   onDelete,
+  onEditBacklogTask,
   onUseSuggestion,
   onDismissSuggestion,
   variant = "default",
@@ -114,42 +105,35 @@ export function MilestoneCard({
     return name;
   };
 
+  const cardClassName = [
+    variant === "suggested" ? classes.ghostItem : "",
+    isSelected && !done ? classes.selectedItem : "",
+  ]
+    .filter(Boolean)
+    .join(" ");
+
   return (
     <Card
       ref={(el) => {
-        drag?.innerRef(el);
         if (activeIdx >= 0) milestoneRef(el);
       }}
-      {...(drag?.draggableProps ?? {})}
       withBorder
       padding="xs"
-      className={
-        variant === "suggested"
-          ? classes.ghostItem
-          : done
-            ? classes.completedItem
-            : isSelected
-              ? classes.selectedItem
-              : undefined
-      }
+      className={cardClassName || undefined}
       onClick={() => {
         if (variant === "default" && !done && activeIdx >= 0) onSelect();
       }}
     >
       <Group gap="xs" wrap="nowrap" justify="space-between">
         <Group gap="xs" wrap="nowrap">
-          {drag ? (
-            <Box {...drag.dragHandleProps} className={classes.dragHandle}>
-              <GripVertical size={14} />
-            </Box>
-          ) : null}
-          <Text lh={1}>{tag?.emoji}</Text>
+          <Text fz={isSelected ? "h1" : undefined}>{tag?.emoji}</Text>
           <Stack gap={2} style={{ minWidth: 0 }}>
             <Text
               fw={isSelected ? 600 : 400}
               size="sm"
-              td={done ? "line-through" : undefined}
               c={done ? "dimmed" : undefined}
+              td={done ? "line-through" : undefined}
+              fz={isSelected ? "h1" : undefined}
             >
               {item.name}
             </Text>
@@ -162,6 +146,7 @@ export function MilestoneCard({
                     displayState={getDisplayState(postponed, task.name)}
                     displayName={getDisplayName(postponed, task.name)}
                     onCycle={() => cycleTask(task.id)}
+                    onEdit={() => onEditBacklogTask?.(task)}
                   />
                 ))}
               </Group>
