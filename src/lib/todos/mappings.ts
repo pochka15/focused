@@ -1,10 +1,10 @@
-import type { NewTask } from "@/lib/todos/todo-models";
+import type { NewMilestone } from "../timeline/timeline-models";
 
 export type Tag = {
   key: string;
   emoji: string;
   description: string;
-  autoFill: Omit<NewTask, "name" | "x" | "y">;
+  autoFill: Omit<NewMilestone, "name">;
 };
 
 export const orderedTags = [
@@ -32,6 +32,7 @@ export const tagsMapping: Record<TagName, Tag> = {
       priority: 2,
       tag: "good-one",
       mode: "deep",
+      type: "task",
     },
   },
   "new-urgent": {
@@ -42,6 +43,7 @@ export const tagsMapping: Record<TagName, Tag> = {
       priority: 1,
       tag: "new-urgent",
       mode: "deep",
+      type: "task",
     },
   },
   "light-good": {
@@ -52,6 +54,7 @@ export const tagsMapping: Record<TagName, Tag> = {
       priority: 2,
       tag: "light-good",
       mode: "light",
+      type: "task",
     },
   },
   "daily-noise": {
@@ -62,6 +65,7 @@ export const tagsMapping: Record<TagName, Tag> = {
       priority: 2,
       tag: "daily-noise",
       mode: "deep",
+      type: "task",
     },
   },
   "deep-routine": {
@@ -72,6 +76,7 @@ export const tagsMapping: Record<TagName, Tag> = {
       priority: 2,
       tag: "deep-routine",
       mode: "deep",
+      type: "task",
     },
   },
   "light-routine": {
@@ -82,6 +87,7 @@ export const tagsMapping: Record<TagName, Tag> = {
       priority: 2,
       tag: "light-routine",
       mode: "light",
+      type: "task",
     },
   },
   pleasures: {
@@ -92,16 +98,18 @@ export const tagsMapping: Record<TagName, Tag> = {
       priority: 3,
       tag: "pleasures",
       mode: "light",
+      type: "task",
     },
   },
   other: {
     key: "m",
-    emoji: "🌊",
+    emoji: "🦥",
     description: "Другое",
     autoFill: {
       priority: 2,
       tag: "other",
       mode: "light",
+      type: "task",
     },
   },
 };

@@ -1,7 +1,5 @@
 import type { TagName, TodoMode } from "@/lib/todos/mappings";
 
-export const DONE_PREFIX = "[DONE] ";
-
 export type NewMilestone = {
   type: "task";
   name: string;

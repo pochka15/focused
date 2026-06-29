@@ -15,8 +15,8 @@ import { showUndoNotification } from "@/lib/notifications/show-undo-notification
 import { Window as W, type UiWindow } from "@/shared-lib/shortcuts/window";
 import { Box, Stack, Tabs, Text } from "@mantine/core";
 import { useEffect, useMemo, useRef, useState } from "react";
-import type { BacklogTask } from "@/lib/stores/planning-store";
-import { usePlanningStore } from "@/lib/stores/planning-store";
+import type { BacklogTask } from "@/lib/stores/backlog-store";
+import { useBacklogStore } from "@/lib/stores/backlog-store";
 import { BacklogModal } from "@/components/backlog/backlog-modal";
 import { EventModal } from "./event-modal";
 import { MilestoneCard } from "./milestone-card";
@@ -25,8 +25,16 @@ import { QuickNoteCard } from "./quick-note-card";
 import { TimelineEventRow } from "./timeline-event-row";
 import { TimelineSectionHeader } from "./timeline-section-header";
 import { CollapsedMilestonesCard } from "./collapsed-milestones-card";
+import { TimelineNotesTab } from "./timeline-notes-tab";
 import { useTimelineShortcuts } from "./use-timeline-shortcuts";
+import { cycleTask } from "./milestone-card-utils";
+import { getDoneTasks, createTasksMap } from "./timeline-view-utils";
+import { tagsMapping } from "@/lib/todos/mappings";
 import classes from "./timeline-view.module.css";
+
+type TimelineTab = "milestones" | "events" | "notes";
+
+const MARK_TASKS_DONE_MESSAGE = "Ssup with tasks?";
 
 export function TimelineView() {
   const items = useTimelineStore((s) => s.items);
@@ -37,6 +45,8 @@ export function TimelineView() {
   const reorder = useTimelineStore((s) => s.reorder);
   const quickNote = useTimelineStore((s) => s.quickNote);
   const setQuickNote = useTimelineStore((s) => s.setQuickNote);
+  const notesText = useTimelineStore((s) => s.notesText);
+  const setNotesText = useTimelineStore((s) => s.setNotesText);
 
   const milestones = items.filter(isMilestone);
   const activeMilestones = milestones.filter((m) => !m.completed);
@@ -49,6 +59,7 @@ export function TimelineView() {
   );
 
   const [windowData, setWindowData] = useState<UiWindow>(W.create());
+  const [activeTab, setActiveTab] = useState<TimelineTab>("milestones");
   const [milestoneModalOpen, setMilestoneModalOpen] = useState(false);
   const [eventModalOpen, setEventModalOpen] = useState(false);
   const [editingMilestone, setEditingMilestone] = useState<
@@ -66,14 +77,57 @@ export function TimelineView() {
   >();
 
   const showBacklogModal = editedBacklogTask !== undefined;
-  const updateTask = usePlanningStore((s) => s.updateTask);
-  const addTask = usePlanningStore((s) => s.addTask);
-  const consumeNextId = usePlanningStore((s) => s.consumeNextId);
+  const updateTask = useBacklogStore((s) => s.updateTask);
+  const addTask = useBacklogStore((s) => s.addTask);
+  const consumeNextId = useBacklogStore((s) => s.consumeNextId);
+  const backlog = useBacklogStore((s) => s.tasks);
+  const allTasksMap = useMemo(() => createTasksMap(backlog), [backlog]);
 
-  const windowRef = useRef(windowData);
-  windowRef.current = windowData;
   const milestoneRefs = useRef<(HTMLDivElement | null)[]>([]);
   const quickNoteRef = useRef<HTMLTextAreaElement | null>(null);
+
+  const getIncompleteTaskIds = (taskIds: number[] | undefined): number[] => {
+    const doneTasks = getDoneTasks(backlog);
+    const doneIds = new Set(doneTasks.map((t) => t.id));
+    return taskIds?.filter((id) => !doneIds.has(id)) ?? [];
+  };
+
+  const addHelperTask = (taskIds: number[]) => {
+    addItem(
+      {
+        ...tagsMapping["other"].autoFill,
+        type: "task",
+        name: MARK_TASKS_DONE_MESSAGE,
+        completed: false,
+        taskIds,
+      },
+      true
+    );
+  };
+
+  const handleToggleMilestoneDone = (item: Milestone) => {
+    const isHelperTask = item.name === MARK_TASKS_DONE_MESSAGE;
+
+    if (!item.completed && !isHelperTask) {
+      const ids = getIncompleteTaskIds(item.taskIds);
+      if (ids.length > 0) addHelperTask(ids);
+    }
+
+    editItem({ ...item, completed: !item.completed });
+  };
+
+  const handleCycleTask = (taskId: number) => {
+    const task = allTasksMap.get(taskId);
+    if (task) cycleTask(task, updateTask);
+  };
+
+  const focusMilestonesTab = () => {
+    setActiveTab("milestones");
+  };
+
+  const focusNotesTab = () => {
+    setActiveTab("notes");
+  };
 
   useEffect(() => {
     setWindowData((w) => W.shrinkTo(w, activeMilestones.length));
@@ -96,12 +150,11 @@ export function TimelineView() {
     );
   };
 
-  useTimelineShortcuts({
+  const { isRemoving } = useTimelineShortcuts({
     milestoneModalOpen,
     eventModalOpen,
     quickNoteRef,
-    milestoneRefs,
-    windowRef,
+    windowData,
     setWindowData,
     activeMilestones,
     items,
@@ -110,8 +163,11 @@ export function TimelineView() {
     setMilestoneModalOpen,
     setEditingEvent,
     setEventModalOpen,
-    editItem,
+    onToggleDone: handleToggleMilestoneDone,
+    onDelete: deleteWithUndo,
     toggleShowCompletedMilestones,
+    focusNotesTab,
+    onCycleTask: handleCycleTask,
   });
 
   const handleMilestoneSubmit = (newItem: NewMilestone) => {
@@ -195,10 +251,16 @@ export function TimelineView() {
         editing={editingEvent}
       />
 
-      <Tabs defaultValue="milestones">
+      <Tabs
+        value={activeTab}
+        onChange={(value) =>
+          setActiveTab((value as TimelineTab) ?? "milestones")
+        }
+      >
         <Tabs.List>
           <Tabs.Tab value="milestones">Milestones</Tabs.Tab>
           <Tabs.Tab value="events">Events</Tabs.Tab>
+          <Tabs.Tab value="notes">Notes</Tabs.Tab>
         </Tabs.List>
 
         <Tabs.Panel value="milestones" pt="md">
@@ -230,6 +292,7 @@ export function TimelineView() {
                   <MilestoneCard
                     item={item}
                     isSelected={isSelected}
+                    isRemoving={isSelected && isRemoving}
                     activeIdx={activeIdx}
                     milestoneRef={(el) => {
                       if (activeIdx >= 0) {
@@ -243,15 +306,31 @@ export function TimelineView() {
                       setEditingMilestone(item);
                       setMilestoneModalOpen(true);
                     }}
-                    onToggleDone={() =>
-                      editItem({ ...item, completed: !item.completed })
-                    }
+                    onToggleDone={() => handleToggleMilestoneDone(item)}
                     onDelete={() => deleteWithUndo(item)}
                     onEditBacklogTask={setEditedBacklogTask}
                   />
                 </Box>
               );
             })}
+
+            {visibleSoonEvents.map(({ event }) => (
+              <Box key={event.id} className={classes.cardContainer}>
+                <MilestoneCard
+                  variant="suggested"
+                  item={toSuggestedMilestone(event)}
+                  isSelected={false}
+                  activeIdx={-1}
+                  milestoneRef={() => {}}
+                  onSelect={() => {}}
+                  onEdit={() => {}}
+                  onToggleDone={() => {}}
+                  onDelete={() => {}}
+                  onUseSuggestion={() => addSuggestedEvent(event)}
+                  onDismissSuggestion={() => dismissSuggestedEvent(event.id)}
+                />
+              </Box>
+            ))}
 
             <Box className={classes.quickCardContainer}>
               <QuickNoteCard
@@ -286,37 +365,13 @@ export function TimelineView() {
                     setEditingMilestone(item);
                     setMilestoneModalOpen(true);
                   }}
-                  onToggleDone={() =>
-                    editItem({ ...item, completed: !item.completed })
-                  }
+                  onToggleDone={() => handleToggleMilestoneDone(item)}
                   onDelete={() => deleteWithUndo(item)}
                   onEditBacklogTask={setEditedBacklogTask}
                 />
               </Box>
             ))}
           </Stack>
-
-          {visibleSoonEvents.length > 0 && (
-            <Stack gap="xs" mt="md">
-              {visibleSoonEvents.map(({ event }) => (
-                <Box key={event.id} className={classes.cardContainer}>
-                  <MilestoneCard
-                    variant="suggested"
-                    item={toSuggestedMilestone(event)}
-                    isSelected={false}
-                    activeIdx={-1}
-                    milestoneRef={() => {}}
-                    onSelect={() => {}}
-                    onEdit={() => {}}
-                    onToggleDone={() => {}}
-                    onDelete={() => {}}
-                    onUseSuggestion={() => addSuggestedEvent(event)}
-                    onDismissSuggestion={() => dismissSuggestedEvent(event.id)}
-                  />
-                </Box>
-              ))}
-            </Stack>
-          )}
         </Tabs.Panel>
 
         <Tabs.Panel value="events" pt="md">
@@ -350,6 +405,15 @@ export function TimelineView() {
               </Box>
             ))}
           </Stack>
+        </Tabs.Panel>
+
+        <Tabs.Panel value="notes" pt="md">
+          <TimelineNotesTab
+            value={notesText}
+            onChange={setNotesText}
+            active={activeTab === "notes"}
+            onClose={focusMilestonesTab}
+          />
         </Tabs.Panel>
       </Tabs>
     </Box>

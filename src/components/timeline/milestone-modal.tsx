@@ -1,8 +1,9 @@
 import { useSimpleForm } from "@/hooks/use-simple-form";
 import type { Milestone, NewMilestone } from "@/lib/timeline/timeline-models";
 import { orderedTags, tagsMapping, type TagName } from "@/lib/todos/mappings";
-import { usePlanningStore } from "@/lib/stores/planning-store";
+import { useBacklogStore } from "@/lib/stores/backlog-store";
 import { useShortcuts } from "@/shared-lib/shortcuts/use-shortcuts";
+import { MILESTONE_MODAL_SHORTCUTS } from "@/lib/shortcuts/shortcut-mappings";
 import {
   Badge,
   Box,
@@ -51,7 +52,7 @@ export function MilestoneModal({ opened, onClose, onSubmit, editing }: Props) {
   const { values, field, setValues, reset } =
     useSimpleForm<MilestoneFormValues>(defaultValues(editing));
   const nameRef = useRef<HTMLInputElement>(null);
-  const allTasks = usePlanningStore((s) => s.tasks);
+  const allTasks = useBacklogStore((s) => s.tasks);
 
   useEffect(() => {
     if (opened) setValues(defaultValues(editing));
@@ -91,7 +92,7 @@ export function MilestoneModal({ opened, onClose, onSubmit, editing }: Props) {
     name: "milestoneModal",
     enabled: opened,
     keys: (key, event) => {
-      if (key === "Enter") {
+      if (key === MILESTONE_MODAL_SHORTCUTS.submit) {
         event.preventDefault();
         handleSubmit();
         return true;
@@ -100,7 +101,7 @@ export function MilestoneModal({ opened, onClose, onSubmit, editing }: Props) {
       const el = document.activeElement as HTMLElement | null;
       const inputFocused =
         el?.tagName === "INPUT" || el?.tagName === "TEXTAREA";
-      const isCtrlN = key === "ctrl+n";
+      const isCtrlN = key === MILESTONE_MODAL_SHORTCUTS.toggleFocus;
 
       if (isCtrlN) {
         event.preventDefault();

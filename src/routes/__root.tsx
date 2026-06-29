@@ -27,8 +27,8 @@ import {
   Sun,
   type LucideIcon,
 } from "lucide-react";
-import { ShortcutsHover } from "./shortcuts-hover";
-import { StatsHover } from "./stats-hover.tsx";
+import { ShortcutsHover } from "../components/shell/shortcuts-hover.tsx";
+import { StatsHover } from "../components/shell/stats-hover.tsx";
 import classes from "./__root.module.css";
 
 type FullPath = FileRouteTypes["fullPaths"];

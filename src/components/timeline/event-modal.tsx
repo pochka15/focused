@@ -5,6 +5,7 @@ import type {
 } from "@/lib/timeline/timeline-models";
 import { isInputFocused } from "@/shared-lib/shortcuts/is-input-focused";
 import { useShortcuts } from "@/shared-lib/shortcuts/use-shortcuts";
+import { EVENT_MODAL_SHORTCUTS } from "@/lib/shortcuts/shortcut-mappings";
 import {
   Button,
   Group,
@@ -60,7 +61,7 @@ export function EventModal({ opened, onClose, onSubmit, editing }: Props) {
     enabled: opened,
     keys: (key, event) => {
       if (isInputFocused() && key !== "Enter") return true;
-      if (key === "Enter") {
+      if (key === EVENT_MODAL_SHORTCUTS.submit) {
         event.preventDefault();
         handleSubmit();
         return true;

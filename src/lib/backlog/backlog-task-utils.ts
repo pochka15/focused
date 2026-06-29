@@ -1,4 +1,4 @@
-import type { BacklogTask } from "@/lib/stores/planning-store";
+import type { BacklogTask } from "@/lib/stores/backlog-store";
 
 export const toTimestamp = (
   value: string | null | undefined

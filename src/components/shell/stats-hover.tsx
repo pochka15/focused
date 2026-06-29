@@ -11,7 +11,7 @@ import {
 } from "@mantine/core";
 import { ChartColumn } from "lucide-react";
 import { useMemo } from "react";
-import classes from "./__root.module.css";
+import classes from "./shell.module.css";
 
 type ApproxMinutesRange = {
   min: number;

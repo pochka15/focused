@@ -41,7 +41,6 @@ const isSoonEvent = (event: TimelineEvent): boolean => {
 
 export const toSuggestedMilestone = (event: TimelineEvent): Milestone => ({
   id: event.id,
-  type: "task",
   name: `[${event.rawTime}] ${event.name}`,
   ...tagsMapping.other.autoFill,
 });

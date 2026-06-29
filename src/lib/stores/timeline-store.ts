@@ -11,6 +11,7 @@ interface TimelineState {
   items: TimelineItem[];
   history: TimelineItem[];
   quickNote: string;
+  notesText: string;
   showCompletedMilestones: boolean;
 
   addItem: (item: NewTimelineItem, pushFront?: boolean) => void;
@@ -19,6 +20,7 @@ interface TimelineState {
   restoreItem: (item: TimelineItem) => void;
   reorder: (fromIndex: number, toIndex: number) => void;
   setQuickNote: (note: string) => void;
+  setNotesText: (text: string) => void;
   toggleShowCompletedMilestones: () => void;
   clear: () => void;
 }
@@ -29,6 +31,7 @@ export const useTimelineStore = create<TimelineState>()(
       items: [],
       history: [],
       quickNote: "",
+      notesText: "",
       showCompletedMilestones: true,
 
       addItem: (item, pushFront = false) =>
@@ -70,6 +73,11 @@ export const useTimelineStore = create<TimelineState>()(
           state.quickNote = note;
         }),
 
+      setNotesText: (text) =>
+        set((state) => {
+          state.notesText = text;
+        }),
+
       toggleShowCompletedMilestones: () =>
         set((state) => {
           state.showCompletedMilestones = !state.showCompletedMilestones;
@@ -80,6 +88,7 @@ export const useTimelineStore = create<TimelineState>()(
           state.items = [];
           state.history = [];
           state.quickNote = "";
+          state.notesText = "";
           state.showCompletedMilestones = true;
         }),
     })),
@@ -90,6 +99,7 @@ export const useTimelineStore = create<TimelineState>()(
         items: state.items,
         history: state.history,
         quickNote: state.quickNote,
+        notesText: state.notesText,
         showCompletedMilestones: state.showCompletedMilestones,
       }),
     }

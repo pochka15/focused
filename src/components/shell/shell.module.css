@@ -1,0 +1,20 @@
+.navItem {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--mantine-radius-sm);
+  transition: background 120ms ease;
+  opacity: 0.6;
+}
+
+.navItem:hover {
+  background: var(--mantine-color-default-hover);
+  opacity: 1;
+}
+
+.shortcutsDropdown {
+  max-height: min(70vh, 560px);
+  overflow-y: auto;
+}

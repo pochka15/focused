@@ -1,5 +1,5 @@
 import { normalizeBacklogTag } from "@/lib/backlog/backlog-tag-presets";
-import type { BacklogTask } from "@/lib/stores/planning-store";
+import type { BacklogTask } from "@/lib/stores/backlog-store";
 import type { NewMilestone } from "@/lib/timeline/timeline-models";
 
 type TimelinePreset = Pick<NewMilestone, "tag" | "mode" | "priority">;
@@ -29,7 +29,7 @@ export const toTimelineMilestoneFromBacklog = (
     name: task.name,
     taskIds: [task.id],
     tag: preset.tag,
-    mode: task.tiny ? "light" : preset.mode,
+    mode: preset.mode,
     priority: task.isNext ? 1 : preset.priority,
   };
 };

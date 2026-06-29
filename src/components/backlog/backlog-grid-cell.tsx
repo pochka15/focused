@@ -1,4 +1,4 @@
-import type { BacklogTask } from "@/lib/stores/planning-store";
+import type { BacklogTask } from "@/lib/stores/backlog-store";
 import type { GridGroup } from "@/lib/stores/backlog-grid-store";
 import { Badge, Box, Group, Stack, Text } from "@mantine/core";
 import type { RefObject } from "react";

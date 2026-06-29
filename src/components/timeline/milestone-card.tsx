@@ -1,11 +1,13 @@
 import { ActionIcon, Button, Card, Group, Stack, Text } from "@mantine/core";
 import { Check, Pencil, Plus, Trash2, X } from "lucide-react";
 import { useMemo } from "react";
-import type { BacklogTask } from "@/lib/stores/planning-store";
-import { usePlanningStore } from "@/lib/stores/planning-store";
+import type { BacklogTask } from "@/lib/stores/backlog-store";
+import { useBacklogStore } from "@/lib/stores/backlog-store";
 import type { Milestone } from "@/lib/timeline/timeline-models";
-import { DONE_PREFIX } from "@/lib/timeline/timeline-models";
 import { tagsMapping } from "@/lib/todos/mappings";
+import { useShortcutsMode } from "@/shared-lib/shortcuts/shortcuts-store";
+import { cycleTask } from "./milestone-card-utils";
+import { getTaskDisplayState } from "./timeline-view-utils";
 import {
   LinkedTaskBadge,
   type LinkedTaskDisplayState,
@@ -15,6 +17,7 @@ import classes from "./timeline-view.module.css";
 type Props = {
   item: Milestone;
   isSelected: boolean;
+  isRemoving?: boolean;
   activeIdx: number;
   milestoneRef: (el: HTMLDivElement | null) => void;
   onSelect: () => void;
@@ -30,6 +33,7 @@ type Props = {
 export function MilestoneCard({
   item,
   isSelected,
+  isRemoving = false,
   activeIdx,
   milestoneRef,
   onSelect,
@@ -41,11 +45,9 @@ export function MilestoneCard({
   onDismissSuggestion,
   variant = "default",
 }: Props) {
-  const tasks = usePlanningStore((s) => s.tasks);
-  const postponedTasks = usePlanningStore((s) => s.postponedTasks);
-  const postponeTask = usePlanningStore((s) => s.postponeTask);
-  const activateTask = usePlanningStore((s) => s.activateTask);
-  const updatePostponedTask = usePlanningStore((s) => s.updatePostponedTask);
+  const tasks = useBacklogStore((s) => s.tasks);
+  const updateTask = useBacklogStore((s) => s.updateTask);
+  const editingMode = useShortcutsMode("editingMilestoneCardTasks");
 
   const tag = tagsMapping[item.tag];
   const done = item.completed;
@@ -53,61 +55,34 @@ export function MilestoneCard({
   const taskIds = useMemo(() => new Set(item.taskIds ?? []), [item.taskIds]);
 
   const allTasksById = useMemo(() => {
-    const map = new Map<number, { task: BacklogTask; postponed: boolean }>();
+    const map = new Map<number, BacklogTask>();
     for (const t of tasks) {
-      if (taskIds.has(t.id)) map.set(t.id, { task: t, postponed: false });
-    }
-    for (const t of postponedTasks) {
-      if (taskIds.has(t.id)) map.set(t.id, { task: t, postponed: true });
+      if (taskIds.has(t.id)) map.set(t.id, t);
     }
     return map;
-  }, [tasks, postponedTasks, taskIds]);
+  }, [tasks, taskIds]);
 
   const boundEntries = useMemo(
     () =>
       [...taskIds]
         .map((id) => allTasksById.get(id))
-        .filter(Boolean) as NonNullable<ReturnType<typeof allTasksById.get>>[],
+        .filter(Boolean) as BacklogTask[],
     [taskIds, allTasksById]
   );
 
-  const cycleTask = (id: number) => {
-    const entry = allTasksById.get(id);
-    if (!entry) return;
-    const { task, postponed } = entry;
-    if (!postponed) {
-      postponeTask(id);
-      Promise.resolve().then(() => {
-        updatePostponedTask({ ...task, name: `${DONE_PREFIX}${task.name}` });
-      });
-    } else if (task.name.startsWith(DONE_PREFIX)) {
-      updatePostponedTask({
-        ...task,
-        name: task.name.slice(DONE_PREFIX.length),
-      });
-    } else {
-      activateTask(id);
-    }
+  const cycleTaskHandler = (id: number) => {
+    const task = allTasksById.get(id);
+    if (task) cycleTask(task, updateTask);
   };
 
-  const getDisplayState = (
-    postponed: boolean,
-    name: string
-  ): LinkedTaskDisplayState => {
-    if (!postponed) return "active";
-    return name.startsWith(DONE_PREFIX) ? "done" : "postponed";
-  };
-
-  const getDisplayName = (postponed: boolean, name: string): string => {
-    if (postponed && name.startsWith(DONE_PREFIX)) {
-      return name.slice(DONE_PREFIX.length);
-    }
-    return name;
+  const getDisplayState = (task: BacklogTask): LinkedTaskDisplayState => {
+    return getTaskDisplayState(task);
   };
 
   const cardClassName = [
     variant === "suggested" ? classes.ghostItem : "",
     isSelected && !done ? classes.selectedItem : "",
+    isRemoving && !done ? classes.removingItem : "",
   ]
     .filter(Boolean)
     .join(" ");
@@ -139,16 +114,23 @@ export function MilestoneCard({
             </Text>
             {boundEntries.length > 0 && (
               <Group gap={4} wrap="wrap">
-                {boundEntries.map(({ task, postponed }) => (
-                  <LinkedTaskBadge
-                    key={task.id}
-                    task={task}
-                    displayState={getDisplayState(postponed, task.name)}
-                    displayName={getDisplayName(postponed, task.name)}
-                    onCycle={() => cycleTask(task.id)}
-                    onEdit={() => onEditBacklogTask?.(task)}
-                  />
-                ))}
+                {boundEntries.map((task, idx) => {
+                  const isFocused =
+                    editingMode.enabled &&
+                    editingMode.data.milestoneId === item.id &&
+                    editingMode.data.taskIndex === idx;
+                  return (
+                    <LinkedTaskBadge
+                      key={task.id}
+                      task={task}
+                      displayState={getDisplayState(task)}
+                      displayName={task.name}
+                      onCycle={() => cycleTaskHandler(task.id)}
+                      onEdit={() => onEditBacklogTask?.(task)}
+                      focused={isFocused}
+                    />
+                  );
+                })}
               </Group>
             )}
           </Stack>

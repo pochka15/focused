@@ -2,6 +2,11 @@
   border-color: var(--mantine-color-blue-5) !important;
 }
 
+.removingItem {
+  border-color: var(--mantine-color-red-6) !important;
+  box-shadow: 0 0 0 1px var(--mantine-color-red-6);
+}
+
 .cardContainer {
   width: 100%;
   max-width: var(--mantine-breakpoint-md);
@@ -38,4 +43,17 @@
 .quickNoteInput {
   max-height: 150px;
   overflow-y: auto;
+}
+
+.notesPanel {
+  width: min(100%, 860px);
+  margin: 0 auto;
+  padding: var(--mantine-spacing-md) var(--mantine-spacing-sm)
+    var(--mantine-spacing-xl);
+}
+
+.notesInput {
+  min-height: 68vh;
+  font-size: 1.125rem;
+  letter-spacing: 0.01em;
 }

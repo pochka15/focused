@@ -3,8 +3,8 @@ import {
   type SmartGroup,
 } from "@/lib/backlog/smart-groups";
 import { toTimelineMilestoneFromBacklog } from "@/lib/backlog/backlog-to-timeline";
-import type { BacklogTask } from "@/lib/stores/planning-store";
-import { usePlanningStore } from "@/lib/stores/planning-store";
+import type { BacklogTask } from "@/lib/stores/backlog-store";
+import { useBacklogStore } from "@/lib/stores/backlog-store";
 import { useTimelineStore } from "@/lib/stores/timeline-store";
 import {
   BACKLOG_GRID_COLUMNS,
@@ -13,8 +13,16 @@ import {
   useBacklogGridStore,
 } from "@/lib/stores/backlog-grid-store";
 import { showUndoNotification } from "@/lib/notifications/show-undo-notification";
-import { DONE_PREFIX } from "@/lib/timeline/timeline-models";
+import {
+  getBacklogRouteSearch,
+  getBacklogRouteView,
+} from "@/lib/backlog/backlog-route-mode";
 import { isMilestone } from "@/lib/timeline/timeline-models";
+import {
+  BACKLOG_SHORTCUTS,
+  BACKLOG_TINDER_SHORTCUTS,
+  BACKLOG_VIEW_SHORTCUTS,
+} from "@/lib/shortcuts/shortcut-mappings";
 import {
   Window as W,
   Window2D,
@@ -35,6 +43,7 @@ import {
 import { useMediaQuery } from "@mantine/hooks";
 import { notifications } from "@mantine/notifications";
 import { Plus } from "lucide-react";
+import { useNavigate, useRouterState } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { BacklogGridCell } from "./backlog-grid-cell";
 import { BacklogModal } from "./backlog-modal";
@@ -47,18 +56,17 @@ const GROUPS = BACKLOG_GROUPS;
 const FIRST_GROUP = GROUPS[0] ?? 1;
 
 export function BacklogView() {
-  const tasks = usePlanningStore((s) => s.tasks);
-  const postponedTasks = usePlanningStore((s) => s.postponedTasks);
-  const addTask = usePlanningStore((s) => s.addTask);
-  const updateTask = usePlanningStore((s) => s.updateTask);
-  const removeTask = usePlanningStore((s) => s.removeTask);
-  const restoreTask = usePlanningStore((s) => s.restoreTask);
-  const postponeTask = usePlanningStore((s) => s.postponeTask);
-  const activateTask = usePlanningStore((s) => s.activateTask);
-  const removePostponedByNamePrefix = usePlanningStore(
-    (s) => s.removePostponedByNamePrefix
-  );
-  const consumeNextId = usePlanningStore((s) => s.consumeNextId);
+  const sh = BACKLOG_TINDER_SHORTCUTS;
+  const bh = BACKLOG_SHORTCUTS;
+  const bv = BACKLOG_VIEW_SHORTCUTS;
+  const navigate = useNavigate();
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const search = useRouterState({ select: (s) => s.location.search });
+  const tasks = useBacklogStore((s) => s.tasks);
+  const addTask = useBacklogStore((s) => s.addTask);
+  const updateTask = useBacklogStore((s) => s.updateTask);
+  const removeTask = useBacklogStore((s) => s.removeTask);
+  const consumeNextId = useBacklogStore((s) => s.consumeNextId);
   const timelineItems = useTimelineStore((s) => s.items);
   const addTimelineItem = useTimelineStore((s) => s.addItem);
 
@@ -69,8 +77,9 @@ export function BacklogView() {
   const isWide = useMediaQuery("(min-width: 900px)") ?? false;
 
   const [nowTick, setNowTick] = useState(() => Date.now());
-  const [showOnlyNext, setShowOnlyNext] = useState(false);
-  const [tinderMode, setTinderMode] = useState(true);
+  const tinderView = pathname.startsWith("/backlog")
+    ? getBacklogRouteView(search) === "tinder"
+    : false;
 
   const [window2D, setWindow2D] = useState(() =>
     Window2D.create<GridGroup>(GROUPS)
@@ -98,10 +107,7 @@ export function BacklogView() {
     [tasks, nowTick]
   );
 
-  const backlogTasks = useMemo(
-    () => (showOnlyNext ? tasks.filter((task) => task.isNext) : tasks),
-    [tasks, showOnlyNext]
-  );
+  const backlogTasks = tasks;
 
   const groupedTasksBase = useTasksByGroups(backlogTasks, GROUPS);
   const allSorted = useAllTasksSorted(backlogTasks);
@@ -208,7 +214,7 @@ export function BacklogView() {
     showUndoNotification(
       `del-task-${task.id}`,
       `"${task.name}" removed`,
-      () => restoreTask(task),
+      () => addTask(task),
       "bottom-left"
     );
   };
@@ -239,8 +245,22 @@ export function BacklogView() {
   };
 
   const handleDeleteAllDone = () => {
-    const removedIds = removePostponedByNamePrefix(DONE_PREFIX);
-    removedIds.forEach((id) => removeTaskFromGrid(id));
+    tasks
+      .filter((t) => t.isDone)
+      .forEach((task) => {
+        removeTask(task.id);
+        removeTaskFromGrid(task.id);
+      });
+  };
+
+  const postponeTask = (taskId: number) => {
+    const task = tasks.find((t) => t.id === taskId);
+    if (task) updateTask({ ...task, isPostponed: true });
+  };
+
+  const activateTask = (taskId: number) => {
+    const task = tasks.find((t) => t.id === taskId);
+    if (task) updateTask({ ...task, isPostponed: false });
   };
 
   const handleSubmit = (values: Omit<BacklogTask, "id">) => {
@@ -259,8 +279,11 @@ export function BacklogView() {
     setModalOpen(true);
   };
 
-  const toggleMode = () => {
-    setTinderMode((current) => !current);
+  const setRouteView = (view: "grid" | "tinder") => {
+    void navigate({
+      to: "/backlog",
+      search: () => getBacklogRouteSearch(view),
+    });
     setIsMoving(false);
     setExpandedSmartGroupId(null);
     setSnoozeTargetTaskId(null);
@@ -279,11 +302,11 @@ export function BacklogView() {
     enabled: !modalOpen,
     keys: (key, event) => {
       if (snoozeTargetTaskId !== null) {
-        if (key === "Escape") {
+        if (key === bv.cancelSnooze) {
           setSnoozeTargetTaskId(null);
           return true;
         }
-        if (key === "0") {
+        if (key === bv.clearSnooze) {
           clearSnoozeByTaskId(snoozeTargetTaskId);
           setSnoozeTargetTaskId(null);
           return true;
@@ -296,22 +319,22 @@ export function BacklogView() {
         }
       }
 
-      if (key === "q") {
+      if (key === sh.switchMode) {
         event.preventDefault();
-        toggleMode();
+        setRouteView(tinderView ? "grid" : "tinder");
         return true;
       }
 
-      if (key === "n") {
+      if (key === sh.newTask) {
         openModal();
         return true;
       }
 
-      if (tinderMode) {
+      if (tinderView) {
         const focusedSmartGroup = smartGroups[focusedSmartGroupIdx];
 
         if (!expandedGroup) {
-          if (key === "j" || key === "ArrowDown") {
+          if (key === sh.moveDown || key === sh.moveDownArrow) {
             event.preventDefault();
             setFocusedSmartGroupIdx((idx) =>
               Math.min(idx + 1, Math.max(0, smartGroups.length - 1))
@@ -319,13 +342,13 @@ export function BacklogView() {
             return true;
           }
 
-          if (key === "k" || key === "ArrowUp") {
+          if (key === sh.moveUp || key === sh.moveUpArrow) {
             event.preventDefault();
             setFocusedSmartGroupIdx((idx) => Math.max(0, idx - 1));
             return true;
           }
 
-          if (key === "l" && focusedSmartGroup) {
+          if (key === sh.expandGroup && focusedSmartGroup) {
             setExpandedSmartGroupId(focusedSmartGroup.id);
             setTinderWindow((windowState) => W.withCursor(windowState, 0));
             return true;
@@ -339,59 +362,59 @@ export function BacklogView() {
         const cursor = tinderWindow.cursor;
         const currentTask = curTasks[cursor];
 
-        if (key === "Escape" || key === "l") {
+        if (key === bv.cancelSnooze || key === sh.expandGroup) {
           setExpandedSmartGroupId(null);
           return true;
         }
 
-        if (key === "j" || key === "ArrowDown") {
+        if (key === sh.moveDown || key === sh.moveDownArrow) {
           event.preventDefault();
           setTinderWindow((windowState) => W.moveSingle(windowState, 1, n));
           return true;
         }
 
-        if (key === "k" || key === "ArrowUp") {
+        if (key === sh.moveUp || key === sh.moveUpArrow) {
           event.preventDefault();
           setTinderWindow((windowState) => W.moveSingle(windowState, -1, n));
           return true;
         }
 
-        if (key === "g") {
+        if (key === sh.taskFirst) {
           setTinderWindow((windowState) => W.first(windowState));
           return true;
         }
 
-        if (key === "shift+G") {
+        if (key === sh.taskLast) {
           setTinderWindow((windowState) => W.last(windowState, n));
           return true;
         }
 
-        if (key === "e" && currentTask) {
+        if (key === sh.edit && currentTask) {
           openModal(currentTask);
           return true;
         }
 
-        if (key === "p" && currentTask) {
+        if (key === sh.pushTimeline && currentTask) {
           pushTaskToTimeline(currentTask);
           return true;
         }
 
-        if (key === "shift+P" && currentTask) {
+        if (key === sh.pushTimelineFront && currentTask) {
           pushTaskToTimeline(currentTask, true);
           return true;
         }
 
-        if (key === "x" && currentTask) {
+        if (key === sh.postpone && currentTask) {
           postponeTask(currentTask.id);
           return true;
         }
 
-        if (key === "a" && currentTask) {
+        if (key === sh.toggleNext && currentTask) {
           toggleTaskNext(currentTask);
           return true;
         }
 
-        if (key === "z" && currentTask) {
+        if (key === sh.snoozePicker && currentTask) {
           setSnoozeTargetTaskId(currentTask.id);
           return true;
         }
@@ -428,49 +451,55 @@ export function BacklogView() {
         return true;
       }
 
-      if (key === "l" || key === "ArrowRight") {
+      if (key === bh.groupRight || key === bh.groupRightArrow) {
         event.preventDefault();
         setWindow2D((state) => Window2D.cycleFocusedGroup(state, 1));
         return true;
       }
 
-      if (key === "h" || key === "ArrowLeft") {
+      if (key === bh.groupLeft || key === bh.groupLeftArrow) {
         event.preventDefault();
         setWindow2D((state) => Window2D.cycleFocusedGroup(state, -1));
         return true;
       }
 
-      if (key === "e") {
+      if (key === bh.edit) {
         const task = curTasks[cursorNow];
         if (task) openModal(task);
         return true;
       }
-      if (key === "p") {
+      if (key === bh.pushTimeline) {
         const task = curTasks[cursorNow];
         if (task) pushTaskToTimeline(task);
         return true;
       }
-      if (key === "shift+P") {
+      if (key === bh.pushTimelineFront) {
         const task = curTasks[cursorNow];
         if (task) pushTaskToTimeline(task, true);
         return true;
       }
-      if (key === "x") {
+      if (key === bh.postpone) {
         const task = curTasks[cursorNow];
         if (task) postponeTask(task.id);
         return true;
       }
-      if (key === "z") {
+      if (key === bh.snoozePicker) {
         const task = getFocusedBacklogTask();
         if (task) setSnoozeTargetTaskId(task.id);
         return true;
       }
-      if (key === "m") {
+      if (key === bh.moveTask) {
         setIsMoving(true);
         return true;
       }
 
-      if (key === "j" || key === "ArrowDown") {
+      if (key === bh.toggleNext) {
+        const task = curTasks[cursorNow];
+        if (task) toggleTaskNext(task);
+        return true;
+      }
+
+      if (key === bh.taskDown || key === sh.moveDownArrow) {
         event.preventDefault();
         if (isWide)
           setWindowFor(focusedGroup, (windowState) =>
@@ -482,7 +511,7 @@ export function BacklogView() {
           );
         return true;
       }
-      if (key === "k" || key === "ArrowUp") {
+      if (key === bh.taskUp || key === sh.moveUpArrow) {
         event.preventDefault();
         if (isWide)
           setWindowFor(focusedGroup, (windowState) =>
@@ -494,19 +523,19 @@ export function BacklogView() {
           );
         return true;
       }
-      if (key === "g") {
+      if (key === bh.taskFirst) {
         if (isWide) setWindowFor(focusedGroup, W.first);
         else setWindowFor(FIRST_GROUP, W.first);
         return true;
       }
-      if (key === "shift+G") {
+      if (key === bh.taskLast) {
         if (isWide)
           setWindowFor(focusedGroup, (windowState) => W.last(windowState, n));
         else setWindowFor(FIRST_GROUP, (windowState) => W.last(windowState, n));
         return true;
       }
 
-      const direction = key === "shift+J" ? 1 : key === "shift+K" ? -1 : 0;
+      const direction = key === bh.swapDown ? 1 : key === bh.swapUp ? -1 : 0;
 
       if (direction) {
         const group = isWide ? focusedGroup : FIRST_GROUP;
@@ -524,11 +553,6 @@ export function BacklogView() {
         setWindowFor(group, (windowState) =>
           W.moveSingle(windowState, direction, n)
         );
-        return true;
-      }
-
-      if (key === "a") {
-        setShowOnlyNext((value) => !value);
         return true;
       }
 
@@ -566,34 +590,24 @@ export function BacklogView() {
         <Group gap={6} mb="md" align="center" wrap="wrap">
           <button
             className={
-              tinderMode ? classes.filterPillActive : classes.filterPill
+              tinderView ? classes.filterPillActive : classes.filterPill
             }
             onClick={() => {
-              if (!tinderMode) toggleMode();
+              if (!tinderView) setRouteView("tinder");
             }}
           >
             Tinder
           </button>
           <button
             className={
-              !tinderMode ? classes.filterPillActive : classes.filterPill
+              !tinderView ? classes.filterPillActive : classes.filterPill
             }
             onClick={() => {
-              if (tinderMode) toggleMode();
+              if (tinderView) setRouteView("grid");
             }}
           >
-            Backlog
+            Grid
           </button>
-          {!tinderMode && (
-            <button
-              className={
-                showOnlyNext ? classes.filterPillActive : classes.filterPill
-              }
-              onClick={() => setShowOnlyNext((value) => !value)}
-            >
-              {showOnlyNext ? "Next" : "All"}
-            </button>
-          )}
         </Group>
 
         {snoozeTargetTaskId !== null && (
@@ -632,7 +646,7 @@ export function BacklogView() {
         )}
       </Box>
 
-      {tinderMode ? (
+      {tinderView ? (
         <Stack gap="xs" maw={900} mx="auto" w="100%">
           {smartGroups.length === 0 && (
             <Text c="dimmed" size="sm">
@@ -792,7 +806,7 @@ export function BacklogView() {
       )}
 
       <BacklogPostponed
-        tasks={postponedTasks}
+        tasks={tasks.filter((t) => t.isPostponed)}
         onActivate={activateTask}
         onDelete={deleteWithUndo}
         onDeleteDone={handleDeleteAllDone}

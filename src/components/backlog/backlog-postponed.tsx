@@ -1,4 +1,4 @@
-import type { BacklogTask } from "@/lib/stores/planning-store";
+import type { BacklogTask } from "@/lib/stores/backlog-store";
 import {
   Accordion,
   ActionIcon,
@@ -47,11 +47,6 @@ export function BacklogPostponed({
                       {task.isNext && (
                         <Badge size="xs" color="red" variant="light">
                           next
-                        </Badge>
-                      )}
-                      {task.tiny && (
-                        <Badge size="xs" color="orange" variant="outline">
-                          tiny
                         </Badge>
                       )}
                       {task.tag.trim() && (

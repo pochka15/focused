@@ -43,6 +43,7 @@ export const ShortcutsProvider: FC<PropsWithChildren> = ({ children }) => {
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
+      if (["Shift", "Control", "Alt", "Meta"].includes(event.key)) return;
       const combo = getKeysCombo(event);
       if (combo === "cmd+j" || combo === "alt+j") event.preventDefault();
 

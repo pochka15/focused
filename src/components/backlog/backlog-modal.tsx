@@ -1,7 +1,8 @@
 import { useSimpleForm } from "@/hooks/use-simple-form";
 import { BACKLOG_TAG_PRESETS } from "@/lib/backlog/backlog-tag-presets";
-import type { BacklogTask } from "@/lib/stores/planning-store";
+import type { BacklogTask } from "@/lib/stores/backlog-store";
 import { useShortcuts } from "@/shared-lib/shortcuts/use-shortcuts";
+import { BACKLOG_MODAL_SHORTCUTS } from "@/lib/shortcuts/shortcut-mappings";
 import {
   Button,
   Group,
@@ -22,7 +23,6 @@ type BacklogFormValues = {
   name: string;
   description: string;
   isNext: boolean;
-  tiny: boolean;
   tag: string;
 };
 
@@ -30,7 +30,6 @@ const defaultValues = (task?: BacklogTask): BacklogFormValues => ({
   name: task?.name ?? "",
   description: task?.description ?? "",
   isNext: task?.isNext ?? false,
-  tiny: task?.tiny ?? false,
   tag: task?.tag ?? "",
 });
 
@@ -54,10 +53,8 @@ const TAG_OPTIONS = [
 
 const NEXT_FALSE = { emoji: "🫙", label: "Пока не на очереди" };
 const NEXT_TRUE = { emoji: "🔥", label: "На очереди" };
-const TINY_FALSE = { emoji: "🛋️", label: "Норм размер" };
-const TINY_TRUE = { emoji: "⚡", label: "Маленькая задача" };
 
-const STEP_COUNT = 3;
+const STEP_COUNT = 2;
 
 export function BacklogModal({ opened, onClose, onSubmit, editing }: Props) {
   const nameRef = useRef<HTMLInputElement>(null);
@@ -99,7 +96,6 @@ export function BacklogModal({ opened, onClose, onSubmit, editing }: Props) {
       setValues((current) => ({ ...current, isNext: !current.isNext }));
       return;
     }
-    setValues((current) => ({ ...current, tiny: !current.tiny }));
   };
 
   const handleSubmit = () => {
@@ -108,9 +104,10 @@ export function BacklogModal({ opened, onClose, onSubmit, editing }: Props) {
       name: values.name.trim(),
       description: values.description,
       isNext: values.isNext,
-      tiny: values.tiny,
       tag: values.tag,
       snoozeUntil: editing?.snoozeUntil ?? null,
+      isDone: editing?.isDone ?? false,
+      isPostponed: editing?.isPostponed ?? false,
     });
     reset();
     onClose();
@@ -120,7 +117,7 @@ export function BacklogModal({ opened, onClose, onSubmit, editing }: Props) {
     name: "backlogModal",
     enabled: opened,
     keys: (key, event) => {
-      if (key === "Enter") {
+      if (key === BACKLOG_MODAL_SHORTCUTS.submit) {
         event.preventDefault();
         handleSubmit();
         return true;
@@ -128,7 +125,7 @@ export function BacklogModal({ opened, onClose, onSubmit, editing }: Props) {
       const el = document.activeElement as HTMLElement | null;
       const inputFocused =
         el?.tagName === "INPUT" || el?.tagName === "TEXTAREA";
-      const isCtrlN = key === "ctrl+n";
+      const isCtrlN = key === BACKLOG_MODAL_SHORTCUTS.toggleFocus;
 
       if (isCtrlN) {
         event.preventDefault();
@@ -139,13 +136,13 @@ export function BacklogModal({ opened, onClose, onSubmit, editing }: Props) {
 
       if (inputFocused) return true;
 
-      if (key === "h") {
+      if (key === BACKLOG_MODAL_SHORTCUTS.stepBack) {
         event.preventDefault();
         goStep(-1);
         return true;
       }
 
-      if (key === "l") {
+      if (key === BACKLOG_MODAL_SHORTCUTS.stepForward) {
         event.preventDefault();
         if (step === STEP_COUNT - 1) {
           handleSubmit();
@@ -155,13 +152,13 @@ export function BacklogModal({ opened, onClose, onSubmit, editing }: Props) {
         return true;
       }
 
-      if (key === "j") {
+      if (key === BACKLOG_MODAL_SHORTCUTS.cycleDown) {
         event.preventDefault();
         cycleCurrentStep(1);
         return true;
       }
 
-      if (key === "k") {
+      if (key === BACKLOG_MODAL_SHORTCUTS.cycleUp) {
         event.preventDefault();
         cycleCurrentStep(-1);
         return true;
@@ -213,16 +210,6 @@ export function BacklogModal({ opened, onClose, onSubmit, editing }: Props) {
               trueOpt={NEXT_TRUE}
               onChange={(isNext) =>
                 setValues((current) => ({ ...current, isNext }))
-              }
-            />
-          )}
-          {step === 2 && (
-            <BinaryStep
-              value={values.tiny}
-              falseOpt={TINY_FALSE}
-              trueOpt={TINY_TRUE}
-              onChange={(tiny) =>
-                setValues((current) => ({ ...current, tiny }))
               }
             />
           )}

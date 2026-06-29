@@ -1,7 +1,7 @@
 import { getBacklogTagPreset } from "@/lib/backlog/backlog-tag-presets";
 import { SNOOZE_PRESETS } from "@/lib/backlog/snooze-presets";
 import { isTaskSnoozed } from "@/lib/backlog/backlog-task-utils";
-import type { BacklogTask } from "@/lib/stores/planning-store";
+import type { BacklogTask } from "@/lib/stores/backlog-store";
 import {
   ActionIcon,
   Badge,
@@ -89,11 +89,6 @@ export function BacklogTaskCard({
             {task.isNext && (
               <Badge size="xs" color="red" leftSection={<Zap size={9} />}>
                 next
-              </Badge>
-            )}
-            {task.tiny && (
-              <Badge size="xs" variant="outline" color="orange">
-                tiny
               </Badge>
             )}
             {task.tag.trim() && (
