@@ -2,7 +2,7 @@
 
 Experimental app. Kinda like a minimalistic Todo app with extensive keyboard use.
 
-## Newer demo
+## Legacy demo 2
 
 [![Demo](https://github.com/pochka15/focused/blob/main/assets/demo.png)](https://drive.google.com/file/d/1Qqr7xF7_1m5SzpdGjj6HLUx1xgEn3YBj/view?usp=drive_link)
 
@@ -12,4 +12,4 @@ Experimental app. Kinda like a minimalistic Todo app with extensive keyboard use
 
 ## Quick start
 
-Install Bun and run via `make start`
+run via `make start`
