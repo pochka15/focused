@@ -19,36 +19,23 @@ import {
 } from "@/lib/backlog/backlog-route-mode";
 import { isMilestone } from "@/lib/timeline/timeline-models";
 import {
-  BACKLOG_SHORTCUTS,
-  BACKLOG_TINDER_SHORTCUTS,
-  BACKLOG_VIEW_SHORTCUTS,
-} from "@/lib/shortcuts/shortcut-mappings";
-import {
   Window as W,
   Window2D,
   type UiWindow,
 } from "@/shared-lib/shortcuts/window";
-import { useShortcuts } from "@/shared-lib/shortcuts/use-shortcuts";
 import { SNOOZE_PRESETS } from "@/lib/backlog/snooze-presets";
-import {
-  Badge,
-  Box,
-  Button,
-  Grid,
-  Group,
-  Stack,
-  Text,
-  Title,
-} from "@mantine/core";
+import { Box, Button, Group, Text, Title } from "@mantine/core";
 import { useMediaQuery } from "@mantine/hooks";
 import { notifications } from "@mantine/notifications";
 import { Plus } from "lucide-react";
 import { useNavigate, useRouterState } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { BacklogGridCell } from "./backlog-grid-cell";
+import { BacklogGridNarrowView } from "./backlog-grid-narrow-view";
+import { BacklogGridWideView } from "./backlog-grid-wide-view";
 import { BacklogModal } from "./backlog-modal";
-import { BacklogPostponed } from "./backlog-postponed";
-import { BacklogTaskCard } from "./backlog-task-card";
+import { BacklogPostponedOrDone } from "./backlog-postponed-or-done";
+import { BacklogTinderView } from "./backlog-tinder-view";
+import { useBacklogShortcuts } from "./use-backlog-shortcuts";
 import { useAllTasksSorted, useTasksByGroups } from "./use-backlog-groups";
 import classes from "./backlog-view.module.css";
 
@@ -56,9 +43,6 @@ const GROUPS = BACKLOG_GROUPS;
 const FIRST_GROUP = GROUPS[0] ?? 1;
 
 export function BacklogView() {
-  const sh = BACKLOG_TINDER_SHORTCUTS;
-  const bh = BACKLOG_SHORTCUTS;
-  const bv = BACKLOG_VIEW_SHORTCUTS;
   const navigate = useNavigate();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const search = useRouterState({ select: (s) => s.location.search });
@@ -102,15 +86,24 @@ export function BacklogView() {
     return () => window.clearInterval(timer);
   }, []);
 
+  const { activeBacklogTasks, postponedTasks, doneTasks } = useMemo(() => {
+    const activeBacklogTasks = tasks.filter(
+      (task) => !task.isPostponed && !task.isDone
+    );
+    const postponedTasks = tasks.filter(
+      (task) => task.isPostponed && !task.isDone
+    );
+    const doneTasks = tasks.filter((task) => task.isDone);
+    return { activeBacklogTasks, postponedTasks, doneTasks };
+  }, [tasks]);
+
   const smartGroups = useMemo(
-    () => computeSmartGroups(tasks, nowTick),
-    [tasks, nowTick]
+    () => computeSmartGroups(activeBacklogTasks, nowTick),
+    [activeBacklogTasks, nowTick]
   );
 
-  const backlogTasks = tasks;
-
-  const groupedTasksBase = useTasksByGroups(backlogTasks, GROUPS);
-  const allSorted = useAllTasksSorted(backlogTasks);
+  const groupedTasksBase = useTasksByGroups(activeBacklogTasks, GROUPS);
+  const allSorted = useAllTasksSorted(activeBacklogTasks);
 
   const focusedGroup = window2D.focusedGroup;
   const windows = window2D.windows;
@@ -297,267 +290,37 @@ export function BacklogView() {
     return curTasks[cursorNow];
   };
 
-  useShortcuts({
-    name: "backlogView",
-    enabled: !modalOpen,
-    keys: (key, event) => {
-      if (snoozeTargetTaskId !== null) {
-        if (key === bv.cancelSnooze) {
-          setSnoozeTargetTaskId(null);
-          return true;
-        }
-        if (key === bv.clearSnooze) {
-          clearSnoozeByTaskId(snoozeTargetTaskId);
-          setSnoozeTargetTaskId(null);
-          return true;
-        }
-        const preset = SNOOZE_PRESETS.find((item) => item.key === key);
-        if (preset) {
-          applySnoozeByTaskId(snoozeTargetTaskId, preset.minutes);
-          setSnoozeTargetTaskId(null);
-          return true;
-        }
-      }
-
-      if (key === sh.switchMode) {
-        event.preventDefault();
-        setRouteView(tinderView ? "grid" : "tinder");
-        return true;
-      }
-
-      if (key === sh.newTask) {
-        openModal();
-        return true;
-      }
-
-      if (tinderView) {
-        const focusedSmartGroup = smartGroups[focusedSmartGroupIdx];
-
-        if (!expandedGroup) {
-          if (key === sh.moveDown || key === sh.moveDownArrow) {
-            event.preventDefault();
-            setFocusedSmartGroupIdx((idx) =>
-              Math.min(idx + 1, Math.max(0, smartGroups.length - 1))
-            );
-            return true;
-          }
-
-          if (key === sh.moveUp || key === sh.moveUpArrow) {
-            event.preventDefault();
-            setFocusedSmartGroupIdx((idx) => Math.max(0, idx - 1));
-            return true;
-          }
-
-          if (key === sh.expandGroup && focusedSmartGroup) {
-            setExpandedSmartGroupId(focusedSmartGroup.id);
-            setTinderWindow((windowState) => W.withCursor(windowState, 0));
-            return true;
-          }
-
-          return false;
-        }
-
-        const curTasks = expandedGroup.tasks;
-        const n = curTasks.length;
-        const cursor = tinderWindow.cursor;
-        const currentTask = curTasks[cursor];
-
-        if (key === bv.cancelSnooze || key === sh.expandGroup) {
-          setExpandedSmartGroupId(null);
-          return true;
-        }
-
-        if (key === sh.moveDown || key === sh.moveDownArrow) {
-          event.preventDefault();
-          setTinderWindow((windowState) => W.moveSingle(windowState, 1, n));
-          return true;
-        }
-
-        if (key === sh.moveUp || key === sh.moveUpArrow) {
-          event.preventDefault();
-          setTinderWindow((windowState) => W.moveSingle(windowState, -1, n));
-          return true;
-        }
-
-        if (key === sh.taskFirst) {
-          setTinderWindow((windowState) => W.first(windowState));
-          return true;
-        }
-
-        if (key === sh.taskLast) {
-          setTinderWindow((windowState) => W.last(windowState, n));
-          return true;
-        }
-
-        if (key === sh.edit && currentTask) {
-          openModal(currentTask);
-          return true;
-        }
-
-        if (key === sh.pushTimeline && currentTask) {
-          pushTaskToTimeline(currentTask);
-          return true;
-        }
-
-        if (key === sh.pushTimelineFront && currentTask) {
-          pushTaskToTimeline(currentTask, true);
-          return true;
-        }
-
-        if (key === sh.postpone && currentTask) {
-          postponeTask(currentTask.id);
-          return true;
-        }
-
-        if (key === sh.toggleNext && currentTask) {
-          toggleTaskNext(currentTask);
-          return true;
-        }
-
-        if (key === sh.snoozePicker && currentTask) {
-          setSnoozeTargetTaskId(currentTask.id);
-          return true;
-        }
-
-        return false;
-      }
-
-      const curTasks = isWide ? focusedTasks : allSorted;
-      const n = curTasks.length;
-      const cursorNow = isWide
-        ? getWindow(focusedGroup).cursor
-        : getWindow(FIRST_GROUP).cursor;
-
-      const numericKey = Number(key);
-      const isGroupNumber =
-        Number.isInteger(numericKey) && GROUPS.includes(numericKey);
-
-      if (isMoving) {
-        if (isGroupNumber) {
-          const destGroup = numericKey as GridGroup;
-          const task = curTasks[cursorNow];
-          if (task) assignTask(task.id, destGroup);
-          setIsMoving(false);
-          return true;
-        }
-        setIsMoving(false);
-        return false;
-      }
-
-      if (isGroupNumber) {
-        setWindow2D((state) =>
-          Window2D.setFocusedGroup(state, numericKey as GridGroup)
-        );
-        return true;
-      }
-
-      if (key === bh.groupRight || key === bh.groupRightArrow) {
-        event.preventDefault();
-        setWindow2D((state) => Window2D.cycleFocusedGroup(state, 1));
-        return true;
-      }
-
-      if (key === bh.groupLeft || key === bh.groupLeftArrow) {
-        event.preventDefault();
-        setWindow2D((state) => Window2D.cycleFocusedGroup(state, -1));
-        return true;
-      }
-
-      if (key === bh.edit) {
-        const task = curTasks[cursorNow];
-        if (task) openModal(task);
-        return true;
-      }
-      if (key === bh.pushTimeline) {
-        const task = curTasks[cursorNow];
-        if (task) pushTaskToTimeline(task);
-        return true;
-      }
-      if (key === bh.pushTimelineFront) {
-        const task = curTasks[cursorNow];
-        if (task) pushTaskToTimeline(task, true);
-        return true;
-      }
-      if (key === bh.postpone) {
-        const task = curTasks[cursorNow];
-        if (task) postponeTask(task.id);
-        return true;
-      }
-      if (key === bh.snoozePicker) {
-        const task = getFocusedBacklogTask();
-        if (task) setSnoozeTargetTaskId(task.id);
-        return true;
-      }
-      if (key === bh.moveTask) {
-        setIsMoving(true);
-        return true;
-      }
-
-      if (key === bh.toggleNext) {
-        const task = curTasks[cursorNow];
-        if (task) toggleTaskNext(task);
-        return true;
-      }
-
-      if (key === bh.taskDown || key === sh.moveDownArrow) {
-        event.preventDefault();
-        if (isWide)
-          setWindowFor(focusedGroup, (windowState) =>
-            W.moveSingle(windowState, 1, n)
-          );
-        else
-          setWindowFor(FIRST_GROUP, (windowState) =>
-            W.moveSingle(windowState, 1, n)
-          );
-        return true;
-      }
-      if (key === bh.taskUp || key === sh.moveUpArrow) {
-        event.preventDefault();
-        if (isWide)
-          setWindowFor(focusedGroup, (windowState) =>
-            W.moveSingle(windowState, -1, n)
-          );
-        else
-          setWindowFor(FIRST_GROUP, (windowState) =>
-            W.moveSingle(windowState, -1, n)
-          );
-        return true;
-      }
-      if (key === bh.taskFirst) {
-        if (isWide) setWindowFor(focusedGroup, W.first);
-        else setWindowFor(FIRST_GROUP, W.first);
-        return true;
-      }
-      if (key === bh.taskLast) {
-        if (isWide)
-          setWindowFor(focusedGroup, (windowState) => W.last(windowState, n));
-        else setWindowFor(FIRST_GROUP, (windowState) => W.last(windowState, n));
-        return true;
-      }
-
-      const direction = key === bh.swapDown ? 1 : key === bh.swapUp ? -1 : 0;
-
-      if (direction) {
-        const group = isWide ? focusedGroup : FIRST_GROUP;
-        const cur = getWindow(group).cursor;
-        const fromTask = curTasks[cur];
-        const toTask = curTasks[cur + direction];
-        if (!fromTask || !toTask) return true;
-
-        swapWithin(
-          group,
-          fromTask.id,
-          toTask.id,
-          curTasks.map((task) => task.id)
-        );
-        setWindowFor(group, (windowState) =>
-          W.moveSingle(windowState, direction, n)
-        );
-        return true;
-      }
-
-      return false;
-    },
+  useBacklogShortcuts({
+    modalOpen,
+    tinderView,
+    isWide,
+    isMoving,
+    snoozeTargetTaskId,
+    smartGroups,
+    focusedSmartGroupIdx,
+    expandedGroup,
+    focusedGroup,
+    focusedTasks,
+    allSorted,
+    tinderWindow,
+    getWindow,
+    setIsMoving,
+    setSnoozeTargetTaskId,
+    setFocusedSmartGroupIdx,
+    setExpandedSmartGroupId,
+    setTinderWindow,
+    setWindow2D,
+    setWindowFor,
+    setRouteView,
+    openModal,
+    assignTask,
+    swapWithin,
+    pushTaskToTimeline,
+    postponeTask,
+    toggleTaskNext,
+    applySnoozeByTaskId,
+    clearSnoozeByTaskId,
+    getFocusedBacklogTask,
   });
 
   return (
@@ -647,166 +410,73 @@ export function BacklogView() {
       </Box>
 
       {tinderView ? (
-        <Stack gap="xs" maw={900} mx="auto" w="100%">
-          {smartGroups.length === 0 && (
-            <Text c="dimmed" size="sm">
-              No tasks yet. Press n to add one.
-            </Text>
-          )}
-
-          {smartGroups.map((group, idx) => {
-            const focused = idx === focusedSmartGroupIdx;
-            const expanded = group.id === expandedSmartGroupId;
-            const cursor = tinderWindow.cursor;
-
-            return (
-              <Box
-                key={group.id}
-                className={
-                  expanded
-                    ? classes.smartGroupExpanded
-                    : focused
-                      ? classes.smartGroupFocused
-                      : classes.smartGroup
-                }
-                onClick={() => {
-                  setFocusedSmartGroupIdx(idx);
-                  if (!expandedGroup) return;
-                  if (group.id !== expandedSmartGroupId) {
-                    setExpandedSmartGroupId(group.id);
-                    setTinderWindow((windowState) =>
-                      W.withCursor(windowState, 0)
-                    );
-                  }
-                }}
-              >
-                <Group gap={8} wrap="nowrap">
-                  <Text>{group.emoji}</Text>
-                  <Stack gap={0}>
-                    <Group gap={6} wrap="wrap">
-                      <Text size="sm" fw={700}>
-                        {group.title}
-                      </Text>
-                      {focused && !expanded && (
-                        <Badge size="xs" color="blue" variant="outline">
-                          focused
-                        </Badge>
-                      )}
-                      {expanded && (
-                        <Badge size="xs" color="indigo" variant="filled">
-                          expanded
-                        </Badge>
-                      )}
-                    </Group>
-                    <Text size="sm">{group.summary}</Text>
-                  </Stack>
-                </Group>
-
-                {expanded && (
-                  <Stack gap="xs" mt="sm">
-                    {group.tasks.map((task, taskIdx) => (
-                      <BacklogTaskCard
-                        key={task.id}
-                        task={task}
-                        isSelected={taskIdx === cursor}
-                        isMoving={false}
-                        cardRef={(el) => {
-                          cardRefs.current.set(task.id, el);
-                        }}
-                        onSelect={() =>
-                          setTinderWindow((windowState) =>
-                            W.withCursor(windowState, taskIdx)
-                          )
-                        }
-                        onEdit={() => openModal(task)}
-                        onPostpone={() => postponeTask(task.id)}
-                        onPushToTimeline={() => pushTaskToTimeline(task)}
-                        onToggleNext={() => toggleTaskNext(task)}
-                        onSnooze={(minutes) => snoozeTask(task, minutes)}
-                        onClearSnooze={() => clearTaskSnooze(task)}
-                        onDelete={() => deleteWithUndo(task)}
-                      />
-                    ))}
-                  </Stack>
-                )}
-              </Box>
-            );
-          })}
-        </Stack>
+        <BacklogTinderView
+          smartGroups={smartGroups}
+          focusedSmartGroupIdx={focusedSmartGroupIdx}
+          expandedSmartGroupId={expandedSmartGroupId}
+          expandedGroup={expandedGroup}
+          tinderCursor={tinderWindow.cursor}
+          cardRefs={cardRefs}
+          onFocusSmartGroupIdx={setFocusedSmartGroupIdx}
+          onExpandSmartGroup={(groupId) => {
+            setExpandedSmartGroupId(groupId);
+            setTinderWindow((windowState) => W.withCursor(windowState, 0));
+          }}
+          onSelectExpandedTask={(idx) =>
+            setTinderWindow((windowState) => W.withCursor(windowState, idx))
+          }
+          onEditTask={openModal}
+          onPostponeTask={postponeTask}
+          onPushTaskToTimeline={pushTaskToTimeline}
+          onToggleTaskNext={toggleTaskNext}
+          onSnoozeTask={snoozeTask}
+          onClearTaskSnooze={clearTaskSnooze}
+          onDeleteTask={deleteWithUndo}
+        />
       ) : !isWide ? (
-        <Stack gap="xs" maw={800}>
-          {allSorted.length === 0 && (
-            <Text c="dimmed" size="sm">
-              {tasks.length === 0
-                ? "No tasks yet. Press n to add one."
-                : "No tasks match the current mode."}
-            </Text>
-          )}
-          {allSorted.map((task, idx) => (
-            <BacklogTaskCard
-              key={task.id}
-              task={task}
-              isSelected={idx === getWindow(FIRST_GROUP).cursor}
-              isMoving={false}
-              cardRef={(el) => {
-                cardRefs.current.set(task.id, el);
-              }}
-              onSelect={() =>
-                setWindowFor(FIRST_GROUP, (windowState) =>
-                  W.withCursor(windowState, idx)
-                )
-              }
-              onEdit={() => openModal(task)}
-              onPostpone={() => postponeTask(task.id)}
-              onPushToTimeline={() => pushTaskToTimeline(task)}
-              onToggleNext={() => toggleTaskNext(task)}
-              onSnooze={(minutes) => snoozeTask(task, minutes)}
-              onClearSnooze={() => clearTaskSnooze(task)}
-              onDelete={() => deleteWithUndo(task)}
-            />
-          ))}
-        </Stack>
+        <BacklogGridNarrowView
+          allSorted={allSorted}
+          hasAnyTasks={tasks.length > 0}
+          mobileWindow={getWindow(FIRST_GROUP)}
+          cardRefs={cardRefs}
+          onSelectTask={(windowState) =>
+            setWindowFor(FIRST_GROUP, () => windowState)
+          }
+          onEditTask={openModal}
+          onPostponeTask={postponeTask}
+          onPushTaskToTimeline={pushTaskToTimeline}
+          onToggleTaskNext={toggleTaskNext}
+          onSnoozeTask={snoozeTask}
+          onClearTaskSnooze={clearTaskSnooze}
+          onDeleteTask={deleteWithUndo}
+        />
       ) : (
-        <Grid>
-          {groupColumns.map((colGroups, colIdx) => (
-            <Grid.Col key={colIdx} span={12 / BACKLOG_GRID_COLUMNS}>
-              <Stack gap="md">
-                {colGroups.map((group) => (
-                  <BacklogGridCell
-                    key={group}
-                    group={group}
-                    focusedGroup={focusedGroup}
-                    tasks={getTasksForGroup(group)}
-                    cursor={getWindow(group).cursor}
-                    isMoving={isMoving}
-                    cardRefs={cardRefs}
-                    onSelect={(idx) =>
-                      setWindowFor(group, (windowState) =>
-                        W.withCursor(windowState, idx)
-                      )
-                    }
-                    onFocusGroup={(focusGroup) =>
-                      setWindow2D((state) =>
-                        Window2D.setFocusedGroup(state, focusGroup)
-                      )
-                    }
-                    onEdit={(task) => openModal(task)}
-                    onPostpone={(task) => postponeTask(task.id)}
-                    onPushToTimeline={(task) => pushTaskToTimeline(task)}
-                    onToggleNext={toggleTaskNext}
-                    onSnooze={snoozeTask}
-                    onClearSnooze={clearTaskSnooze}
-                    onDelete={deleteWithUndo}
-                  />
-                ))}
-              </Stack>
-            </Grid.Col>
-          ))}
-        </Grid>
+        <BacklogGridWideView
+          groupColumns={groupColumns}
+          focusedGroup={focusedGroup}
+          groupedTasks={groupedTasksBase}
+          windows={windows}
+          isMoving={isMoving}
+          cardRefs={cardRefs}
+          onSelectTask={(group, idx) =>
+            setWindowFor(group, (windowState) => W.withCursor(windowState, idx))
+          }
+          onFocusGroup={(group) =>
+            setWindow2D((state) => Window2D.setFocusedGroup(state, group))
+          }
+          onEditTask={openModal}
+          onPostponeTask={(task) => postponeTask(task.id)}
+          onPushTaskToTimeline={pushTaskToTimeline}
+          onToggleTaskNext={toggleTaskNext}
+          onSnoozeTask={snoozeTask}
+          onClearTaskSnooze={clearTaskSnooze}
+          onDeleteTask={deleteWithUndo}
+        />
       )}
 
-      <BacklogPostponed
-        tasks={tasks.filter((t) => t.isPostponed)}
+      <BacklogPostponedOrDone
+        postponedTasks={postponedTasks}
+        doneTasks={doneTasks}
         onActivate={activateTask}
         onDelete={deleteWithUndo}
         onDeleteDone={handleDeleteAllDone}
