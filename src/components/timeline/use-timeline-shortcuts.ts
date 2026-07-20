@@ -28,7 +28,6 @@ type UseTimelineShortcutsArgs = {
   setEventModalOpen: Dispatch<SetStateAction<boolean>>;
   onToggleDone: (item: Milestone) => void;
   onDelete: (item: Milestone) => void;
-  toggleShowCompletedMilestones: () => void;
   focusNotesTab: () => void;
   onCycleTask: (taskId: number) => void;
 };
@@ -48,7 +47,6 @@ export const useTimelineShortcuts = ({
   setEventModalOpen,
   onToggleDone,
   onDelete,
-  toggleShowCompletedMilestones,
   focusNotesTab,
   onCycleTask,
 }: UseTimelineShortcutsArgs) => {
@@ -174,11 +172,6 @@ export const useTimelineShortcuts = ({
       if (key === TIMELINE_SHORTCUTS.toggleDone) {
         const item = activeMilestones[windowData.cursor];
         if (item) onToggleDone(item);
-        return true;
-      }
-      if (key === TIMELINE_SHORTCUTS.toggleCompleted) {
-        event.preventDefault();
-        toggleShowCompletedMilestones();
         return true;
       }
 

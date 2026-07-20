@@ -1,3 +1,8 @@
+import { BacklogModal } from "@/components/backlog/backlog-modal";
+import { showUndoNotification } from "@/lib/notifications/show-undo-notification";
+import type { BacklogTask } from "@/lib/stores/backlog-store";
+import { useBacklogStore } from "@/lib/stores/backlog-store";
+import { useTimelineStore } from "@/lib/stores/timeline-store";
 import {
   isMilestone,
   isTimelineEvent,
@@ -7,32 +12,29 @@ import {
   type TimelineEvent,
 } from "@/lib/timeline/timeline-models";
 import {
-  useSoonEvents,
   toSuggestedMilestone,
+  useSoonEvents,
 } from "@/lib/timeline/use-soon-events";
-import { useTimelineStore } from "@/lib/stores/timeline-store";
-import { showUndoNotification } from "@/lib/notifications/show-undo-notification";
+import { tagsMapping } from "@/lib/todos/mappings";
 import { Window as W, type UiWindow } from "@/shared-lib/shortcuts/window";
-import { Box, Stack, Tabs, Text } from "@mantine/core";
+import { Box, Button, Group, Stack, Tabs, Text } from "@mantine/core";
+import { Trash2 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
-import type { BacklogTask } from "@/lib/stores/backlog-store";
-import { useBacklogStore } from "@/lib/stores/backlog-store";
-import { BacklogModal } from "@/components/backlog/backlog-modal";
 import { EventModal } from "./event-modal";
 import { MilestoneCard } from "./milestone-card";
+import { cycleTask } from "./milestone-card-utils";
+import { MilestoneClimb } from "./milestone-climb";
+import { MilestonesStatsBar } from "./milestones-stats-bar";
 import { MilestoneModal } from "./milestone-modal";
 import { QuickNoteCard } from "./quick-note-card";
 import { TimelineEventRow } from "./timeline-event-row";
-import { TimelineSectionHeader } from "./timeline-section-header";
-import { CollapsedMilestonesCard } from "./collapsed-milestones-card";
 import { TimelineNotesTab } from "./timeline-notes-tab";
-import { useTimelineShortcuts } from "./use-timeline-shortcuts";
-import { cycleTask } from "./milestone-card-utils";
-import { getDoneTasks, createTasksMap } from "./timeline-view-utils";
-import { tagsMapping } from "@/lib/todos/mappings";
+import { TimelineSectionHeader } from "./timeline-section-header";
+import { createTasksMap, getDoneTasks } from "./timeline-view-utils";
 import classes from "./timeline-view.module.css";
+import { useTimelineShortcuts } from "./use-timeline-shortcuts";
 
-type TimelineTab = "milestones" | "events" | "notes";
+type TimelineTab = "milestones" | "completed" | "events" | "notes";
 
 const MARK_TASKS_DONE_MESSAGE = "Ssup with tasks?";
 
@@ -63,12 +65,6 @@ export function TimelineView() {
   const [editingMilestone, setEditingMilestone] = useState<
     Milestone | undefined
   >();
-  const showCompletedMilestones = useTimelineStore(
-    (s) => s.showCompletedMilestones
-  );
-  const toggleShowCompletedMilestones = useTimelineStore(
-    (s) => s.toggleShowCompletedMilestones
-  );
   const [editingEvent, setEditingEvent] = useState<TimelineEvent | undefined>();
   const [editedBacklogTask, setEditedBacklogTask] = useState<
     BacklogTask | undefined
@@ -127,6 +123,21 @@ export function TimelineView() {
     setActiveTab("notes");
   };
 
+  const handleReorderCompleted = (fromIdx: number, toIdx: number) => {
+    // Find indices in full items array
+    const fromMilestone = completedMilestones[fromIdx];
+    const toMilestone = completedMilestones[toIdx];
+
+    if (!fromMilestone || !toMilestone) return;
+
+    const fromItemIdx = items.findIndex((t) => t.id === fromMilestone.id);
+    const toItemIdx = items.findIndex((t) => t.id === toMilestone.id);
+
+    if (fromItemIdx >= 0 && toItemIdx >= 0) {
+      reorder(fromItemIdx, toItemIdx);
+    }
+  };
+
   useEffect(() => {
     setWindowData((w) => W.shrinkTo(w, activeMilestones.length));
   }, [activeMilestones.length]);
@@ -148,6 +159,19 @@ export function TimelineView() {
     );
   };
 
+  const handleDeleteAllCompleted = () => {
+    const toDelete = completedMilestones;
+    if (toDelete.length === 0) return;
+
+    toDelete.forEach((item) => archiveItem(item.id));
+    showUndoNotification(
+      "del-all-completed",
+      `${toDelete.length} completed milestone${toDelete.length === 1 ? "" : "s"} removed`,
+      () => toDelete.forEach((item) => restoreItem(item)),
+      "bottom-left"
+    );
+  };
+
   const { isRemoving } = useTimelineShortcuts({
     milestoneModalOpen,
     eventModalOpen,
@@ -163,7 +187,6 @@ export function TimelineView() {
     setEventModalOpen,
     onToggleDone: handleToggleMilestoneDone,
     onDelete: deleteWithUndo,
-    toggleShowCompletedMilestones,
     focusNotesTab,
     onCycleTask: handleCycleTask,
   });
@@ -193,15 +216,10 @@ export function TimelineView() {
     [milestones]
   );
 
-  const visibleCompletedMilestones = useMemo(
-    () =>
-      showCompletedMilestones
-        ? milestones.filter((milestone) => milestone.completed)
-        : [],
-    [milestones, showCompletedMilestones]
+  const completedMilestones = useMemo(
+    () => milestones.filter((milestone) => milestone.completed),
+    [milestones]
   );
-
-  const completedCount = milestones.length - activeMilestones.length;
 
   const {
     soonEvents: visibleSoonEvents,
@@ -257,6 +275,7 @@ export function TimelineView() {
       >
         <Tabs.List>
           <Tabs.Tab value="milestones">Milestones</Tabs.Tab>
+          <Tabs.Tab value="completed">Completed</Tabs.Tab>
           <Tabs.Tab value="events">Events</Tabs.Tab>
           <Tabs.Tab value="notes">Notes</Tabs.Tab>
         </Tabs.List>
@@ -272,104 +291,122 @@ export function TimelineView() {
             }}
           />
 
-          {activeMilestones.length === 0 && (
+          <Box>
+            {activeMilestones.length === 0 && (
+              <Text c="dimmed" size="sm">
+                No active milestones. Press <kbd>n</kbd> to add one.
+              </Text>
+            )}
+
+            <Stack gap="xs">
+                {visibleActiveMilestones.map((item) => {
+                  const isSelected =
+                    !item.completed && selectedMilestone?.id === item.id;
+                  const activeIdx = activeMilestones.findIndex(
+                    (m) => m.id === item.id
+                  );
+                  return (
+                    <Box key={item.id} className={classes.cardContainer}>
+                      <MilestoneCard
+                        item={item}
+                        isSelected={isSelected}
+                        isRemoving={isSelected && isRemoving}
+                        activeIdx={activeIdx}
+                        milestoneRef={(el) => {
+                          if (activeIdx >= 0) {
+                            milestoneRefs.current[activeIdx] = el;
+                          }
+                        }}
+                        onSelect={() =>
+                          setWindowData((w) => W.withCursor(w, activeIdx))
+                        }
+                        onEdit={() => {
+                          setEditingMilestone(item);
+                          setMilestoneModalOpen(true);
+                        }}
+                        onToggleDone={() => handleToggleMilestoneDone(item)}
+                        onDelete={() => deleteWithUndo(item)}
+                        onEditBacklogTask={setEditedBacklogTask}
+                      />
+                    </Box>
+                  );
+                })}
+
+                {visibleSoonEvents.map(({ event }) => (
+                  <Box key={event.id} className={classes.cardContainer}>
+                    <MilestoneCard
+                      variant="suggested"
+                      item={toSuggestedMilestone(event)}
+                      isSelected={false}
+                      activeIdx={-1}
+                      milestoneRef={() => {}}
+                      onSelect={() => {}}
+                      onEdit={() => {}}
+                      onToggleDone={() => {}}
+                      onDelete={() => {}}
+                      onUseSuggestion={() => addSuggestedEvent(event)}
+                      onDismissSuggestion={() =>
+                        dismissSuggestedEvent(event.id)
+                      }
+                    />
+                  </Box>
+                ))}
+
+                <Box className={classes.quickCardContainer}>
+                  <QuickNoteCard
+                    key="timeline-quick-note"
+                    textareaRef={(el) => {
+                      quickNoteRef.current = el;
+                    }}
+                    value={quickNote}
+                    onChange={setQuickNote}
+                  />
+                </Box>
+              </Stack>
+            </Box>
+
+          {activeTab === "milestones" && <MilestonesStatsBar />}
+        </Tabs.Panel>
+
+        <Tabs.Panel value="completed" pt="md">
+          <TimelineSectionHeader
+            title="Completed Milestones"
+            hint=""
+            buttonLabel=""
+            onButtonClick={() => {}}
+          />
+
+          {completedMilestones.length > 0 && (
+            <Group justify="flex-end" mb="xs">
+              <Button
+                size="xs"
+                color="red"
+                variant="light"
+                leftSection={<Trash2 size={14} />}
+                onClick={handleDeleteAllCompleted}
+              >
+                Delete All
+              </Button>
+            </Group>
+          )}
+
+          {completedMilestones.length === 0 && (
             <Text c="dimmed" size="sm">
-              No active milestones. Press <kbd>n</kbd> to add one.
+              No completed milestones.
             </Text>
           )}
 
-          <Stack gap="xs">
-            {visibleActiveMilestones.map((item) => {
-              const isSelected =
-                !item.completed && selectedMilestone?.id === item.id;
-              const activeIdx = activeMilestones.findIndex(
-                (m) => m.id === item.id
-              );
-              return (
-                <Box key={item.id} className={classes.cardContainer}>
-                  <MilestoneCard
-                    item={item}
-                    isSelected={isSelected}
-                    isRemoving={isSelected && isRemoving}
-                    activeIdx={activeIdx}
-                    milestoneRef={(el) => {
-                      if (activeIdx >= 0) {
-                        milestoneRefs.current[activeIdx] = el;
-                      }
-                    }}
-                    onSelect={() =>
-                      setWindowData((w) => W.withCursor(w, activeIdx))
-                    }
-                    onEdit={() => {
-                      setEditingMilestone(item);
-                      setMilestoneModalOpen(true);
-                    }}
-                    onToggleDone={() => handleToggleMilestoneDone(item)}
-                    onDelete={() => deleteWithUndo(item)}
-                    onEditBacklogTask={setEditedBacklogTask}
-                  />
-                </Box>
-              );
-            })}
-
-            {visibleSoonEvents.map(({ event }) => (
-              <Box key={event.id} className={classes.cardContainer}>
-                <MilestoneCard
-                  variant="suggested"
-                  item={toSuggestedMilestone(event)}
-                  isSelected={false}
-                  activeIdx={-1}
-                  milestoneRef={() => {}}
-                  onSelect={() => {}}
-                  onEdit={() => {}}
-                  onToggleDone={() => {}}
-                  onDelete={() => {}}
-                  onUseSuggestion={() => addSuggestedEvent(event)}
-                  onDismissSuggestion={() => dismissSuggestedEvent(event.id)}
-                />
-              </Box>
-            ))}
-
-            <Box className={classes.quickCardContainer}>
-              <QuickNoteCard
-                key="timeline-quick-note"
-                textareaRef={(el) => {
-                  quickNoteRef.current = el;
-                }}
-                value={quickNote}
-                onChange={setQuickNote}
-              />
-            </Box>
-
-            {!showCompletedMilestones && completedCount > 0 && (
-              <Box className={classes.cardContainer}>
-                <CollapsedMilestonesCard
-                  key="collapsed-milestones"
-                  count={completedCount}
-                  onClick={toggleShowCompletedMilestones}
-                />
-              </Box>
-            )}
-
-            {visibleCompletedMilestones.map((item) => (
-              <Box key={item.id} className={classes.cardContainer}>
-                <MilestoneCard
-                  item={item}
-                  isSelected={false}
-                  activeIdx={-1}
-                  milestoneRef={() => {}}
-                  onSelect={() => {}}
-                  onEdit={() => {
-                    setEditingMilestone(item);
-                    setMilestoneModalOpen(true);
-                  }}
-                  onToggleDone={() => handleToggleMilestoneDone(item)}
-                  onDelete={() => deleteWithUndo(item)}
-                  onEditBacklogTask={setEditedBacklogTask}
-                />
-              </Box>
-            ))}
-          </Stack>
+          {completedMilestones.length > 0 && (
+            <MilestoneClimb
+              completed={completedMilestones}
+              onEdit={(milestone) => {
+                setEditingMilestone(milestone);
+                setMilestoneModalOpen(true);
+              }}
+              onDelete={deleteWithUndo}
+              onReorder={handleReorderCompleted}
+            />
+          )}
         </Tabs.Panel>
 
         <Tabs.Panel value="events" pt="md">

@@ -1,0 +1,47 @@
+.stack {
+  display: flex;
+  flex-direction: column-reverse;
+  gap: 6px;
+  align-items: center;
+  width: 100%;
+  padding: 4px 4px 4px 20px;
+}
+
+.circle {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--mantine-color-body);
+  border: 1px solid var(--mantine-color-default-border);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.18);
+  cursor: grab;
+  contain: layout style paint;
+  will-change: transform;
+}
+
+.circle:hover {
+  transform: scale(1.08);
+}
+
+.circle:active {
+  cursor: grabbing;
+}
+
+.circle.dragging {
+  opacity: 0.5;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+}
+
+.emoji {
+  font-size: 32px;
+  line-height: 1;
+  pointer-events: none;
+}
+
+.emoji {
+  font-size: 32px;
+  line-height: 1;
+}

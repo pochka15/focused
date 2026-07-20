@@ -28,7 +28,6 @@ export const TIMELINE_SHORTCUTS = {
   reorderUp: "shift+K",
   openNotes: "m",
   quickNote: "cmd+k",
-  toggleCompleted: "c",
   first: "g",
   last: "shift+G",
 } as const;

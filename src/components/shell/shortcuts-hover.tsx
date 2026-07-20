@@ -41,7 +41,6 @@ const TIMELINE_SHORTCUTS_SECTION = {
     `${TIMELINE_SHORTCUTS.reorderDown}/${TIMELINE_SHORTCUTS.reorderUp}: reorder`,
     `${TIMELINE_SHORTCUTS.openNotes}: open notes`,
     `${TIMELINE_SHORTCUTS.quickNote}: quick note`,
-    `${TIMELINE_SHORTCUTS.toggleCompleted}: show/hide completed`,
   ],
 };
 
