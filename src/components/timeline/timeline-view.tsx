@@ -45,8 +45,6 @@ export function TimelineView() {
   const reorder = useTimelineStore((s) => s.reorder);
   const quickNote = useTimelineStore((s) => s.quickNote);
   const setQuickNote = useTimelineStore((s) => s.setQuickNote);
-  const notesText = useTimelineStore((s) => s.notesText);
-  const setNotesText = useTimelineStore((s) => s.setNotesText);
 
   const milestones = items.filter(isMilestone);
   const activeMilestones = milestones.filter((m) => !m.completed);
@@ -409,8 +407,6 @@ export function TimelineView() {
 
         <Tabs.Panel value="notes" pt="md">
           <TimelineNotesTab
-            value={notesText}
-            onChange={setNotesText}
             active={activeTab === "notes"}
             onClose={focusMilestonesTab}
           />

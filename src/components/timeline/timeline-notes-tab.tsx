@@ -1,37 +1,23 @@
 import { Box, Textarea } from "@mantine/core";
-import { useDebouncedValue } from "@mantine/hooks";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
+import { useTimelineStore } from "@/lib/stores/timeline-store";
+import { useDebouncedSync } from "@/hooks/use-debounced-sync";
 import { useShortcuts } from "@/shared-lib/shortcuts/use-shortcuts";
 import { TIMELINE_NOTES_SHORTCUTS } from "@/lib/shortcuts/shortcut-mappings";
 import classes from "./timeline-view.module.css";
 
 type Props = {
-  value: string;
   active: boolean;
-  onChange: (value: string) => void;
   onClose: () => void;
 };
 
-const SAVE_DEBOUNCE_MS = 350;
-
-export const TimelineNotesTab = ({
-  value,
-  onChange,
-  active,
-  onClose,
-}: Props) => {
-  const [draft, setDraft] = useState(value);
-  const [debouncedDraft] = useDebouncedValue(draft, SAVE_DEBOUNCE_MS);
+export const TimelineNotesTab = ({ active, onClose }: Props) => {
+  const notesText = useTimelineStore((s) => s.notesText);
+  const setNotesText = useTimelineStore((s) => s.setNotesText);
+  const [draft, setDraft] = useDebouncedSync(notesText, setNotesText, {
+    debounceMs: 350,
+  });
   const internalRef = useRef<HTMLTextAreaElement | null>(null);
-
-  // Last onChange before unmount in case debouncedDraft hasn't been flushed yet
-  useEffect(() => {
-    return () => onChange(draft);
-  }, []);
-
-  useEffect(() => {
-    onChange(debouncedDraft);
-  }, [debouncedDraft]);
 
   useEffect(() => {
     if (active) {
