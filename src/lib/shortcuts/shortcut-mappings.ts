@@ -40,27 +40,6 @@ export const TIMELINE_CARD_SHORTCUTS = {
   exit: "f",
 } as const;
 
-export const BACKLOG_TINDER_SHORTCUTS = {
-  switchMode: "q",
-  newTask: "n",
-  edit: "e",
-  pushTimeline: "p",
-  pushTimelineFront: "shift+P",
-  postpone: "x",
-  snoozePicker: "z",
-  moveTask: "m",
-  toggleNext: "a",
-  expandGroup: "f",
-  moveDown: "j",
-  moveDownArrow: "ArrowDown",
-  moveUp: "k",
-  moveUpArrow: "ArrowUp",
-  taskFirst: "g",
-  taskLast: "shift+G",
-  reorderDown: "shift+J",
-  reorderUp: "shift+K",
-} as const;
-
 export const BACKLOG_SHORTCUTS = {
   switchMode: "q",
   newTask: "n",
@@ -77,6 +56,8 @@ export const BACKLOG_SHORTCUTS = {
   groupLeftArrow: "ArrowLeft",
   taskDown: "j",
   taskUp: "k",
+  taskDownArrow: "ArrowDown",
+  taskUpArrow: "ArrowUp",
   taskFirst: "g",
   taskLast: "shift+G",
   swapDown: "shift+J",

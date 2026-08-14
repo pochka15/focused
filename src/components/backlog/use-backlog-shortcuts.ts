@@ -1,6 +1,5 @@
 import {
   BACKLOG_SHORTCUTS,
-  BACKLOG_TINDER_SHORTCUTS,
   BACKLOG_VIEW_SHORTCUTS,
 } from "@/lib/shortcuts/shortcut-mappings";
 import {
@@ -8,7 +7,7 @@ import {
   type GridGroup,
 } from "@/lib/stores/backlog-grid-store";
 import type { BacklogTask } from "@/lib/stores/backlog-store";
-import type { SmartGroup } from "@/lib/backlog/smart-groups";
+import type { BacklogRouteView } from "@/lib/backlog/backlog-route-mode";
 import { SNOOZE_PRESETS } from "@/lib/backlog/snooze-presets";
 import {
   Window as W,
@@ -20,25 +19,16 @@ import { useShortcuts } from "@/shared-lib/shortcuts/use-shortcuts";
 
 type Params = {
   modalOpen: boolean;
-  tinderView: boolean;
+  zenMode: boolean;
   isWide: boolean;
   isMoving: boolean;
   snoozeTargetTaskId: number | null;
-  smartGroups: SmartGroup[];
-  focusedSmartGroupIdx: number;
-  expandedGroup: SmartGroup | null;
   focusedGroup: GridGroup;
   focusedTasks: BacklogTask[];
   allSorted: BacklogTask[];
-  tinderWindow: UiWindow;
   getWindow: (group: GridGroup) => UiWindow;
   setIsMoving: (isMoving: boolean) => void;
   setSnoozeTargetTaskId: (taskId: number | null) => void;
-  setFocusedSmartGroupIdx: (
-    updater: number | ((idx: number) => number)
-  ) => void;
-  setExpandedSmartGroupId: (groupId: SmartGroup["id"] | null) => void;
-  setTinderWindow: (updater: (windowState: UiWindow) => UiWindow) => void;
   setWindow2D: (
     updater: (state: UiWindow2D<GridGroup>) => UiWindow2D<GridGroup>
   ) => void;
@@ -46,7 +36,7 @@ type Params = {
     group: GridGroup,
     updater: (windowState: UiWindow) => UiWindow
   ) => void;
-  setRouteView: (view: "grid" | "tinder") => void;
+  setRouteView: (view: BacklogRouteView) => void;
   openModal: (task?: BacklogTask) => void;
   assignTask: (taskId: number, group: GridGroup) => void;
   swapWithin: (
@@ -68,23 +58,16 @@ const FIRST_GROUP = GROUPS[0] ?? 1;
 
 export function useBacklogShortcuts({
   modalOpen,
-  tinderView,
+  zenMode,
   isWide,
   isMoving,
   snoozeTargetTaskId,
-  smartGroups,
-  focusedSmartGroupIdx,
-  expandedGroup,
   focusedGroup,
   focusedTasks,
   allSorted,
-  tinderWindow,
   getWindow,
   setIsMoving,
   setSnoozeTargetTaskId,
-  setFocusedSmartGroupIdx,
-  setExpandedSmartGroupId,
-  setTinderWindow,
   setWindow2D,
   setWindowFor,
   setRouteView,
@@ -98,7 +81,6 @@ export function useBacklogShortcuts({
   clearSnoozeByTaskId,
   getFocusedBacklogTask,
 }: Params) {
-  const sh = BACKLOG_TINDER_SHORTCUTS;
   const bh = BACKLOG_SHORTCUTS;
   const bv = BACKLOG_VIEW_SHORTCUTS;
 
@@ -124,107 +106,15 @@ export function useBacklogShortcuts({
         }
       }
 
-      if (key === sh.switchMode) {
+      if (key === bh.switchMode) {
         event.preventDefault();
-        setRouteView(tinderView ? "grid" : "tinder");
+        setRouteView(zenMode ? "full" : "zen");
         return true;
       }
 
-      if (key === sh.newTask) {
+      if (key === bh.newTask) {
         openModal();
         return true;
-      }
-
-      if (tinderView) {
-        const focusedSmartGroup = smartGroups[focusedSmartGroupIdx];
-
-        if (!expandedGroup) {
-          if (key === sh.moveDown || key === sh.moveDownArrow) {
-            event.preventDefault();
-            setFocusedSmartGroupIdx((idx) =>
-              Math.min(idx + 1, Math.max(0, smartGroups.length - 1))
-            );
-            return true;
-          }
-
-          if (key === sh.moveUp || key === sh.moveUpArrow) {
-            event.preventDefault();
-            setFocusedSmartGroupIdx((idx) => Math.max(0, idx - 1));
-            return true;
-          }
-
-          if (key === sh.expandGroup && focusedSmartGroup) {
-            setExpandedSmartGroupId(focusedSmartGroup.id);
-            setTinderWindow((windowState) => W.withCursor(windowState, 0));
-            return true;
-          }
-
-          return false;
-        }
-
-        const curTasks = expandedGroup.tasks;
-        const n = curTasks.length;
-        const cursor = tinderWindow.cursor;
-        const currentTask = curTasks[cursor];
-
-        if (key === bv.cancelSnooze || key === sh.expandGroup) {
-          setExpandedSmartGroupId(null);
-          return true;
-        }
-
-        if (key === sh.moveDown || key === sh.moveDownArrow) {
-          event.preventDefault();
-          setTinderWindow((windowState) => W.moveSingle(windowState, 1, n));
-          return true;
-        }
-
-        if (key === sh.moveUp || key === sh.moveUpArrow) {
-          event.preventDefault();
-          setTinderWindow((windowState) => W.moveSingle(windowState, -1, n));
-          return true;
-        }
-
-        if (key === sh.taskFirst) {
-          setTinderWindow((windowState) => W.first(windowState));
-          return true;
-        }
-
-        if (key === sh.taskLast) {
-          setTinderWindow((windowState) => W.last(windowState, n));
-          return true;
-        }
-
-        if (key === sh.edit && currentTask) {
-          openModal(currentTask);
-          return true;
-        }
-
-        if (key === sh.pushTimeline && currentTask) {
-          pushTaskToTimeline(currentTask);
-          return true;
-        }
-
-        if (key === sh.pushTimelineFront && currentTask) {
-          pushTaskToTimeline(currentTask, true);
-          return true;
-        }
-
-        if (key === sh.postpone && currentTask) {
-          postponeTask(currentTask.id);
-          return true;
-        }
-
-        if (key === sh.toggleNext && currentTask) {
-          toggleTaskNext(currentTask);
-          return true;
-        }
-
-        if (key === sh.snoozePicker && currentTask) {
-          setSnoozeTargetTaskId(currentTask.id);
-          return true;
-        }
-
-        return false;
       }
 
       const curTasks = isWide ? focusedTasks : allSorted;
@@ -304,7 +194,7 @@ export function useBacklogShortcuts({
         return true;
       }
 
-      if (key === bh.taskDown || key === sh.moveDownArrow) {
+      if (key === bh.taskDown || key === bh.taskDownArrow) {
         event.preventDefault();
         if (isWide)
           setWindowFor(focusedGroup, (windowState) =>
@@ -316,7 +206,7 @@ export function useBacklogShortcuts({
           );
         return true;
       }
-      if (key === bh.taskUp || key === sh.moveUpArrow) {
+      if (key === bh.taskUp || key === bh.taskUpArrow) {
         event.preventDefault();
         if (isWide)
           setWindowFor(focusedGroup, (windowState) =>

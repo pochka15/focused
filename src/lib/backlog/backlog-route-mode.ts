@@ -1,6 +1,6 @@
 export const BACKLOG_ROUTE_VIEW_PARAM = "view" as const;
 
-export type BacklogRouteView = "tinder" | "grid";
+export type BacklogRouteView = "zen" | "full";
 
 export type BacklogRouteSearch = {
   view?: BacklogRouteView;
@@ -9,11 +9,11 @@ export type BacklogRouteSearch = {
 export const getBacklogRouteView = (
   search: BacklogRouteSearch | undefined
 ): BacklogRouteView => {
-  return search?.[BACKLOG_ROUTE_VIEW_PARAM] === "grid" ? "grid" : "tinder";
+  return search?.[BACKLOG_ROUTE_VIEW_PARAM] === "full" ? "full" : "zen";
 };
 
 export const getBacklogRouteSearch = (
   view: BacklogRouteView
 ): BacklogRouteSearch => {
-  return view === "grid" ? { view } : {};
+  return view === "full" ? { view } : {};
 };

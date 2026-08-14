@@ -8,6 +8,7 @@ type Props = {
   allSorted: BacklogTask[];
   hasAnyTasks: boolean;
   mobileWindow: UiWindow;
+  zenMode: boolean;
   cardRefs: RefObject<Map<number, HTMLDivElement | null>>;
   onSelectTask: (windowState: UiWindow) => void;
   onEditTask: (task: BacklogTask) => void;
@@ -23,6 +24,7 @@ export function BacklogGridNarrowView({
   allSorted,
   hasAnyTasks,
   mobileWindow,
+  zenMode,
   cardRefs,
   onSelectTask,
   onEditTask,
@@ -48,6 +50,7 @@ export function BacklogGridNarrowView({
           task={task}
           isSelected={idx === mobileWindow.cursor}
           isMoving={false}
+          zenMode={zenMode}
           cardRef={(el) => {
             cardRefs.current.set(task.id, el);
           }}

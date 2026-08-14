@@ -12,6 +12,7 @@ type Props = {
   tasks: BacklogTask[];
   cursor: number;
   isMoving: boolean;
+  zenMode: boolean;
   cardRefs: RefObject<Map<number, HTMLDivElement | null>>;
   onSelect: (idx: number) => void;
   onFocusGroup: (group: GridGroup) => void;
@@ -30,6 +31,7 @@ export function BacklogGridCell({
   tasks,
   cursor,
   isMoving,
+  zenMode,
   cardRefs,
   onSelect,
   onFocusGroup,
@@ -62,6 +64,7 @@ export function BacklogGridCell({
             task={task}
             isSelected={isFocused && idx === cursor}
             isMoving={isMoving}
+            zenMode={zenMode}
             cardRef={(el) => {
               cardRefs.current.set(task.id, el);
             }}

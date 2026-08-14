@@ -14,6 +14,7 @@ type Props = {
   groupedTasks: Record<GridGroup, BacklogTask[]>;
   windows: Record<GridGroup, UiWindow>;
   isMoving: boolean;
+  zenMode: boolean;
   cardRefs: RefObject<Map<number, HTMLDivElement | null>>;
   onSelectTask: (group: GridGroup, idx: number) => void;
   onFocusGroup: (group: GridGroup) => void;
@@ -32,6 +33,7 @@ export function BacklogGridWideView({
   groupedTasks,
   windows,
   isMoving,
+  zenMode,
   cardRefs,
   onSelectTask,
   onFocusGroup,
@@ -56,6 +58,7 @@ export function BacklogGridWideView({
                 tasks={groupedTasks[group] ?? []}
                 cursor={windows[group]?.cursor ?? 0}
                 isMoving={isMoving}
+                zenMode={zenMode}
                 cardRefs={cardRefs}
                 onSelect={(idx) => onSelectTask(group, idx)}
                 onFocusGroup={onFocusGroup}

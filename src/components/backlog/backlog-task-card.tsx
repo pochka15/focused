@@ -5,6 +5,7 @@ import type { BacklogTask } from "@/lib/stores/backlog-store";
 import {
   ActionIcon,
   Badge,
+  Box,
   Card,
   Group,
   Menu,
@@ -26,6 +27,7 @@ type Props = {
   task: BacklogTask;
   isSelected: boolean;
   isMoving: boolean;
+  zenMode?: boolean;
   cardRef: (el: HTMLDivElement | null) => void;
   onSelect: () => void;
   onEdit: () => void;
@@ -41,6 +43,7 @@ export function BacklogTaskCard({
   task,
   isSelected,
   isMoving,
+  zenMode = false,
   cardRef,
   onSelect,
   onEdit,
@@ -70,24 +73,36 @@ export function BacklogTaskCard({
     >
       <Group justify="space-between" wrap="nowrap" gap="sm">
         <Stack gap={4} style={{ flex: 1 }}>
-          <Group gap={6} wrap="wrap">
-            <Text size="sm" fw={500}>
-              #{task.id} {task.name}
-            </Text>
-            {tagPreset && (
-              <Text size="sm" lh={1}>
-                {tagPreset.emoji}
+          {zenMode ? (
+            <Box
+              className={classes.zenSkeleton}
+              style={{ width: '25%' }}
+            />
+          ) : (
+            <Group gap={6} wrap="wrap">
+              <Text size="sm" fw={500}>
+                #{task.id} {task.name}
               </Text>
-            )}
-          </Group>
-          {task.description && (
+              {tagPreset && (
+                <Text size="sm" lh={1}>
+                  {tagPreset.emoji}
+                </Text>
+              )}
+            </Group>
+          )}
+          {!zenMode && task.description && (
             <Text size="xs" c="dimmed">
               {task.description}
             </Text>
           )}
           <Group gap={4} wrap="wrap">
             {task.isNext && (
-              <Badge size="xs" color="red" leftSection={<Zap size={9} />}>
+              <Badge
+                size="xs"
+                color="red"
+                className={classes.nextBadge}
+                leftSection={<Zap size={9} />}
+              >
                 next
               </Badge>
             )}
@@ -108,7 +123,8 @@ export function BacklogTaskCard({
           </Group>
         </Stack>
 
-        <Group gap={8} wrap="nowrap">
+        {!zenMode && (
+          <Group gap={8} wrap="nowrap">
           {onPushToTimeline && (
             <ActionIcon
               variant="subtle"
@@ -181,18 +197,19 @@ export function BacklogTaskCard({
           >
             <RotateCcw size={16} />
           </ActionIcon>
-          <ActionIcon
-            variant="subtle"
-            color="red"
-            style={{ marginLeft: 8 }}
-            onClick={(e) => {
-              e.stopPropagation();
-              onDelete();
-            }}
-          >
-            <Trash2 size={16} />
-          </ActionIcon>
-        </Group>
+            <ActionIcon
+              variant="subtle"
+              color="red"
+              style={{ marginLeft: 8 }}
+              onClick={(e) => {
+                e.stopPropagation();
+                onDelete();
+              }}
+            >
+              <Trash2 size={16} />
+            </ActionIcon>
+          </Group>
+        )}
       </Group>
     </Card>
   );

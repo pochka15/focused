@@ -8,12 +8,10 @@ import {
 } from "@mantine/core";
 import { useRouterState } from "@tanstack/react-router";
 import { Keyboard } from "lucide-react";
-import { getBacklogRouteView } from "@/lib/backlog/backlog-route-mode";
 import { useShortcuts } from "@/shared-lib/shortcuts/use-shortcuts";
 import { useShortcutsMode } from "@/shared-lib/shortcuts/shortcuts-store";
 import {
   BACKLOG_SHORTCUTS,
-  BACKLOG_TINDER_SHORTCUTS,
   NAVIGATION_SHORTCUTS,
   ROOT_SHORTCUTS,
   TIMELINE_CARD_SHORTCUTS,
@@ -53,27 +51,10 @@ const TIMELINE_CARD_SHORTCUTS_SECTION = {
   ],
 };
 
-const TINDER_SHORTCUTS_SECTION = {
-  title: "Tinder",
-  items: [
-    `${BACKLOG_TINDER_SHORTCUTS.switchMode}: mode switch`,
-    `${BACKLOG_TINDER_SHORTCUTS.newTask}: new task`,
-    `${BACKLOG_TINDER_SHORTCUTS.edit}: edit`,
-    `${BACKLOG_TINDER_SHORTCUTS.pushTimeline} / ${BACKLOG_TINDER_SHORTCUTS.pushTimelineFront}: push timeline (back/front)`,
-    `${BACKLOG_TINDER_SHORTCUTS.postpone}: postpone`,
-    `${BACKLOG_TINDER_SHORTCUTS.snoozePicker}: snooze picker`,
-    `${BACKLOG_TINDER_SHORTCUTS.moveTask}: move task`,
-    `${BACKLOG_TINDER_SHORTCUTS.toggleNext}: next`,
-    `${BACKLOG_TINDER_SHORTCUTS.reorderDown}/${BACKLOG_TINDER_SHORTCUTS.reorderUp}: swap`,
-    `${BACKLOG_TINDER_SHORTCUTS.moveDown}/${BACKLOG_TINDER_SHORTCUTS.moveUp}: focus`,
-    `${BACKLOG_TINDER_SHORTCUTS.expandGroup}: expand group`,
-  ],
-};
-
 const BACKLOG_SHORTCUTS_SECTION = {
   title: "Backlog",
   items: [
-    `${BACKLOG_SHORTCUTS.switchMode}: mode switch`,
+    `${BACKLOG_SHORTCUTS.switchMode}: zen/full switch`,
     `${BACKLOG_SHORTCUTS.newTask}: new task`,
     `${BACKLOG_SHORTCUTS.edit}: edit`,
     `${BACKLOG_SHORTCUTS.pushTimeline} / ${BACKLOG_SHORTCUTS.pushTimelineFront}: push timeline (back/front)`,
@@ -99,10 +80,7 @@ const SHORTCUT_SECTIONS = [
   },
   {
     route: "/backlog",
-    sectionsByView: {
-      tinder: [TINDER_SHORTCUTS_SECTION],
-      grid: [BACKLOG_SHORTCUTS_SECTION],
-    },
+    sections: [BACKLOG_SHORTCUTS_SECTION],
   },
   {
     route: "/notifications",
@@ -115,7 +93,6 @@ type Props = {
 };
 
 export function ShortcutsHover({ pathname }: Props) {
-  const search = useRouterState({ select: (s) => s.location.search });
   const { enabled } = useShortcutsMode("help");
 
   const { disableModes } = useShortcuts({
@@ -132,11 +109,7 @@ export function ShortcutsHover({ pathname }: Props) {
   );
 
   const routeSections = routeConfig
-    ? "sectionsByView" in routeConfig
-      ? (routeConfig.sectionsByView?.[getBacklogRouteView(search)] ?? [
-          BACKLOG_SHORTCUTS_SECTION,
-        ])
-      : routeConfig.sections
+    ? routeConfig.sections
     : [TIMELINE_SHORTCUTS_SECTION];
 
   const visibleSections = [NAV_SHORTCUTS_SECTION, ...routeSections];
