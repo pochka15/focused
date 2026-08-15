@@ -20,8 +20,7 @@ import {
   Window2D,
   type UiWindow,
 } from "@/shared-lib/shortcuts/window";
-import { SNOOZE_PRESETS } from "@/lib/backlog/snooze-presets";
-import { Box, Button, Group, Text, Title } from "@mantine/core";
+import { Box, Button, Group, Title } from "@mantine/core";
 import { useMediaQuery } from "@mantine/hooks";
 import { notifications } from "@mantine/notifications";
 import { Plus } from "lucide-react";
@@ -69,10 +68,6 @@ export function BacklogView() {
   const [isMoving, setIsMoving] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<BacklogTask | undefined>();
-
-  const [snoozeTargetTaskId, setSnoozeTargetTaskId] = useState<number | null>(
-    null
-  );
 
   useEffect(() => {
     const timer = window.setInterval(() => setNowTick(Date.now()), 30000);
@@ -141,21 +136,9 @@ export function BacklogView() {
     updateTask({ ...task, snoozeUntil });
   };
 
-  const applySnoozeByTaskId = (taskId: number, minutes: number) => {
-    const task = tasks.find((candidate) => candidate.id === taskId);
-    if (!task) return;
-    snoozeTask(task, minutes);
-  };
-
   const clearTaskSnooze = (task: BacklogTask) => {
     if (!task.snoozeUntil) return;
     updateTask({ ...task, snoozeUntil: null });
-  };
-
-  const clearSnoozeByTaskId = (taskId: number) => {
-    const task = tasks.find((candidate) => candidate.id === taskId);
-    if (!task) return;
-    clearTaskSnooze(task);
   };
 
   const deleteWithUndo = (task: BacklogTask) => {
@@ -247,15 +230,6 @@ export function BacklogView() {
       search: () => getBacklogRouteSearch(view),
     });
     setIsMoving(false);
-    setSnoozeTargetTaskId(null);
-  };
-
-  const getFocusedBacklogTask = (): BacklogTask | undefined => {
-    const curTasks = isWide ? focusedTasks : allSorted;
-    const cursorNow = isWide
-      ? getWindow(focusedGroup).cursor
-      : getWindow(FIRST_GROUP).cursor;
-    return curTasks[cursorNow];
   };
 
   useBacklogShortcuts({
@@ -263,13 +237,11 @@ export function BacklogView() {
     zenMode,
     isWide,
     isMoving,
-    snoozeTargetTaskId,
     focusedGroup,
     focusedTasks,
     allSorted,
     getWindow,
     setIsMoving,
-    setSnoozeTargetTaskId,
     setWindow2D,
     setWindowFor,
     setRouteView,
@@ -279,9 +251,6 @@ export function BacklogView() {
     pushTaskToTimeline,
     postponeTask,
     toggleTaskNext,
-    applySnoozeByTaskId,
-    clearSnoozeByTaskId,
-    getFocusedBacklogTask,
   });
 
   return (
@@ -329,41 +298,6 @@ export function BacklogView() {
             Full
           </button>
         </Group>
-
-        {snoozeTargetTaskId !== null && (
-          <Group gap={6} mb="sm" wrap="wrap">
-            <Text size="xs" c="dimmed">
-              Snooze picker:
-            </Text>
-            {SNOOZE_PRESETS.map((preset) => (
-              <Button
-                key={preset.key}
-                size="compact-xs"
-                variant="light"
-                onClick={() => {
-                  applySnoozeByTaskId(snoozeTargetTaskId, preset.minutes);
-                  setSnoozeTargetTaskId(null);
-                }}
-              >
-                {preset.key}:{preset.label}
-              </Button>
-            ))}
-            <Button
-              size="compact-xs"
-              color="red"
-              variant="light"
-              onClick={() => {
-                clearSnoozeByTaskId(snoozeTargetTaskId);
-                setSnoozeTargetTaskId(null);
-              }}
-            >
-              0:clear
-            </Button>
-            <Text size="xs" c="dimmed">
-              Esc to cancel
-            </Text>
-          </Group>
-        )}
       </Box>
 
       {!isWide ? (

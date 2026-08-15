@@ -41,13 +41,12 @@ export const TIMELINE_CARD_SHORTCUTS = {
 } as const;
 
 export const BACKLOG_SHORTCUTS = {
-  switchMode: "q",
+  switchMode: "z",
   newTask: "n",
   edit: "e",
   pushTimeline: "p",
   pushTimelineFront: "shift+P",
   postpone: "x",
-  snoozePicker: "z",
   moveTask: "m",
   toggleNext: "a",
   groupRight: "l",
@@ -62,11 +61,6 @@ export const BACKLOG_SHORTCUTS = {
   taskLast: "shift+G",
   swapDown: "shift+J",
   swapUp: "shift+K",
-} as const;
-
-export const BACKLOG_VIEW_SHORTCUTS = {
-  cancelSnooze: "Escape",
-  clearSnooze: "0",
 } as const;
 
 export const BACKLOG_MODAL_SHORTCUTS = {

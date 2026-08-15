@@ -1,14 +1,10 @@
-import {
-  BACKLOG_SHORTCUTS,
-  BACKLOG_VIEW_SHORTCUTS,
-} from "@/lib/shortcuts/shortcut-mappings";
+import { BACKLOG_SHORTCUTS } from "@/lib/shortcuts/shortcut-mappings";
 import {
   BACKLOG_GROUPS,
   type GridGroup,
 } from "@/lib/stores/backlog-grid-store";
 import type { BacklogTask } from "@/lib/stores/backlog-store";
 import type { BacklogRouteView } from "@/lib/backlog/backlog-route-mode";
-import { SNOOZE_PRESETS } from "@/lib/backlog/snooze-presets";
 import {
   Window as W,
   Window2D,
@@ -22,13 +18,11 @@ type Params = {
   zenMode: boolean;
   isWide: boolean;
   isMoving: boolean;
-  snoozeTargetTaskId: number | null;
   focusedGroup: GridGroup;
   focusedTasks: BacklogTask[];
   allSorted: BacklogTask[];
   getWindow: (group: GridGroup) => UiWindow;
   setIsMoving: (isMoving: boolean) => void;
-  setSnoozeTargetTaskId: (taskId: number | null) => void;
   setWindow2D: (
     updater: (state: UiWindow2D<GridGroup>) => UiWindow2D<GridGroup>
   ) => void;
@@ -48,9 +42,6 @@ type Params = {
   pushTaskToTimeline: (task: BacklogTask, pushFront?: boolean) => void;
   postponeTask: (taskId: number) => void;
   toggleTaskNext: (task: BacklogTask) => void;
-  applySnoozeByTaskId: (taskId: number, minutes: number) => void;
-  clearSnoozeByTaskId: (taskId: number) => void;
-  getFocusedBacklogTask: () => BacklogTask | undefined;
 };
 
 const GROUPS = BACKLOG_GROUPS;
@@ -61,13 +52,11 @@ export function useBacklogShortcuts({
   zenMode,
   isWide,
   isMoving,
-  snoozeTargetTaskId,
   focusedGroup,
   focusedTasks,
   allSorted,
   getWindow,
   setIsMoving,
-  setSnoozeTargetTaskId,
   setWindow2D,
   setWindowFor,
   setRouteView,
@@ -77,35 +66,13 @@ export function useBacklogShortcuts({
   pushTaskToTimeline,
   postponeTask,
   toggleTaskNext,
-  applySnoozeByTaskId,
-  clearSnoozeByTaskId,
-  getFocusedBacklogTask,
 }: Params) {
   const bh = BACKLOG_SHORTCUTS;
-  const bv = BACKLOG_VIEW_SHORTCUTS;
 
   useShortcuts({
     name: "backlogView",
     enabled: !modalOpen,
     keys: (key, event) => {
-      if (snoozeTargetTaskId !== null) {
-        if (key === bv.cancelSnooze) {
-          setSnoozeTargetTaskId(null);
-          return true;
-        }
-        if (key === bv.clearSnooze) {
-          clearSnoozeByTaskId(snoozeTargetTaskId);
-          setSnoozeTargetTaskId(null);
-          return true;
-        }
-        const preset = SNOOZE_PRESETS.find((item) => item.key === key);
-        if (preset) {
-          applySnoozeByTaskId(snoozeTargetTaskId, preset.minutes);
-          setSnoozeTargetTaskId(null);
-          return true;
-        }
-      }
-
       if (key === bh.switchMode) {
         event.preventDefault();
         setRouteView(zenMode ? "full" : "zen");
@@ -176,11 +143,6 @@ export function useBacklogShortcuts({
       if (key === bh.postpone) {
         const task = curTasks[cursorNow];
         if (task) postponeTask(task.id);
-        return true;
-      }
-      if (key === bh.snoozePicker) {
-        const task = getFocusedBacklogTask();
-        if (task) setSnoozeTargetTaskId(task.id);
         return true;
       }
       if (key === bh.moveTask) {

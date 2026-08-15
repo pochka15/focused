@@ -59,7 +59,6 @@ const BACKLOG_SHORTCUTS_SECTION = {
     `${BACKLOG_SHORTCUTS.edit}: edit`,
     `${BACKLOG_SHORTCUTS.pushTimeline} / ${BACKLOG_SHORTCUTS.pushTimelineFront}: push timeline (back/front)`,
     `${BACKLOG_SHORTCUTS.postpone}: postpone`,
-    `${BACKLOG_SHORTCUTS.snoozePicker}: snooze picker`,
     `${BACKLOG_SHORTCUTS.moveTask}: move task`,
     `${BACKLOG_SHORTCUTS.toggleNext}: next`,
     `${BACKLOG_SHORTCUTS.groupLeft}/${BACKLOG_SHORTCUTS.groupRight} or arrows: group nav`,
