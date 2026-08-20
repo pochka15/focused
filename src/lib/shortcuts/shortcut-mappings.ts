@@ -66,10 +66,8 @@ export const BACKLOG_SHORTCUTS = {
 export const BACKLOG_MODAL_SHORTCUTS = {
   submit: "Enter",
   toggleFocus: "ctrl+n",
-  stepBack: "h",
-  stepForward: "l",
-  cycleDown: "j",
-  cycleUp: "k",
+  tagKeys: ["n", "m", "h", "j", "k", "l"],
+  toggleNext: "a",
 } as const;
 
 export const MILESTONE_MODAL_SHORTCUTS = {
