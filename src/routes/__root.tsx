@@ -28,7 +28,6 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { ShortcutsHover } from "../components/shell/shortcuts-hover.tsx";
-import { StatsHover } from "../components/shell/stats-hover.tsx";
 import classes from "./__root.module.css";
 
 type FullPath = FileRouteTypes["fullPaths"];
@@ -113,7 +112,6 @@ function NavbarContents() {
             pathname={pathname}
             onNavigate={go}
           />
-          <StatsHover />
           <ShortcutsHover pathname={pathname} />
         </Stack>
 

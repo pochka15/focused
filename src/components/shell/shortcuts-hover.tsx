@@ -6,7 +6,6 @@ import {
   Text,
   UnstyledButton,
 } from "@mantine/core";
-import { useRouterState } from "@tanstack/react-router";
 import { Keyboard } from "lucide-react";
 import { useShortcuts } from "@/shared-lib/shortcuts/use-shortcuts";
 import { useShortcutsMode } from "@/shared-lib/shortcuts/shortcuts-store";

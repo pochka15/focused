@@ -74,10 +74,7 @@ export function BacklogTaskCard({
       <Group justify="space-between" wrap="nowrap" gap="sm">
         <Stack gap={4} style={{ flex: 1 }}>
           {zenMode ? (
-            <Box
-              className={classes.zenSkeleton}
-              style={{ width: '25%' }}
-            />
+            <Box className={classes.zenSkeleton} style={{ width: "25%" }} />
           ) : (
             <Group gap={6} wrap="wrap">
               <Text size="sm" fw={500}>
@@ -125,78 +122,78 @@ export function BacklogTaskCard({
 
         {!zenMode && (
           <Group gap={8} wrap="nowrap">
-          {onPushToTimeline && (
-            <ActionIcon
-              variant="subtle"
-              color="blue"
-              title="Push to timeline"
-              onClick={(e) => {
-                e.stopPropagation();
-                onPushToTimeline();
-              }}
-            >
-              <Plus size={16} />
-            </ActionIcon>
-          )}
-          {onToggleNext && (
-            <ActionIcon
-              variant="subtle"
-              title="Toggle next"
-              onClick={(e) => {
-                e.stopPropagation();
-                onToggleNext();
-              }}
-            >
-              <Flame size={16} />
-            </ActionIcon>
-          )}
-          {onSnooze && (
-            <Menu withinPortal position="bottom-end">
-              <Menu.Target>
-                <ActionIcon
-                  variant="subtle"
-                  title="Snooze presets"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  <AlarmClock size={16} />
-                </ActionIcon>
-              </Menu.Target>
-              <Menu.Dropdown onClick={(e) => e.stopPropagation()}>
-                {SNOOZE_PRESETS.map((preset) => (
-                  <Menu.Item
-                    key={preset.key}
-                    onClick={() => onSnooze(preset.minutes)}
+            {onPushToTimeline && (
+              <ActionIcon
+                variant="subtle"
+                color="blue"
+                title="Push to timeline"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onPushToTimeline();
+                }}
+              >
+                <Plus size={16} />
+              </ActionIcon>
+            )}
+            {onToggleNext && (
+              <ActionIcon
+                variant="subtle"
+                title="Toggle next"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onToggleNext();
+                }}
+              >
+                <Flame size={16} />
+              </ActionIcon>
+            )}
+            {onSnooze && (
+              <Menu withinPortal position="bottom-end">
+                <Menu.Target>
+                  <ActionIcon
+                    variant="subtle"
+                    title="Snooze presets"
+                    onClick={(e) => e.stopPropagation()}
                   >
-                    {preset.label}
-                  </Menu.Item>
-                ))}
-                {snoozed && onClearSnooze && (
-                  <Menu.Item color="red" onClick={() => onClearSnooze()}>
-                    Clear snooze
-                  </Menu.Item>
-                )}
-              </Menu.Dropdown>
-            </Menu>
-          )}
-          <ActionIcon
-            variant="subtle"
-            onClick={(e) => {
-              e.stopPropagation();
-              onEdit();
-            }}
-          >
-            <Pencil size={16} />
-          </ActionIcon>
-          <ActionIcon
-            variant="subtle"
-            title="Postpone"
-            onClick={(e) => {
-              e.stopPropagation();
-              onPostpone();
-            }}
-          >
-            <RotateCcw size={16} />
-          </ActionIcon>
+                    <AlarmClock size={16} />
+                  </ActionIcon>
+                </Menu.Target>
+                <Menu.Dropdown onClick={(e) => e.stopPropagation()}>
+                  {SNOOZE_PRESETS.map((preset) => (
+                    <Menu.Item
+                      key={preset.key}
+                      onClick={() => onSnooze(preset.minutes)}
+                    >
+                      {preset.label}
+                    </Menu.Item>
+                  ))}
+                  {snoozed && onClearSnooze && (
+                    <Menu.Item color="red" onClick={() => onClearSnooze()}>
+                      Clear snooze
+                    </Menu.Item>
+                  )}
+                </Menu.Dropdown>
+              </Menu>
+            )}
+            <ActionIcon
+              variant="subtle"
+              title="Postpone"
+              onClick={(e) => {
+                e.stopPropagation();
+                onPostpone();
+              }}
+            >
+              <RotateCcw size={16} />
+            </ActionIcon>
+            <ActionIcon
+              variant="subtle"
+              onClick={(e) => {
+                e.stopPropagation();
+                onEdit();
+              }}
+            >
+              <Pencil size={16} />
+            </ActionIcon>
             <ActionIcon
               variant="subtle"
               color="red"

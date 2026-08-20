@@ -14,7 +14,7 @@ import {
   Title,
 } from "@mantine/core";
 import { ChevronDown, ChevronUp, Plus, RotateCcw, Trash2 } from "lucide-react";
-import { useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 
 const DEFAULT_TIME_H = 11;
 const DEFAULT_TIME_M = 0;
@@ -37,6 +37,42 @@ function formatRepeats(minutes: number): string {
   if (h > 0 && m > 0) return `${h}h ${m}m`;
   if (h > 0) return `${h}h`;
   return `${m}m`;
+}
+
+type RepeatsInputProps = {
+  minutes: number;
+  onChange: (minutes: number) => void;
+};
+
+function RepeatsInput({ minutes, onChange }: RepeatsInputProps) {
+  const [text, setText] = useState(() => formatRepeats(minutes));
+  const [focused, setFocused] = useState(false);
+
+  // Only follow external updates while the field isn't being edited.
+  useEffect(() => {
+    if (!focused) setText(formatRepeats(minutes));
+  }, [minutes, focused]);
+
+  return (
+    <TextInput
+      size="xs"
+      autoComplete="off"
+      placeholder="1h 20m"
+      value={text}
+      error={parseRepeatDuration(text) === null}
+      onFocus={() => setFocused(true)}
+      onChange={(e) => {
+        const next = e.target.value;
+        setText(next);
+        const parsed = parseRepeatDuration(next);
+        if (parsed !== null) onChange(parsed);
+      }}
+      onBlur={() => {
+        setFocused(false);
+        setText(formatRepeats(minutes));
+      }}
+    />
+  );
 }
 
 export function NotificationsView() {
@@ -198,17 +234,10 @@ export function NotificationsView() {
                 </Table.Td>
 
                 <Table.Td>
-                  <TextInput
-                    size="xs"
-                    autoComplete="off"
-                    placeholder="1h 20m"
-                    value={formatRepeats(n.repeatsInMinutes)}
-                    onChange={(e) =>
-                      handleFieldChange({
-                        ...n,
-                        repeatsInMinutes:
-                          parseRepeatDuration(e.target.value) ?? 0,
-                      })
+                  <RepeatsInput
+                    minutes={n.repeatsInMinutes}
+                    onChange={(repeatsInMinutes) =>
+                      handleFieldChange({ ...n, repeatsInMinutes })
                     }
                   />
                 </Table.Td>
