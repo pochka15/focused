@@ -12,7 +12,9 @@ type TagCounts = {
   "light-routine": number;
 };
 
-const approxMinutesByTag: Partial<Record<TagName, { min: number; max: number }>> = {
+const approxMinutesByTag: Partial<
+  Record<TagName, { min: number; max: number }>
+> = {
   "good-one": { min: 30, max: 60 },
   "light-good": { min: 15, max: 30 },
   "deep-routine": { min: 30, max: 60 },
@@ -42,7 +44,13 @@ type EmojiGroup = {
   count: number;
 };
 
-function EmojiWheel({ groups, total }: { groups: EmojiGroup[]; total: number }) {
+function EmojiWheel({
+  groups,
+  total,
+}: {
+  groups: EmojiGroup[];
+  total: number;
+}) {
   const angleStep = groups.length > 0 ? 360 / groups.length : 0;
 
   return (
@@ -69,7 +77,8 @@ function EmojiWheel({ groups, total }: { groups: EmojiGroup[]; total: number }) 
               const x = dx * distance;
               const y = dy * distance;
               const scale = 1 - depth * 0.12;
-              const isOverflowAnchor = stackIndex === visibleCount - 1 && overflow > 0;
+              const isOverflowAnchor =
+                stackIndex === visibleCount - 1 && overflow > 0;
 
               return (
                 <div
@@ -81,7 +90,9 @@ function EmojiWheel({ groups, total }: { groups: EmojiGroup[]; total: number }) 
                   }}
                 >
                   {group.emoji}
-                  {isOverflowAnchor && <span className={classes.overflowBadge}>+{overflow}</span>}
+                  {isOverflowAnchor && (
+                    <span className={classes.overflowBadge}>+{overflow}</span>
+                  )}
                 </div>
               );
             })}

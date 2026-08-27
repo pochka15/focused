@@ -87,7 +87,10 @@
 .zenSkeleton {
   height: 12px;
   border-radius: 999px;
-  background-color: light-dark(var(--mantine-color-gray-2), var(--mantine-color-dark-4));
+  background-color: light-dark(
+    var(--mantine-color-gray-2),
+    var(--mantine-color-dark-4)
+  );
 }
 
 .nextBadge {

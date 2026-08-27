@@ -93,6 +93,8 @@ export function MilestoneCard({
 
   const bumpPomodoros = () => editItem({ ...item, pomodoros: pomodoros + 1 });
 
+  const canTrackPomodoros = variant === "default" && isSelected;
+
   return (
     <Card
       ref={(el) => {
@@ -106,7 +108,7 @@ export function MilestoneCard({
         if (variant === "default" && !done && activeIdx >= 0) onSelect();
       }}
     >
-      {variant === "default" && (
+      {canTrackPomodoros && (
         <button
           type="button"
           className={[
@@ -125,9 +127,9 @@ export function MilestoneCard({
         <Group gap="xs" wrap="nowrap">
           <Text
             fz={isSelected ? "h1" : undefined}
-            style={variant === "default" ? { cursor: "pointer" } : undefined}
+            style={canTrackPomodoros ? { cursor: "pointer" } : undefined}
             onClick={(e) => {
-              if (variant !== "default") return;
+              if (!canTrackPomodoros) return;
               e.stopPropagation();
               bumpPomodoros();
             }}

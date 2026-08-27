@@ -20,7 +20,9 @@
   background: var(--mantine-color-gray-5);
   filter: blur(1.5px);
   opacity: 0.5;
-  transition: background 150ms ease, opacity 150ms ease;
+  transition:
+    background 150ms ease,
+    opacity 150ms ease;
 }
 
 .pomodoroDotActive {
