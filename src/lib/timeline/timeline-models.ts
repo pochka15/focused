@@ -8,6 +8,7 @@ export type NewMilestone = {
   mode: TodoMode;
   completed?: boolean;
   taskIds?: number[];
+  pomodoros?: number;
 };
 
 export type Milestone = NewMilestone & {

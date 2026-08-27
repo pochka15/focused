@@ -3,6 +3,7 @@ import { Check, Pencil, Plus, Trash2, X } from "lucide-react";
 import { useMemo } from "react";
 import type { BacklogTask } from "@/lib/stores/backlog-store";
 import { useBacklogStore } from "@/lib/stores/backlog-store";
+import { useTimelineStore } from "@/lib/stores/timeline-store";
 import type { Milestone } from "@/lib/timeline/timeline-models";
 import { tagsMapping } from "@/lib/todos/mappings";
 import { useShortcutsMode } from "@/shared-lib/shortcuts/shortcuts-store";
@@ -47,10 +48,13 @@ export function MilestoneCard({
 }: Props) {
   const tasks = useBacklogStore((s) => s.tasks);
   const updateTask = useBacklogStore((s) => s.updateTask);
+  const editItem = useTimelineStore((s) => s.editItem);
   const editingMode = useShortcutsMode("editingMilestoneCardTasks");
 
   const tag = tagsMapping[item.tag];
   const done = item.completed;
+
+  const pomodoros = item.pomodoros ?? 0;
 
   const taskIds = useMemo(() => new Set(item.taskIds ?? []), [item.taskIds]);
 
@@ -87,6 +91,8 @@ export function MilestoneCard({
     .filter(Boolean)
     .join(" ");
 
+  const bumpPomodoros = () => editItem({ ...item, pomodoros: pomodoros + 1 });
+
   return (
     <Card
       ref={(el) => {
@@ -94,14 +100,40 @@ export function MilestoneCard({
       }}
       withBorder
       padding="xs"
+      pos="relative"
       className={cardClassName || undefined}
       onClick={() => {
         if (variant === "default" && !done && activeIdx >= 0) onSelect();
       }}
     >
+      {variant === "default" && (
+        <button
+          type="button"
+          className={[
+            classes.pomodoroDot,
+            pomodoros % 2 === 1 ? classes.pomodoroDotActive : "",
+          ]
+            .filter(Boolean)
+            .join(" ")}
+          onClick={(e) => {
+            e.stopPropagation();
+            bumpPomodoros();
+          }}
+        />
+      )}
       <Group gap="xs" wrap="nowrap" justify="space-between">
         <Group gap="xs" wrap="nowrap">
-          <Text fz={isSelected ? "h1" : undefined}>{tag?.emoji}</Text>
+          <Text
+            fz={isSelected ? "h1" : undefined}
+            style={variant === "default" ? { cursor: "pointer" } : undefined}
+            onClick={(e) => {
+              if (variant !== "default") return;
+              e.stopPropagation();
+              bumpPomodoros();
+            }}
+          >
+            {tag?.emoji}
+          </Text>
           <Stack gap={2} style={{ minWidth: 0 }}>
             <Text
               fw={isSelected ? 600 : 400}
