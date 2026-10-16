@@ -4,7 +4,6 @@ import {
   type GridGroup,
 } from "@/lib/stores/backlog-grid-store";
 import type { UiWindow } from "@/shared-lib/shortcuts/window";
-import { Grid, Stack } from "@mantine/core";
 import type { RefObject } from "react";
 import { BacklogGridCell } from "./backlog-grid-cell";
 
@@ -46,34 +45,37 @@ export function BacklogGridWideView({
   onDeleteTask,
 }: Props) {
   return (
-    <Grid>
+    <div
+      className="grid gap-4"
+      style={{
+        gridTemplateColumns: `repeat(${BACKLOG_GRID_COLUMNS}, minmax(0, 1fr))`,
+      }}
+    >
       {groupColumns.map((colGroups, colIdx) => (
-        <Grid.Col key={colIdx} span={12 / BACKLOG_GRID_COLUMNS}>
-          <Stack gap="md">
-            {colGroups.map((group) => (
-              <BacklogGridCell
-                key={group}
-                group={group}
-                focusedGroup={focusedGroup}
-                tasks={groupedTasks[group] ?? []}
-                cursor={windows[group]?.cursor ?? 0}
-                isMoving={isMoving}
-                zenMode={zenMode}
-                cardRefs={cardRefs}
-                onSelect={(idx) => onSelectTask(group, idx)}
-                onFocusGroup={onFocusGroup}
-                onEdit={onEditTask}
-                onPostpone={onPostponeTask}
-                onPushToTimeline={onPushTaskToTimeline}
-                onToggleNext={onToggleTaskNext}
-                onSnooze={onSnoozeTask}
-                onClearSnooze={onClearTaskSnooze}
-                onDelete={onDeleteTask}
-              />
-            ))}
-          </Stack>
-        </Grid.Col>
+        <div key={colIdx} className="flex flex-col gap-4">
+          {colGroups.map((group) => (
+            <BacklogGridCell
+              key={group}
+              group={group}
+              focusedGroup={focusedGroup}
+              tasks={groupedTasks[group] ?? []}
+              cursor={windows[group]?.cursor ?? 0}
+              isMoving={isMoving}
+              zenMode={zenMode}
+              cardRefs={cardRefs}
+              onSelect={(idx) => onSelectTask(group, idx)}
+              onFocusGroup={onFocusGroup}
+              onEdit={onEditTask}
+              onPostpone={onPostponeTask}
+              onPushToTimeline={onPushTaskToTimeline}
+              onToggleNext={onToggleTaskNext}
+              onSnooze={onSnoozeTask}
+              onClearSnooze={onClearTaskSnooze}
+              onDelete={onDeleteTask}
+            />
+          ))}
+        </div>
       ))}
-    </Grid>
+    </div>
   );
 }

@@ -2,17 +2,17 @@ import type { Notification } from "@/lib/notifications/notifications-models";
 import { parseRepeatDuration } from "@/lib/notifications/repeat-duration-utils";
 import { useNotificationsStore } from "@/lib/stores/notifications-store";
 import { useShortcuts } from "@/shared-lib/shortcuts/use-shortcuts";
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Input } from "@/components/ui/input";
 import {
-  ActionIcon,
-  Box,
-  Button,
-  Checkbox,
-  Group,
   Table,
-  Text,
-  TextInput,
-  Title,
-} from "@mantine/core";
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { ChevronDown, ChevronUp, Plus, RotateCcw, Trash2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
@@ -54,12 +54,12 @@ function RepeatsInput({ minutes, onChange }: RepeatsInputProps) {
   }, [minutes, focused]);
 
   return (
-    <TextInput
-      size="xs"
+    <Input
+      className="h-8 font-mono"
       autoComplete="off"
       placeholder="1h 20m"
       value={text}
-      error={parseRepeatDuration(text) === null}
+      aria-invalid={parseRepeatDuration(text) === null}
       onFocus={() => setFocused(true)}
       onChange={(e) => {
         const next = e.target.value;
@@ -115,71 +115,65 @@ export function NotificationsView() {
   });
 
   return (
-    <Box>
-      <Group justify="space-between" mb="md">
-        <Title order={3}>Notifications</Title>
-        <Group gap="xs">
-          <Button
-            size="xs"
-            variant="subtle"
-            leftSection={<RotateCcw size={14} />}
-            onClick={handleReset}
-          >
+    <div>
+      <div className="mb-4 flex items-center justify-between">
+        <h2 className="text-lg font-semibold tracking-wider uppercase">
+          Notifications
+        </h2>
+        <div className="flex gap-2">
+          <Button size="xs" variant="ghost" onClick={handleReset}>
+            <RotateCcw data-icon="inline-start" />
             Reset times
           </Button>
-          <Button
-            size="xs"
-            variant="light"
-            leftSection={<Plus size={14} />}
-            onClick={handleAddRow}
-          >
+          <Button size="xs" variant="outline" onClick={handleAddRow}>
+            <Plus data-icon="inline-start" />
             Add
           </Button>
-        </Group>
-      </Group>
+        </div>
+      </div>
 
-      <Table withTableBorder withColumnBorders>
-        <Table.Thead>
-          <Table.Tr>
-            <Table.Th w={70}>Move</Table.Th>
-            <Table.Th>Name</Table.Th>
-            <Table.Th w={120}>HH : MM</Table.Th>
-            <Table.Th w={120}>Repeats</Table.Th>
-            <Table.Th w={60}>Done</Table.Th>
-            <Table.Th>Description</Table.Th>
-            <Table.Th w={40} />
-          </Table.Tr>
-        </Table.Thead>
-        <Table.Tbody>
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead className="w-16">Move</TableHead>
+            <TableHead>Name</TableHead>
+            <TableHead className="w-28">HH : MM</TableHead>
+            <TableHead className="w-28">Repeats</TableHead>
+            <TableHead className="w-14">Done</TableHead>
+            <TableHead>Description</TableHead>
+            <TableHead className="w-10" />
+          </TableRow>
+        </TableHeader>
+        <TableBody>
           {notifications.map((n, idx) => {
             const isLast = idx === notifications.length - 1;
             return (
-              <Table.Tr key={n.id}>
-                <Table.Td>
-                  <Group gap={2}>
-                    <ActionIcon
-                      size="xs"
-                      variant="subtle"
+              <TableRow key={n.id}>
+                <TableCell>
+                  <div className="flex gap-0.5">
+                    <Button
+                      size="icon-xs"
+                      variant="ghost"
                       disabled={idx === 0}
                       onClick={() => moveNotification(n.id, -1)}
                     >
-                      <ChevronUp size={12} />
-                    </ActionIcon>
-                    <ActionIcon
-                      size="xs"
-                      variant="subtle"
+                      <ChevronUp />
+                    </Button>
+                    <Button
+                      size="icon-xs"
+                      variant="ghost"
                       disabled={isLast}
                       onClick={() => moveNotification(n.id, 1)}
                     >
-                      <ChevronDown size={12} />
-                    </ActionIcon>
-                  </Group>
-                </Table.Td>
+                      <ChevronDown />
+                    </Button>
+                  </div>
+                </TableCell>
 
-                <Table.Td>
-                  <TextInput
+                <TableCell>
+                  <Input
                     ref={isLast ? lastNameRef : undefined}
-                    size="xs"
+                    className="h-8"
                     autoComplete="off"
                     value={n.notificationName}
                     onChange={(e) =>
@@ -195,13 +189,12 @@ export function NotificationsView() {
                       }
                     }}
                   />
-                </Table.Td>
+                </TableCell>
 
-                <Table.Td>
-                  <Group gap={4} wrap="nowrap">
-                    <TextInput
-                      size="xs"
-                      w={44}
+                <TableCell>
+                  <div className="flex items-center gap-1">
+                    <Input
+                      className="h-8 w-10 text-center font-mono"
                       type="number"
                       min={0}
                       max={23}
@@ -214,10 +207,9 @@ export function NotificationsView() {
                         })
                       }
                     />
-                    <Text size="sm">:</Text>
-                    <TextInput
-                      size="xs"
-                      w={44}
+                    <span className="font-mono text-muted-foreground">:</span>
+                    <Input
+                      className="h-8 w-10 text-center font-mono"
                       type="number"
                       min={0}
                       max={59}
@@ -230,31 +222,30 @@ export function NotificationsView() {
                         })
                       }
                     />
-                  </Group>
-                </Table.Td>
+                  </div>
+                </TableCell>
 
-                <Table.Td>
+                <TableCell>
                   <RepeatsInput
                     minutes={n.repeatsInMinutes}
                     onChange={(repeatsInMinutes) =>
                       handleFieldChange({ ...n, repeatsInMinutes })
                     }
                   />
-                </Table.Td>
+                </TableCell>
 
-                <Table.Td>
+                <TableCell>
                   <Checkbox
-                    size="xs"
                     checked={n.isComplete}
-                    onChange={(e) =>
-                      editNotification({ ...n, isComplete: e.target.checked })
+                    onCheckedChange={(checked) =>
+                      editNotification({ ...n, isComplete: checked })
                     }
                   />
-                </Table.Td>
+                </TableCell>
 
-                <Table.Td>
-                  <TextInput
-                    size="xs"
+                <TableCell>
+                  <Input
+                    className="h-8"
                     autoComplete="off"
                     value={n.notificationDescription ?? ""}
                     onChange={(e) =>
@@ -264,24 +255,24 @@ export function NotificationsView() {
                       })
                     }
                   />
-                </Table.Td>
+                </TableCell>
 
-                <Table.Td>
-                  <ActionIcon
-                    size="xs"
-                    variant="subtle"
-                    color="red"
+                <TableCell>
+                  <Button
+                    size="icon-xs"
+                    variant="ghost"
+                    className="hover:text-destructive"
                     disabled={notifications.length === 1}
                     onClick={() => removeNotification(n.id)}
                   >
-                    <Trash2 size={12} />
-                  </ActionIcon>
-                </Table.Td>
-              </Table.Tr>
+                    <Trash2 />
+                  </Button>
+                </TableCell>
+              </TableRow>
             );
           })}
-        </Table.Tbody>
+        </TableBody>
       </Table>
-    </Box>
+    </div>
   );
 }

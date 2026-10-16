@@ -7,33 +7,14 @@ import { useRootShortcuts } from "@/lib/shortcuts/use-root-shortcuts";
 import { useNotificationsStore } from "@/lib/stores/notifications-store";
 import { useShortcutsMode } from "@/shared-lib/shortcuts/shortcuts-store";
 import type { Notification } from "@/lib/notifications/notifications-models";
-import { Button, Text } from "@mantine/core";
-import { notifications } from "@mantine/notifications";
 import { useEffect, type FC, type PropsWithChildren } from "react";
+import { toast } from "sonner";
 
-function NotificationMessage({
-  notification,
-  onAck,
-}: {
-  notification: Notification;
-  onAck: () => void;
-}) {
+const getNotificationMessage = (notification: Notification) => {
   const descr = notification.notificationDescription?.trim() || "";
   const suffix = getRepeatSuffix(notification);
-  return (
-    <div>
-      {(descr || suffix) && (
-        <Text size="sm" mb="xs">
-          {descr}
-          {suffix}
-        </Text>
-      )}
-      <Button size="xs" variant="filled" onClick={onAck}>
-        OK
-      </Button>
-    </div>
-  );
-}
+  return descr || suffix ? `${descr}${suffix}` : undefined;
+};
 
 export const RootController: FC<PropsWithChildren> = ({ children }) => {
   const { data } = useShortcutsMode("syncing");
@@ -53,17 +34,15 @@ export const RootController: FC<PropsWithChildren> = ({ children }) => {
 
       const ack = () => {
         editNotification(acknowledgeNotification(notification));
-        notifications.hide(id);
+        toast.dismiss(id);
       };
 
-      notifications.show({
+      toast(notification.notificationName, {
         id,
-        title: notification.notificationName,
-        message: (
-          <NotificationMessage notification={notification} onAck={ack} />
-        ),
-        autoClose: false,
-        withCloseButton: true,
+        description: getNotificationMessage(notification),
+        duration: Infinity,
+        closeButton: true,
+        action: { label: "OK", onClick: ack },
       });
     });
   }, [data?.lastUpdated, editNotification]);

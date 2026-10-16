@@ -1,15 +1,20 @@
-import type { BacklogTask } from "@/lib/stores/backlog-store";
 import {
   Accordion,
-  ActionIcon,
-  Badge,
-  Button,
-  Card,
-  Group,
-  Stack,
-  Text,
-} from "@mantine/core";
-import { Trash2 } from "lucide-react";
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import type { BacklogTask } from "@/lib/stores/backlog-store";
+import { tw } from "@/lib/utils";
+import { Check, Trash2, Zap } from "lucide-react";
+import type { ReactNode } from "react";
+
+const rowStyles = tw`
+  flex items-center justify-between gap-3 bg-card px-3 py-2 shadow-xs
+  ring-1 ring-foreground/5
+`;
 
 type Props = {
   postponedTasks: BacklogTask[];
@@ -18,6 +23,43 @@ type Props = {
   onDelete: (task: BacklogTask) => void;
   onDeleteDone?: () => void;
 };
+
+const TaskRow = ({
+  task,
+  badges,
+  actions,
+}: {
+  task: BacklogTask;
+  badges: ReactNode;
+  actions: ReactNode;
+}) => (
+  <div className={rowStyles}>
+    <div className="flex min-w-0 flex-1 flex-col gap-1">
+      <p className="truncate text-sm text-muted-foreground">
+        <span className="font-mono">#{task.id}</span> {task.name}
+      </p>
+      <div className="flex flex-wrap gap-3">{badges}</div>
+    </div>
+    <div className="flex shrink-0 items-center gap-1">{actions}</div>
+  </div>
+);
+
+const DeleteButton = ({ onClick }: { onClick: () => void }) => (
+  <Button
+    size="icon-xs"
+    variant="ghost"
+    className="hover:text-destructive"
+    onClick={onClick}
+  >
+    <Trash2 />
+  </Button>
+);
+
+const SectionTitle = ({ label, count }: { label: string; count: number }) => (
+  <span className="text-muted-foreground">
+    {label} <span className="font-mono">({count})</span>
+  </span>
+);
 
 export function BacklogPostponedOrDone({
   postponedTasks,
@@ -29,116 +71,88 @@ export function BacklogPostponedOrDone({
   if (postponedTasks.length === 0 && doneTasks.length === 0) return null;
 
   return (
-    <Accordion mt="xl" variant="separated">
+    <Accordion className="mt-8">
       {postponedTasks.length > 0 && (
-        <Accordion.Item value="postponed">
-          <Accordion.Control>
-            <Text size="sm" c="dimmed">
-              Postponed ({postponedTasks.length})
-            </Text>
-          </Accordion.Control>
-          <Accordion.Panel>
-            <Stack gap="xs">
+        <AccordionItem value="postponed">
+          <AccordionTrigger>
+            <SectionTitle label="Postponed" count={postponedTasks.length} />
+          </AccordionTrigger>
+          <AccordionContent>
+            <div className="flex flex-col gap-2">
               {postponedTasks.map((task) => (
-                <Card key={task.id} withBorder padding="xs">
-                  <Group justify="space-between" wrap="nowrap">
-                    <Stack gap={2} style={{ minWidth: 0, flex: 1 }}>
-                      <Text size="sm" c="dimmed" truncate>
-                        #{task.id} {task.name}
-                      </Text>
-                      <Group gap={4} wrap="wrap">
-                        {task.isNext && (
-                          <Badge size="xs" color="red" variant="light">
-                            next
-                          </Badge>
-                        )}
-                        {task.tag.trim() && (
-                          <Badge size="xs" color="gray" variant="light">
-                            {task.tag}
-                          </Badge>
-                        )}
-                      </Group>
-                    </Stack>
-                    <Group gap={4}>
+                <TaskRow
+                  key={task.id}
+                  task={task}
+                  badges={
+                    <>
+                      {task.isNext && (
+                        <Badge>
+                          <Zap data-icon="inline-start" />
+                          next
+                        </Badge>
+                      )}
+                      {task.tag.trim() && (
+                        <Badge variant="secondary">{task.tag}</Badge>
+                      )}
+                    </>
+                  }
+                  actions={
+                    <>
                       <Button
                         size="xs"
-                        variant="subtle"
+                        variant="ghost"
                         onClick={() => onActivate(task.id)}
                       >
                         Activate
                       </Button>
-                      <ActionIcon
-                        size="xs"
-                        variant="subtle"
-                        color="red"
-                        onClick={() => onDelete(task)}
-                      >
-                        <Trash2 size={12} />
-                      </ActionIcon>
-                    </Group>
-                  </Group>
-                </Card>
+                      <DeleteButton onClick={() => onDelete(task)} />
+                    </>
+                  }
+                />
               ))}
-            </Stack>
-          </Accordion.Panel>
-        </Accordion.Item>
+            </div>
+          </AccordionContent>
+        </AccordionItem>
       )}
 
       {doneTasks.length > 0 && (
-        <Accordion.Item value="done">
-          <Accordion.Control>
-            <Text size="sm" c="dimmed">
-              Done ({doneTasks.length})
-            </Text>
-          </Accordion.Control>
-          <Accordion.Panel>
-            <Stack gap="xs">
+        <AccordionItem value="done">
+          <AccordionTrigger>
+            <SectionTitle label="Done" count={doneTasks.length} />
+          </AccordionTrigger>
+          <AccordionContent>
+            <div className="flex flex-col gap-2">
               {doneTasks.map((task) => (
-                <Card key={task.id} withBorder padding="xs">
-                  <Group justify="space-between" wrap="nowrap">
-                    <Stack gap={2} style={{ minWidth: 0, flex: 1 }}>
-                      <Text size="sm" c="dimmed" truncate>
-                        #{task.id} {task.name}
-                      </Text>
-                      <Group gap={4} wrap="wrap">
-                        <Badge size="xs" color="green" variant="light">
-                          done
-                        </Badge>
-                        {task.tag.trim() && (
-                          <Badge size="xs" color="gray" variant="light">
-                            {task.tag}
-                          </Badge>
-                        )}
-                      </Group>
-                    </Stack>
-                    <Group gap={4}>
-                      <ActionIcon
-                        size="xs"
-                        variant="subtle"
-                        color="red"
-                        onClick={() => onDelete(task)}
-                      >
-                        <Trash2 size={12} />
-                      </ActionIcon>
-                    </Group>
-                  </Group>
-                </Card>
+                <TaskRow
+                  key={task.id}
+                  task={task}
+                  badges={
+                    <>
+                      <Badge>
+                        <Check data-icon="inline-start" />
+                        done
+                      </Badge>
+                      {task.tag.trim() && (
+                        <Badge variant="secondary">{task.tag}</Badge>
+                      )}
+                    </>
+                  }
+                  actions={<DeleteButton onClick={() => onDelete(task)} />}
+                />
               ))}
-            </Stack>
+            </div>
             {onDeleteDone && (
               <Button
                 size="xs"
-                color="red"
-                variant="light"
-                fullWidth
-                mt="sm"
+                variant="destructive"
+                className="mt-3 w-full"
                 onClick={onDeleteDone}
               >
                 Delete All Done
               </Button>
             )}
-          </Accordion.Panel>
-        </Accordion.Item>
+          </AccordionContent>
+        </AccordionItem>
       )}
     </Accordion>
   );

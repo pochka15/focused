@@ -1,5 +1,4 @@
-import { Card, Textarea } from "@mantine/core";
-import classes from "./timeline-view.module.css";
+import { Textarea } from "@/components/ui/textarea";
 
 type Props = {
   value: string;
@@ -9,17 +8,14 @@ type Props = {
 
 export const QuickNoteCard = ({ value, onChange, textareaRef }: Props) => {
   return (
-    <Card withBorder padding="xs" className={classes.quickNoteCard}>
+    <div className="bg-muted/40 px-4 py-1">
       <Textarea
         ref={textareaRef}
         value={value}
         onChange={(e) => onChange(e.currentTarget.value)}
         placeholder="Quick note..."
-        autosize
-        minRows={2}
-        maxRows={6}
-        classNames={{ input: classes.quickNoteInput }}
+        className="max-h-[150px] min-h-14 overflow-y-auto border-b-transparent"
       />
-    </Card>
+    </div>
   );
 };

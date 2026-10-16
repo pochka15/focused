@@ -1,11 +1,11 @@
+import { Button } from "@/components/ui/button";
 import {
-  Divider,
   HoverCard,
-  Paper,
-  Stack,
-  Text,
-  UnstyledButton,
-} from "@mantine/core";
+  HoverCardContent,
+  HoverCardTrigger,
+} from "@/components/ui/hover-card";
+import { Separator } from "@/components/ui/separator";
+import { cn, tw } from "@/lib/utils";
 import { Keyboard } from "lucide-react";
 import { useShortcuts } from "@/shared-lib/shortcuts/use-shortcuts";
 import { useShortcutsMode } from "@/shared-lib/shortcuts/shortcuts-store";
@@ -16,7 +16,6 @@ import {
   TIMELINE_CARD_SHORTCUTS,
   TIMELINE_SHORTCUTS,
 } from "@/lib/shortcuts/shortcut-mappings";
-import classes from "./shell.module.css";
 
 const NAV_SHORTCUTS_SECTION = {
   title: "Navigation",
@@ -90,6 +89,38 @@ type Props = {
   pathname: string;
 };
 
+const panelStyles = tw`
+  max-h-[min(70vh,560px)] w-80 overflow-y-auto
+`;
+
+const pinnedPanelStyles = tw`
+  absolute top-0 left-[calc(100%+8px)] z-10 bg-popover p-4
+  text-popover-foreground shadow-md ring-1 ring-foreground/10
+`;
+
+// Lines look like "j/k: move cursor" — render the keys part in mono.
+const ShortcutLine = ({ item }: { item: string }) => {
+  const sep = item.indexOf(": ");
+  if (sep < 0) return <p className="text-xs">{item}</p>;
+  return (
+    <p className="flex gap-3 text-xs">
+      <span className="w-20 shrink-0 font-mono text-muted-foreground">
+        {item.slice(0, sep)}
+      </span>
+      <span>{item.slice(sep + 2)}</span>
+    </p>
+  );
+};
+
+const TriggerButton = (props: React.ComponentProps<typeof Button>) => (
+  <Button
+    variant="ghost"
+    size="icon-sm"
+    className="text-muted-foreground"
+    {...props}
+  />
+);
+
 export function ShortcutsHover({ pathname }: Props) {
   const { enabled } = useShortcutsMode("help");
 
@@ -113,65 +144,40 @@ export function ShortcutsHover({ pathname }: Props) {
   const visibleSections = [NAV_SHORTCUTS_SECTION, ...routeSections];
 
   const content = (
-    <Stack gap="xs">
+    <div className="flex flex-col gap-3">
       {visibleSections.map((section, idx) => (
-        <Stack key={section.title} gap={4}>
-          <Text size="xs" fw={700} c="dimmed">
+        <div key={section.title} className="flex flex-col gap-1.5">
+          <p className="text-[0.625rem] font-semibold tracking-widest text-muted-foreground uppercase">
             {section.title}
-          </Text>
+          </p>
           {section.items.map((item) => (
-            <Text key={item} size="xs">
-              {item}
-            </Text>
+            <ShortcutLine key={item} item={item} />
           ))}
-          {idx < visibleSections.length - 1 && <Divider my={4} />}
-        </Stack>
+          {idx < visibleSections.length - 1 && <Separator className="mt-1.5" />}
+        </div>
       ))}
-    </Stack>
+    </div>
   );
 
   if (enabled) {
     return (
-      <div style={{ position: "relative" }}>
-        <UnstyledButton className={classes.navItem}>
-          <Keyboard size={18} />
-        </UnstyledButton>
-        <Paper
-          className={classes.shortcutsDropdown}
-          shadow="md"
-          withBorder
-          style={{
-            position: "absolute",
-            top: 0,
-            left: "calc(100% + 8px)",
-            width: 320,
-            zIndex: 10,
-          }}
-          p="sm"
-        >
-          {content}
-        </Paper>
+      <div className="relative">
+        <TriggerButton>
+          <Keyboard />
+        </TriggerButton>
+        <div className={cn(panelStyles, pinnedPanelStyles)}>{content}</div>
       </div>
     );
   }
 
   return (
-    <HoverCard
-      width={320}
-      position="right-start"
-      withArrow
-      openDelay={80}
-      closeDelay={120}
-      shadow="md"
-    >
-      <HoverCard.Target>
-        <UnstyledButton className={classes.navItem}>
-          <Keyboard size={18} />
-        </UnstyledButton>
-      </HoverCard.Target>
-      <HoverCard.Dropdown className={classes.shortcutsDropdown}>
+    <HoverCard>
+      <HoverCardTrigger delay={80} closeDelay={120} render={<TriggerButton />}>
+        <Keyboard />
+      </HoverCardTrigger>
+      <HoverCardContent side="right" align="start" className={panelStyles}>
         {content}
-      </HoverCard.Dropdown>
+      </HoverCardContent>
     </HoverCard>
   );
 }

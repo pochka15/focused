@@ -1,10 +1,9 @@
-import { Box, Textarea } from "@mantine/core";
+import { Textarea } from "@/components/ui/textarea";
 import { useEffect, useRef } from "react";
 import { useTimelineStore } from "@/lib/stores/timeline-store";
 import { useDebouncedSync } from "@/hooks/use-debounced-sync";
 import { useShortcuts } from "@/shared-lib/shortcuts/use-shortcuts";
 import { TIMELINE_NOTES_SHORTCUTS } from "@/lib/shortcuts/shortcut-mappings";
-import classes from "./timeline-view.module.css";
 
 type Props = {
   active: boolean;
@@ -39,18 +38,14 @@ export const TimelineNotesTab = ({ active, onClose }: Props) => {
   });
 
   return (
-    <Box className={classes.notesPanel}>
+    <div className="mx-auto w-full max-w-215 px-2 pt-4 pb-8">
       <Textarea
-        data-autofocus
         ref={internalRef}
         value={draft}
         onChange={(e) => setDraft(e.currentTarget.value)}
         placeholder="Write freely..."
-        variant="unstyled"
-        autosize
-        minRows={18}
-        classNames={{ input: classes.notesInput }}
+        className="min-h-[68vh] border-b-transparent text-lg tracking-[0.01em] md:text-lg"
       />
-    </Box>
+    </div>
   );
 };

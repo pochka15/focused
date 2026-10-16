@@ -1,6 +1,5 @@
 import type { BacklogTask } from "@/lib/stores/backlog-store";
 import { Window as W, type UiWindow } from "@/shared-lib/shortcuts/window";
-import { Stack, Text } from "@mantine/core";
 import type { RefObject } from "react";
 import { BacklogTaskCard } from "./backlog-task-card";
 
@@ -36,13 +35,13 @@ export function BacklogGridNarrowView({
   onDeleteTask,
 }: Props) {
   return (
-    <Stack gap="xs" maw={800}>
+    <div className="flex max-w-200 flex-col gap-2">
       {allSorted.length === 0 && (
-        <Text c="dimmed" size="sm">
+        <p className="text-sm text-muted-foreground">
           {hasAnyTasks
             ? "No tasks match the current mode."
             : "No tasks yet. Press n to add one."}
-        </Text>
+        </p>
       )}
       {allSorted.map((task, idx) => (
         <BacklogTaskCard
@@ -64,6 +63,6 @@ export function BacklogGridNarrowView({
           onDelete={() => onDeleteTask(task)}
         />
       ))}
-    </Stack>
+    </div>
   );
 }

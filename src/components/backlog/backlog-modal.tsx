@@ -1,22 +1,63 @@
+import { useDeferredFocus } from "@/hooks/use-deferred-focus";
 import { useSimpleForm } from "@/hooks/use-simple-form";
 import { BACKLOG_TAG_PRESETS } from "@/lib/backlog/backlog-tag-presets";
 import type { BacklogTask } from "@/lib/stores/backlog-store";
 import { useShortcuts } from "@/shared-lib/shortcuts/use-shortcuts";
 import { BACKLOG_MODAL_SHORTCUTS } from "@/lib/shortcuts/shortcut-mappings";
+import { Button } from "@/components/ui/button";
 import {
-  Box,
-  Button,
-  Group,
-  Kbd,
-  Modal,
-  Stack,
-  Text,
-  Textarea,
-  TextInput,
-  UnstyledButton,
-} from "@mantine/core";
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  Field,
+  FieldGroup,
+  FieldLabel,
+  FieldLegend,
+  FieldSet,
+} from "@/components/ui/field";
+import { Input } from "@/components/ui/input";
+import { Kbd } from "@/components/ui/kbd";
+import { Textarea } from "@/components/ui/textarea";
+import { cn, tw } from "@/lib/utils";
+import { CircleDashed, Flame, Hourglass, type LucideIcon } from "lucide-react";
 import { useEffect, useRef } from "react";
-import classes from "./backlog-modal.module.css";
+
+const optionStyles = tw`
+  flex w-full items-center gap-3 bg-muted/40 px-3 py-2 text-left
+  text-muted-foreground transition-colors hover:bg-muted hover:text-foreground
+`;
+
+const selectedOptionStyles = tw`
+  bg-foreground text-background hover:bg-foreground hover:text-background
+`;
+
+const OptionButton = ({
+  selected,
+  shortcut,
+  icon: Icon,
+  label,
+  onClick,
+}: {
+  selected: boolean;
+  shortcut: string;
+  icon: LucideIcon;
+  label: string;
+  onClick: () => void;
+}) => (
+  <button
+    type="button"
+    onClick={onClick}
+    className={cn(optionStyles, selected && selectedOptionStyles)}
+  >
+    <Kbd>{shortcut}</Kbd>
+    <Icon strokeWidth={1.5} className="size-4 shrink-0" />
+    <span className="truncate text-xs">{label}</span>
+  </button>
+);
 
 // ─── Form ─────────────────────────────────────────────────────────────────────
 
@@ -45,10 +86,10 @@ type Props = {
 // Keys line up 1:1 with BACKLOG_MODAL_SHORTCUTS.tagKeys.
 
 const TAG_OPTIONS = [
-  { value: "", emoji: "∅", label: "Без тега" },
+  { value: "", icon: CircleDashed, label: "Без тега" },
   ...BACKLOG_TAG_PRESETS.map((preset) => ({
     value: preset.value,
-    emoji: preset.emoji,
+    icon: preset.icon,
     label: preset.label,
   })),
 ].map((opt, index) => ({
@@ -56,11 +97,12 @@ const TAG_OPTIONS = [
   key: BACKLOG_MODAL_SHORTCUTS.tagKeys[index]!,
 }));
 
-const NEXT_FALSE = { emoji: "🫙", label: "Пока не на очереди" };
-const NEXT_TRUE = { emoji: "🔥", label: "На очереди" };
+const NEXT_FALSE = { icon: Hourglass, label: "Пока не на очереди" };
+const NEXT_TRUE = { icon: Flame, label: "На очереди" };
 
 export function BacklogModal({ opened, onClose, onSubmit, editing }: Props) {
   const nameRef = useRef<HTMLInputElement>(null);
+  useDeferredFocus(nameRef, opened);
   const { values, setValues, reset } = useSimpleForm<BacklogFormValues>(
     defaultValues(editing)
   );
@@ -126,93 +168,82 @@ export function BacklogModal({ opened, onClose, onSubmit, editing }: Props) {
     },
   });
 
-  return (
-    <Modal
-      opened={opened}
-      onClose={onClose}
-      title={editing ? "Edit task" : "New task"}
-      size="sm"
-    >
-      <Stack gap="sm">
-        <TextInput
-          ref={nameRef}
-          data-autofocus="true"
-          label="Name"
-          placeholder="Task name"
-          value={values.name}
-          onChange={(e) => setValues((v) => ({ ...v, name: e.target.value }))}
-        />
-        <Textarea
-          label="Description"
-          placeholder="Optional context"
-          value={values.description}
-          onChange={(e) =>
-            setValues((v) => ({ ...v, description: e.target.value }))
-          }
-          autosize
-          minRows={2}
-          maxRows={8}
-        />
+  const nextOption = values.isNext ? NEXT_TRUE : NEXT_FALSE;
 
-        <Box>
-          <Text size="xs" c="dimmed" mb={6}>
-            Tag
-          </Text>
-          <Stack gap={4}>
-            {TAG_OPTIONS.map((opt) => {
-              const isSelected = values.tag === opt.value;
-              return (
-                <UnstyledButton
+  return (
+    <Dialog open={opened} onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="sm:max-w-sm" initialFocus={false}>
+        <DialogHeader>
+          <DialogTitle>{editing ? "Edit task" : "New task"}</DialogTitle>
+        </DialogHeader>
+        <FieldGroup>
+          <Field>
+            <FieldLabel htmlFor="backlog-name">Name</FieldLabel>
+            <Input
+              id="backlog-name"
+              ref={nameRef}
+              placeholder="Task name"
+              value={values.name}
+              onChange={(e) =>
+                setValues((v) => ({ ...v, name: e.target.value }))
+              }
+            />
+          </Field>
+          <Field>
+            <FieldLabel htmlFor="backlog-description">Description</FieldLabel>
+            <Textarea
+              id="backlog-description"
+              placeholder="Optional context"
+              className="max-h-48 min-h-12"
+              value={values.description}
+              onChange={(e) =>
+                setValues((v) => ({ ...v, description: e.target.value }))
+              }
+            />
+          </Field>
+
+          <FieldSet>
+            <FieldLegend variant="label">Tag</FieldLegend>
+            <div className="flex flex-col gap-1">
+              {TAG_OPTIONS.map((opt) => (
+                <OptionButton
                   key={opt.value}
+                  selected={values.tag === opt.value}
+                  shortcut={opt.key}
+                  icon={opt.icon}
+                  label={opt.label}
                   onClick={() =>
                     setValues((current) => ({ ...current, tag: opt.value }))
                   }
-                  className={isSelected ? classes.tagSelected : classes.tag}
-                >
-                  <Group gap={8} wrap="nowrap">
-                    <Kbd size="xs">{opt.key}</Kbd>
-                    <Text size="lg" lh={1}>
-                      {opt.emoji}
-                    </Text>
-                    <Text size="xs" truncate>
-                      {opt.label}
-                    </Text>
-                  </Group>
-                </UnstyledButton>
-              );
-            })}
-          </Stack>
-        </Box>
+                />
+              ))}
+            </div>
+          </FieldSet>
 
-        <Box>
-          <Text size="xs" c="dimmed" mb={6}>
-            Next
-          </Text>
-          <UnstyledButton
-            onClick={() =>
-              setValues((current) => ({ ...current, isNext: !current.isNext }))
-            }
-            className={values.isNext ? classes.tagSelected : classes.tag}
-          >
-            <Group gap={8} wrap="nowrap">
-              <Kbd size="xs">{BACKLOG_MODAL_SHORTCUTS.toggleNext}</Kbd>
-              <Text size="lg" lh={1}>
-                {values.isNext ? NEXT_TRUE.emoji : NEXT_FALSE.emoji}
-              </Text>
-              <Text size="xs">
-                {values.isNext ? NEXT_TRUE.label : NEXT_FALSE.label}
-              </Text>
-            </Group>
-          </UnstyledButton>
-        </Box>
+          <FieldSet>
+            <FieldLegend variant="label">Next</FieldLegend>
+            <OptionButton
+              selected={values.isNext}
+              shortcut={BACKLOG_MODAL_SHORTCUTS.toggleNext}
+              icon={nextOption.icon}
+              label={nextOption.label}
+              onClick={() =>
+                setValues((current) => ({
+                  ...current,
+                  isNext: !current.isNext,
+                }))
+              }
+            />
+          </FieldSet>
+        </FieldGroup>
 
-        <Group justify="flex-end" mt="xs">
-          <Button variant="subtle" onClick={onClose}>
+        <DialogFooter>
+          <Button variant="ghost" onClick={onClose}>
             Cancel
           </Button>
           <Button onClick={handleSubmit}>{editing ? "Save" : "Add"}</Button>
-        </Group>
-      </Stack>
-    </Modal>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }

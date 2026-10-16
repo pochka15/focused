@@ -1,4 +1,4 @@
-import { Button, Group, Text, Title } from "@mantine/core";
+import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 
 type Props = {
@@ -15,21 +15,19 @@ export const TimelineSectionHeader = ({
   onButtonClick,
 }: Props) => {
   return (
-    <Group justify="space-between" mb="md">
-      <Title order={3}>{title}</Title>
-      <Group gap="xs">
-        <Text size="xs" c="dimmed">
-          {hint}
-        </Text>
-        <Button
-          size="xs"
-          variant="light"
-          leftSection={<Plus size={14} />}
-          onClick={onButtonClick}
-        >
-          {buttonLabel}
-        </Button>
-      </Group>
-    </Group>
+    <div className="mb-4 flex items-center justify-between">
+      <h2 className="text-lg font-semibold tracking-wider uppercase">
+        {title}
+      </h2>
+      <div className="flex items-center gap-2">
+        {hint && <span className="text-xs text-muted-foreground">{hint}</span>}
+        {buttonLabel && (
+          <Button size="xs" variant="outline" onClick={onButtonClick}>
+            <Plus data-icon="inline-start" />
+            {buttonLabel}
+          </Button>
+        )}
+      </div>
+    </div>
   );
 };

@@ -1,40 +1,43 @@
+import {
+  CakeSlice,
+  Cog,
+  Gem,
+  HandHeart,
+  Tornado,
+  type LucideIcon,
+} from "lucide-react";
+
 export type BacklogTagPreset = {
   value: string;
   label: string;
-  emoji: string;
-  color: string;
+  icon: LucideIcon;
 };
 
 export const BACKLOG_TAG_PRESETS: BacklogTagPreset[] = [
   {
     value: "real value",
     label: "Хорошая ценность",
-    emoji: "🌟",
-    color: "yellow",
+    icon: Gem,
   },
   {
     value: "thank me later",
     label: "Скажешь спасибо позже",
-    emoji: "🙏",
-    color: "teal",
+    icon: HandHeart,
   },
   {
     value: "duty task",
     label: "Классическая дежурная",
-    emoji: "⚙️",
-    color: "gray",
+    icon: Cog,
   },
   {
     value: "dessert",
     label: "На десерт",
-    emoji: "🍰",
-    color: "pink",
+    icon: CakeSlice,
   },
   {
     value: "maybe vibes",
     label: "Вроде и прек, но хз",
-    emoji: "🌀",
-    color: "indigo",
+    icon: Tornado,
   },
 ];
 

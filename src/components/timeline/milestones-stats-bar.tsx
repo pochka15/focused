@@ -1,9 +1,14 @@
 import { useTimelineStore } from "@/lib/stores/timeline-store";
 import { isMilestone } from "@/lib/timeline/timeline-models";
 import { orderedTags, tagsMapping, type TagName } from "@/lib/todos/mappings";
-import { Box, Stack, Text } from "@mantine/core";
+import { tw } from "@/lib/utils";
+import { Timer, type LucideIcon } from "lucide-react";
 import { useMemo } from "react";
-import classes from "./milestones-stats-bar.module.css";
+
+const iconChipStyles = tw`
+  flex size-6 items-center justify-center rounded-full bg-card shadow-xs
+  ring-1 ring-foreground/10
+`;
 
 type TagCounts = {
   "good-one": number;
@@ -33,75 +38,30 @@ function formatTimeRange(min: number, max: number): string {
   return `${min}м – ${max}м`;
 }
 
-// Wheel geometry
-const RADIUS = 66;
-const STACK_STEP = 15;
-const MAX_STACK = 4;
+const MAX_STACK = 5;
 
-type EmojiGroup = {
+type IconGroup = {
   tag: TagName;
-  emoji: string;
+  icon: LucideIcon;
   count: number;
 };
 
-function EmojiWheel({
-  groups,
-  total,
-}: {
-  groups: EmojiGroup[];
-  total: number;
-}) {
-  const angleStep = groups.length > 0 ? 360 / groups.length : 0;
-
-  return (
-    <div className={classes.wheel}>
-      <div className={classes.hub}>{total}</div>
-
-      {groups.map((group, groupIndex) => {
-        const angleDeg = -90 + angleStep * groupIndex;
-        const angleRad = (angleDeg * Math.PI) / 180;
-        const dx = Math.cos(angleRad);
-        const dy = Math.sin(angleRad);
-
-        const visibleCount = Math.min(group.count, MAX_STACK);
-        const overflow = group.count - visibleCount;
-
-        return (
-          <div key={group.tag} className={classes.group}>
-            {Array.from({ length: visibleCount }).map((_, stackIndex) => {
-              // stackIndex 0 is the front emoji, sitting at the outer edge of the
-              // circle; later ones line up behind it toward the hub, each a bit
-              // smaller and dimmer so they read as peeking out from behind.
-              const depth = visibleCount - 1 - stackIndex;
-              const distance = RADIUS - depth * STACK_STEP;
-              const x = dx * distance;
-              const y = dy * distance;
-              const scale = 1 - depth * 0.12;
-              const isOverflowAnchor =
-                stackIndex === visibleCount - 1 && overflow > 0;
-
-              return (
-                <div
-                  key={stackIndex}
-                  className={classes.emoji}
-                  style={{
-                    transform: `translate(-50%, -50%) translate(${x}px, ${y}px) scale(${scale})`,
-                    zIndex: stackIndex + 1,
-                  }}
-                >
-                  {group.emoji}
-                  {isOverflowAnchor && (
-                    <span className={classes.overflowBadge}>+{overflow}</span>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        );
-      })}
+const IconRow = ({ group }: { group: IconGroup }) => (
+  <div className="flex items-center justify-end gap-2">
+    <div className="flex *:not-first:-ml-2">
+      {Array.from({ length: Math.min(group.count, MAX_STACK) }).map(
+        (_, idx) => (
+          <span key={idx} className={iconChipStyles}>
+            <group.icon strokeWidth={1.5} className="size-3.5" />
+          </span>
+        )
+      )}
     </div>
-  );
-}
+    <span className="w-4 text-right font-mono text-xs text-muted-foreground tabular-nums">
+      {group.count}
+    </span>
+  </div>
+);
 
 export function MilestonesStatsBar() {
   const items = useTimelineStore((s) => s.items);
@@ -138,30 +98,35 @@ export function MilestonesStatsBar() {
 
     const timeRange = totalMin > 0 ? formatTimeRange(totalMin, totalMax) : null;
 
-    const groups: EmojiGroup[] = orderedTags
+    const groups: IconGroup[] = orderedTags
       .filter((tag) => counts[tag] > 0)
       .map((tag) => ({
         tag,
-        emoji: tagsMapping[tag].emoji,
+        icon: tagsMapping[tag].icon,
         count: counts[tag],
       }));
 
     return { timeRange, groups, total };
   }, [items]);
 
-  return (
-    <Box className={classes.container}>
-      <Stack align="center" gap={10}>
-        <EmojiWheel groups={groups} total={total} />
+  if (total === 0) return null;
 
-        <Stack gap={2} align="center">
-          {timeRange && (
-            <Text size="xs" c="dimmed" fw={400}>
-              ⏱ {timeRange}
-            </Text>
-          )}
-        </Stack>
-      </Stack>
-    </Box>
+  return (
+    <div className="fixed right-6 bottom-6 z-10 flex flex-col items-end gap-1.5">
+      {groups.map((group) => (
+        <IconRow key={group.tag} group={group} />
+      ))}
+      <div className="mt-1 flex items-center gap-3 font-mono text-xs text-muted-foreground">
+        {timeRange && (
+          <span className="flex items-center gap-1">
+            <Timer className="size-3" />
+            {timeRange}
+          </span>
+        )}
+        <span className="font-semibold text-foreground tabular-nums">
+          Σ {total}
+        </span>
+      </div>
+    </div>
   );
 }

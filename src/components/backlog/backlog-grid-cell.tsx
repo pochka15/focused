@@ -1,10 +1,15 @@
 import type { BacklogTask } from "@/lib/stores/backlog-store";
 import type { GridGroup } from "@/lib/stores/backlog-grid-store";
-import { Badge, Box, Group, Stack, Text } from "@mantine/core";
+import { Badge } from "@/components/ui/badge";
+import { cn, tw } from "@/lib/utils";
+import { MoveVertical } from "lucide-react";
 import type { RefObject } from "react";
 import { BacklogTaskCard } from "./backlog-task-card";
 import { GROUP_LABELS } from "./use-backlog-groups";
-import classes from "./backlog-view.module.css";
+
+const cellStyles = tw`
+  flex min-h-70 flex-col gap-3 bg-muted/30 p-3 transition-shadow
+`;
 
 type Props = {
   group: GridGroup;
@@ -46,18 +51,24 @@ export function BacklogGridCell({
   const isFocused = group === focusedGroup;
 
   return (
-    <Box className={isFocused ? classes.cellFocused : classes.cell}>
-      <Group justify="space-between" mb={6}>
-        <Text size="xs" fw={600} c={isFocused ? "blue" : "dimmed"}>
+    <div className={cn(cellStyles, isFocused && "ring-1 ring-foreground/25")}>
+      <div className="flex items-center justify-between">
+        <p
+          className={cn(
+            "text-[0.625rem] font-semibold tracking-widest uppercase",
+            isFocused ? "text-foreground" : "text-muted-foreground"
+          )}
+        >
           {GROUP_LABELS[group]}
-        </Text>
+        </p>
         {isFocused && isMoving && (
-          <Badge size="xs" color="orange" variant="filled">
+          <Badge>
+            <MoveVertical data-icon="inline-start" />
             moving
           </Badge>
         )}
-      </Group>
-      <Stack gap="xs">
+      </div>
+      <div className="flex flex-col gap-2">
         {tasks.map((task, idx) => (
           <BacklogTaskCard
             key={task.id}
@@ -82,11 +93,9 @@ export function BacklogGridCell({
           />
         ))}
         {tasks.length === 0 && (
-          <Text size="xs" c="dimmed" fs="italic">
-            Empty
-          </Text>
+          <p className="text-xs text-muted-foreground/60 italic">Empty</p>
         )}
-      </Stack>
-    </Box>
+      </div>
+    </div>
   );
 }

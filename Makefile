@@ -15,3 +15,13 @@ build-and-run:
 
 typecheck:
 	pnpm typecheck
+
+lint:
+	pnpm lint
+
+lint-fix:
+	pnpm lint:fix
+
+check: check-formatting lint typecheck
+
+fix: format lint-fix

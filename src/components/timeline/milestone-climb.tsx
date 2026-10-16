@@ -1,6 +1,11 @@
 import type { Milestone } from "@/lib/timeline/timeline-models";
 import { tagsMapping } from "@/lib/todos/mappings";
-import { Tooltip } from "@mantine/core";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { cn, tw } from "@/lib/utils";
 import { memo } from "react";
 import {
   DndContext,
@@ -17,7 +22,13 @@ import {
   useSortable,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import classes from "./milestone-climb.module.css";
+
+const circleStyles = tw`
+  flex size-14 cursor-grab items-center justify-center rounded-full bg-card
+  text-muted-foreground shadow-sm ring-1 ring-foreground/10
+  transition-[scale,color] will-change-transform [contain:layout_style_paint]
+  hover:scale-108 hover:text-foreground active:cursor-grabbing
+`;
 
 type Props = {
   completed: Milestone[];
@@ -41,24 +52,29 @@ const SortableItem = memo(
       transform: CSS.Transform.toString(transform),
     };
 
+    const Icon = tagsMapping[milestone.tag].icon;
+
     return (
-      <Tooltip label={milestone.name} position="left" disabled={isDragging}>
-        <div
-          ref={setNodeRef}
-          style={style}
-          className={`${classes.circle} ${isDragging ? classes.dragging : ""}`}
-          {...attributes}
-          {...listeners}
-          onClick={() => onEdit(milestone)}
-          onContextMenu={(e) => {
-            e.preventDefault();
-            onDelete(milestone);
-          }}
+      <Tooltip disabled={isDragging}>
+        <TooltipTrigger
+          render={
+            <div
+              ref={setNodeRef}
+              style={style}
+              className={cn(circleStyles, isDragging && "opacity-50 shadow-lg")}
+              {...attributes}
+              {...listeners}
+              onClick={() => onEdit(milestone)}
+              onContextMenu={(e) => {
+                e.preventDefault();
+                onDelete(milestone);
+              }}
+            />
+          }
         >
-          <span className={classes.emoji}>
-            {tagsMapping[milestone.tag].emoji}
-          </span>
-        </div>
+          <Icon strokeWidth={1.5} className="pointer-events-none size-6" />
+        </TooltipTrigger>
+        <TooltipContent side="left">{milestone.name}</TooltipContent>
       </Tooltip>
     );
   }
@@ -105,7 +121,7 @@ export function MilestoneClimb({
         items={completed.map((m) => m.id)}
         strategy={verticalListSortingStrategy}
       >
-        <div className={classes.stack}>
+        <div className="flex w-full flex-col-reverse items-center gap-1.5 py-1 pr-1 pl-5">
           {completed.map((milestone) => (
             <SortableItem
               key={milestone.id}

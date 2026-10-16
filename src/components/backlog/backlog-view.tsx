@@ -20,10 +20,11 @@ import {
   Window2D,
   type UiWindow,
 } from "@/shared-lib/shortcuts/window";
-import { Box, Button, Group, Title } from "@mantine/core";
-import { useMediaQuery } from "@mantine/hooks";
-import { notifications } from "@mantine/notifications";
+import { Button } from "@/components/ui/button";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { useMediaQuery } from "@uidotdev/usehooks";
 import { Plus } from "lucide-react";
+import { toast } from "sonner";
 import { useNavigate, useRouterState } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { BacklogGridNarrowView } from "./backlog-grid-narrow-view";
@@ -32,7 +33,6 @@ import { BacklogModal } from "./backlog-modal";
 import { BacklogPostponedOrDone } from "./backlog-postponed-or-done";
 import { useBacklogShortcuts } from "./use-backlog-shortcuts";
 import { useAllTasksSorted, useTasksByGroups } from "./use-backlog-groups";
-import classes from "./backlog-view.module.css";
 
 const GROUPS = BACKLOG_GROUPS;
 const FIRST_GROUP = GROUPS[0] ?? 1;
@@ -161,10 +161,8 @@ export function BacklogView() {
 
     if (targetMilestone) {
       if ((targetMilestone.taskIds ?? []).includes(task.id)) {
-        notifications.show({
-          title: `Already linked to "${targetMilestone.name}"`,
-          message: `#${task.id} ${task.name}`,
-          color: "yellow",
+        toast.warning(`Already linked to "${targetMilestone.name}"`, {
+          description: `#${task.id} ${task.name}`,
         });
         return;
       }
@@ -173,19 +171,15 @@ export function BacklogView() {
         ...targetMilestone,
         taskIds: [...(targetMilestone.taskIds ?? []), task.id],
       });
-      notifications.show({
-        title: `Linked to "${targetMilestone.name}"`,
-        message: `#${task.id} ${task.name}`,
-        color: "teal",
+      toast.success(`Linked to "${targetMilestone.name}"`, {
+        description: `#${task.id} ${task.name}`,
       });
       return;
     }
 
     addTimelineItem(toTimelineMilestoneFromBacklog(task), pushFront);
-    notifications.show({
-      title: "Added to timeline",
-      message: `#${task.id} ${task.name}`,
-      color: "teal",
+    toast.success("Added to timeline", {
+      description: `#${task.id} ${task.name}`,
     });
   };
 
@@ -254,7 +248,7 @@ export function BacklogView() {
   });
 
   return (
-    <Box>
+    <div>
       <BacklogModal
         opened={modalOpen}
         onClose={() => {
@@ -265,40 +259,30 @@ export function BacklogView() {
         editing={editingTask}
       />
 
-      <Box className={classes.stickyHeader}>
-        <Group justify="space-between" mb="sm">
-          <Title order={3}>Backlog</Title>
-          <Group gap="xs">
-            <Button
-              size="xs"
-              variant="light"
-              leftSection={<Plus size={14} />}
-              onClick={() => openModal()}
-            >
-              New
-            </Button>
-          </Group>
-        </Group>
-
-        <Group gap={6} mb="md" align="center" wrap="wrap">
-          <button
-            className={zenMode ? classes.filterPillActive : classes.filterPill}
-            onClick={() => {
-              if (!zenMode) setRouteView("zen");
+      <div className="sticky top-0 z-10 -mx-4 mb-4 flex items-center justify-between gap-4 bg-background/90 px-4 py-2 backdrop-blur-sm">
+        <div className="flex items-center gap-4">
+          <h2 className="text-lg font-semibold tracking-wider uppercase">
+            Backlog
+          </h2>
+          <ToggleGroup
+            size="sm"
+            spacing={0}
+            value={[zenMode ? "zen" : "full"]}
+            onValueChange={(value) => {
+              const next = value[0];
+              if (next === "zen" && !zenMode) setRouteView("zen");
+              if (next === "full" && zenMode) setRouteView("full");
             }}
           >
-            Zen
-          </button>
-          <button
-            className={!zenMode ? classes.filterPillActive : classes.filterPill}
-            onClick={() => {
-              if (zenMode) setRouteView("full");
-            }}
-          >
-            Full
-          </button>
-        </Group>
-      </Box>
+            <ToggleGroupItem value="zen">Zen</ToggleGroupItem>
+            <ToggleGroupItem value="full">Full</ToggleGroupItem>
+          </ToggleGroup>
+        </div>
+        <Button size="xs" variant="outline" onClick={() => openModal()}>
+          <Plus data-icon="inline-start" />
+          New
+        </Button>
+      </div>
 
       {!isWide ? (
         <BacklogGridNarrowView
@@ -350,6 +334,6 @@ export function BacklogView() {
         onDelete={deleteWithUndo}
         onDeleteDone={handleDeleteAllDone}
       />
-    </Box>
+    </div>
   );
 }

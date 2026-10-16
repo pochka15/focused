@@ -1,21 +1,24 @@
 import type { BacklogTask } from "@/lib/stores/backlog-store";
-import { Flex, Group, Text, UnstyledButton } from "@mantine/core";
-import { ArchiveRestore, CheckCircle2, Circle } from "lucide-react";
-import classes from "./linked-task-badge.module.css";
-import type { ReactNode } from "react";
+import { cn } from "@/lib/utils";
+import {
+  ArchiveRestore,
+  CheckCircle2,
+  Circle,
+  type LucideIcon,
+} from "lucide-react";
 
 export type LinkedTaskDisplayState = "active" | "done" | "postponed";
 
-const STATE_ICONS: Record<LinkedTaskDisplayState, ReactNode> = {
-  active: <Circle size={10} />,
-  done: <CheckCircle2 size={10} />,
-  postponed: <ArchiveRestore size={10} />,
+const STATE_ICONS: Record<LinkedTaskDisplayState, LucideIcon> = {
+  active: Circle,
+  done: CheckCircle2,
+  postponed: ArchiveRestore,
 };
 
-const STATE_COLORS: Record<LinkedTaskDisplayState, string> = {
-  active: "gray",
-  done: "green",
-  postponed: "orange",
+const STATE_TEXT: Record<LinkedTaskDisplayState, string> = {
+  active: "text-foreground/80",
+  done: "text-muted-foreground line-through",
+  postponed: "text-muted-foreground/70",
 };
 
 type Props = {
@@ -35,14 +38,17 @@ export function LinkedTaskBadge({
   onEdit,
   focused = false,
 }: Props) {
+  const Icon = STATE_ICONS[displayState];
   return (
-    <Group
-      gap={4}
-      wrap="nowrap"
-      className={focused ? classes.focused : undefined}
+    <span
+      className={cn(
+        "inline-flex items-center gap-1.5 px-1.5 py-0.5 text-xs",
+        focused && "bg-accent"
+      )}
     >
-      <UnstyledButton
-        className={classes.cycleBtn}
+      <button
+        type="button"
+        className={cn("flex shrink-0", STATE_TEXT[displayState])}
         onClick={(e) => {
           e.stopPropagation();
           onCycle();
@@ -55,30 +61,23 @@ export function LinkedTaskBadge({
               : "Return to backlog"
         }
       >
-        <Flex c={STATE_COLORS[displayState]} lh={1}>
-          {STATE_ICONS[displayState]}
-        </Flex>
-      </UnstyledButton>
-      <UnstyledButton
+        <Icon className="size-3" />
+      </button>
+      <button
+        type="button"
         onClick={(e) => {
           e.stopPropagation();
           onEdit?.();
         }}
         title="Edit task"
-        style={{ cursor: onEdit ? "pointer" : undefined }}
+        className={cn(
+          "font-medium",
+          STATE_TEXT[displayState],
+          onEdit && "underline decoration-foreground/20 underline-offset-3"
+        )}
       >
-        <Text
-          size="xs"
-          c={STATE_COLORS[displayState]}
-          span
-          style={{
-            textDecoration: onEdit ? "underline" : "none",
-            fontWeight: 500,
-          }}
-        >
-          #{task.id} {displayName}
-        </Text>
-      </UnstyledButton>
-    </Group>
+        <span className="font-mono opacity-60">#{task.id}</span> {displayName}
+      </button>
+    </span>
   );
 }

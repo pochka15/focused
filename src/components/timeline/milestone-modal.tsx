@@ -1,23 +1,35 @@
+import { useDeferredFocus } from "@/hooks/use-deferred-focus";
 import { useSimpleForm } from "@/hooks/use-simple-form";
 import type { Milestone, NewMilestone } from "@/lib/timeline/timeline-models";
 import { orderedTags, tagsMapping, type TagName } from "@/lib/todos/mappings";
 import { useBacklogStore } from "@/lib/stores/backlog-store";
 import { useShortcuts } from "@/shared-lib/shortcuts/use-shortcuts";
 import { MILESTONE_MODAL_SHORTCUTS } from "@/lib/shortcuts/shortcut-mappings";
+import { Button } from "@/components/ui/button";
 import {
-  Badge,
-  Box,
-  Button,
-  Group,
-  Modal,
-  SimpleGrid,
-  Stack,
-  Text,
-  TextInput,
-  UnstyledButton,
-} from "@mantine/core";
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  Field,
+  FieldDescription,
+  FieldGroup,
+  FieldLabel,
+  FieldSet,
+  FieldLegend,
+} from "@/components/ui/field";
+import { Input } from "@/components/ui/input";
+import { Kbd } from "@/components/ui/kbd";
+import { cn, tw } from "@/lib/utils";
 import { useEffect, useRef } from "react";
-import classes from "./milestone-modal.module.css";
+
+const tagOptionStyles = tw`
+  flex min-w-0 items-center gap-2.5 bg-muted/40 px-3 py-2.5 text-left
+  text-muted-foreground transition-colors hover:bg-muted hover:text-foreground
+`;
 
 type MilestoneFormValues = {
   name: string;
@@ -52,6 +64,7 @@ export function MilestoneModal({ opened, onClose, onSubmit, editing }: Props) {
   const { values, field, setValues, reset } =
     useSimpleForm<MilestoneFormValues>(defaultValues(editing));
   const nameRef = useRef<HTMLInputElement>(null);
+  useDeferredFocus(nameRef, opened);
   const allTasks = useBacklogStore((s) => s.tasks);
 
   useEffect(() => {
@@ -122,90 +135,94 @@ export function MilestoneModal({ opened, onClose, onSubmit, editing }: Props) {
   });
 
   return (
-    <Modal
-      opened={opened}
-      onClose={onClose}
-      title={editing ? "Edit milestone" : "New milestone"}
-      size="md"
-    >
-      <Stack gap="sm">
-        <TextInput
-          ref={nameRef}
-          label="Name"
-          placeholder="What are you working on?"
-          value={values.name}
-          onChange={(e) => field("name").onChange(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
-        />
+    <Dialog open={opened} onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="sm:max-w-lg" initialFocus={false}>
+        <DialogHeader>
+          <DialogTitle>
+            {editing ? "Edit milestone" : "New milestone"}
+          </DialogTitle>
+        </DialogHeader>
+        <FieldGroup>
+          <Field>
+            <FieldLabel htmlFor="milestone-name">Name</FieldLabel>
+            <Input
+              id="milestone-name"
+              ref={nameRef}
+              placeholder="What are you working on?"
+              value={values.name}
+              onChange={(e) => field("name").onChange(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
+            />
+          </Field>
 
-        <TextInput
-          label="Linked backlog tasks"
-          placeholder="1, 4, 7"
-          description="Comma-separated task IDs"
-          value={values.taskIdsRaw}
-          onChange={(e) => field("taskIdsRaw").onChange(e.target.value)}
-        />
+          <Field>
+            <FieldLabel htmlFor="milestone-tasks">
+              Linked backlog tasks
+            </FieldLabel>
+            <Input
+              id="milestone-tasks"
+              className="font-mono"
+              placeholder="1, 4, 7"
+              value={values.taskIdsRaw}
+              onChange={(e) => field("taskIdsRaw").onChange(e.target.value)}
+            />
+            <FieldDescription>Comma-separated task IDs</FieldDescription>
+            {boundTasks.length > 0 && (
+              <div className="flex flex-col gap-1">
+                {boundTasks.map((task) => (
+                  <p key={task.id} className="flex gap-2 text-xs">
+                    <span className="font-mono text-muted-foreground">
+                      #{task.id}
+                    </span>
+                    <span className="truncate">{task.name}</span>
+                  </p>
+                ))}
+              </div>
+            )}
+          </Field>
 
-        {boundTasks.length > 0 && (
-          <Stack gap={4}>
-            {boundTasks.map((task) => (
-              <Group key={task.id} gap={6} wrap="nowrap">
-                <Badge size="xs" variant="outline" color="gray">
-                  #{task.id}
-                </Badge>
-                <Text size="xs" truncate>
-                  {task.name}
-                </Text>
-              </Group>
-            ))}
-          </Stack>
-        )}
+          <FieldSet>
+            <FieldLegend variant="label">Tag</FieldLegend>
+            <div className="grid grid-cols-3 gap-1.5">
+              {orderedTags.map((tagName) => {
+                const tag = tagsMapping[tagName];
+                const Icon = tag.icon;
+                const isSelected = values.tag === tagName;
+                return (
+                  <button
+                    type="button"
+                    key={tagName}
+                    onClick={() => applyTag(tagName)}
+                    className={cn(
+                      tagOptionStyles,
+                      isSelected &&
+                        "bg-foreground text-background hover:bg-foreground hover:text-background"
+                    )}
+                  >
+                    <Icon strokeWidth={1.5} className="size-4 shrink-0" />
+                    <span className="truncate text-xs font-medium">
+                      {tagName}
+                    </span>
+                    <Kbd className="ml-auto">{tag.key}</Kbd>
+                  </button>
+                );
+              })}
+            </div>
+          </FieldSet>
 
-        <Box>
-          <Text size="xs" c="dimmed" mb={6}>
-            Tag
-          </Text>
-          <SimpleGrid cols={3} spacing={6}>
-            {orderedTags.map((tagName) => {
-              const tag = tagsMapping[tagName];
-              const isSelected = values.tag === tagName;
-              return (
-                <UnstyledButton
-                  key={tagName}
-                  onClick={() => applyTag(tagName)}
-                  className={isSelected ? classes.tagSelected : classes.tag}
-                >
-                  <Group gap={6} wrap="nowrap">
-                    <Text size="lg" lh={1}>
-                      {tag.emoji}
-                    </Text>
-                    <Box style={{ minWidth: 0 }}>
-                      <Text size="xs" fw={500} truncate>
-                        {tagName}
-                      </Text>
-                      <Badge size="xs" variant="outline" mt={2}>
-                        {tag.key}
-                      </Badge>
-                    </Box>
-                  </Group>
-                </UnstyledButton>
-              );
-            })}
-          </SimpleGrid>
-        </Box>
+          <p className="font-mono text-xs text-muted-foreground">
+            mode: <span className="text-foreground">{values.mode}</span> ·
+            priority: <span className="text-foreground">{values.priority}</span>
+          </p>
+        </FieldGroup>
 
-        <Text size="xs" c="dimmed">
-          mode: <strong>{values.mode}</strong> · priority:{" "}
-          <strong>{values.priority}</strong>
-        </Text>
-
-        <Group justify="flex-end" mt="xs">
-          <Button variant="subtle" onClick={onClose}>
+        <DialogFooter>
+          <Button variant="ghost" onClick={onClose}>
             Cancel
           </Button>
           <Button onClick={handleSubmit}>{editing ? "Save" : "Add"}</Button>
-        </Group>
-      </Stack>
-    </Modal>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }

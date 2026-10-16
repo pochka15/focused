@@ -1,8 +1,19 @@
+import {
+  AudioLines,
+  CakeSlice,
+  Candy,
+  Lollipop,
+  PlaneLanding,
+  Repeat,
+  Shapes,
+  Sparkles,
+  type LucideIcon,
+} from "lucide-react";
 import type { NewMilestone } from "../timeline/timeline-models";
 
 export type Tag = {
   key: string;
-  emoji: string;
+  icon: LucideIcon;
   description: string;
   autoFill: Omit<NewMilestone, "name">;
 };
@@ -26,7 +37,7 @@ export type TodoMode = (typeof todoModes)[number];
 export const tagsMapping: Record<TagName, Tag> = {
   "good-one": {
     key: "u",
-    emoji: "🌟",
+    icon: Sparkles,
     description: "О, a это прям хорошо",
     autoFill: {
       priority: 2,
@@ -37,7 +48,7 @@ export const tagsMapping: Record<TagName, Tag> = {
   },
   "new-urgent": {
     key: "o",
-    emoji: "✈️",
+    icon: PlaneLanding,
     description: "Прилетела срочная хрень",
     autoFill: {
       priority: 1,
@@ -48,7 +59,7 @@ export const tagsMapping: Record<TagName, Tag> = {
   },
   "light-good": {
     key: "i",
-    emoji: "🍭",
+    icon: Lollipop,
     description: "Недолго что-то полезное поделать",
     autoFill: {
       priority: 2,
@@ -59,7 +70,7 @@ export const tagsMapping: Record<TagName, Tag> = {
   },
   "daily-noise": {
     key: "l",
-    emoji: "🥖",
+    icon: AudioLines,
     description: "Daily Noise",
     autoFill: {
       priority: 2,
@@ -70,7 +81,7 @@ export const tagsMapping: Record<TagName, Tag> = {
   },
   "deep-routine": {
     key: "j",
-    emoji: "⭐",
+    icon: Repeat,
     description: "Раунды по работе",
     autoFill: {
       priority: 2,
@@ -81,7 +92,7 @@ export const tagsMapping: Record<TagName, Tag> = {
   },
   "light-routine": {
     key: "k",
-    emoji: "🍬",
+    icon: Candy,
     description: "Мелкие рабочие моменты",
     autoFill: {
       priority: 2,
@@ -92,7 +103,7 @@ export const tagsMapping: Record<TagName, Tag> = {
   },
   pleasures: {
     key: "n",
-    emoji: "🍰",
+    icon: CakeSlice,
     description: "А теперь время для флекса",
     autoFill: {
       priority: 3,
@@ -103,7 +114,7 @@ export const tagsMapping: Record<TagName, Tag> = {
   },
   other: {
     key: "m",
-    emoji: "🦥",
+    icon: Shapes,
     description: "Другое",
     autoFill: {
       priority: 2,

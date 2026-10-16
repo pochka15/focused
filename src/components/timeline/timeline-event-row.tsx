@@ -1,8 +1,13 @@
+import { Button } from "@/components/ui/button";
 import type { TimelineEvent } from "@/lib/timeline/timeline-models";
-import { ActionIcon, Box, Group, Text } from "@mantine/core";
+import { cn, tw } from "@/lib/utils";
 import { Pencil, Trash2 } from "lucide-react";
 import { formatDuration, isEventBehind } from "./timeline-utils";
-import classes from "./timeline-view.module.css";
+
+const rowStyles = tw`
+  flex items-center justify-between gap-4 bg-card px-4 py-3 shadow-xs
+  ring-1 ring-foreground/5
+`;
 
 type Props = {
   event: TimelineEvent;
@@ -12,33 +17,31 @@ type Props = {
 
 export const TimelineEventRow = ({ event, onEdit, onDelete }: Props) => {
   return (
-    <Box
-      className={`${classes.eventCard} ${isEventBehind(event) ? classes.overdueEvent : ""}`}
-      p="sm"
-    >
-      <Group justify="space-between" wrap="nowrap">
-        <Box>
-          <Text size="sm" fw={500}>
-            {event.name}
-          </Text>
-          <Text size="xs" c="dimmed">
-            {event.rawTime} · {formatDuration(event.durationMinutes)}
-          </Text>
-        </Box>
-        <Group gap={4}>
-          <ActionIcon size="xs" variant="subtle" onClick={() => onEdit(event)}>
-            <Pencil size={12} />
-          </ActionIcon>
-          <ActionIcon
-            size="xs"
-            variant="subtle"
-            color="red"
-            onClick={() => onDelete(event)}
-          >
-            <Trash2 size={12} />
-          </ActionIcon>
-        </Group>
-      </Group>
-    </Box>
+    <div className={cn(rowStyles, isEventBehind(event) && "opacity-35")}>
+      <div className="flex items-baseline gap-4">
+        <span className="w-12 font-mono text-sm tabular-nums">
+          {event.rawTime}
+        </span>
+        <div>
+          <p className="text-sm font-medium">{event.name}</p>
+          <p className="font-mono text-xs text-muted-foreground">
+            {formatDuration(event.durationMinutes)}
+          </p>
+        </div>
+      </div>
+      <div className="flex gap-1">
+        <Button variant="ghost" size="icon-xs" onClick={() => onEdit(event)}>
+          <Pencil />
+        </Button>
+        <Button
+          variant="ghost"
+          size="icon-xs"
+          className="hover:text-destructive"
+          onClick={() => onDelete(event)}
+        >
+          <Trash2 />
+        </Button>
+      </div>
+    </div>
   );
 };

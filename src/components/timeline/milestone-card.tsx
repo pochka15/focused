@@ -1,4 +1,5 @@
-import { ActionIcon, Button, Card, Group, Stack, Text } from "@mantine/core";
+import { Button } from "@/components/ui/button";
+import { cn, tw } from "@/lib/utils";
 import { Check, Pencil, Plus, Trash2, X } from "lucide-react";
 import { useMemo } from "react";
 import type { BacklogTask } from "@/lib/stores/backlog-store";
@@ -13,7 +14,16 @@ import {
   LinkedTaskBadge,
   type LinkedTaskDisplayState,
 } from "./linked-task-badge";
-import classes from "./timeline-view.module.css";
+
+const cardStyles = tw`
+  relative flex w-full max-w-4xl items-center justify-between gap-3 bg-card
+  px-4 py-3 shadow-xs ring-1 ring-foreground/5 transition-shadow
+`;
+
+const pomodoroDotStyles = tw`
+  absolute top-1 left-1 size-2.5 rounded-full bg-muted-foreground opacity-50
+  blur-[1.5px] transition-[background-color,opacity]
+`;
 
 type Props = {
   item: Milestone;
@@ -52,6 +62,7 @@ export function MilestoneCard({
   const editingMode = useShortcutsMode("editingMilestoneCardTasks");
 
   const tag = tagsMapping[item.tag];
+  const TagIcon = tag?.icon;
   const done = item.completed;
 
   const pomodoros = item.pomodoros ?? 0;
@@ -83,27 +94,22 @@ export function MilestoneCard({
     return getTaskDisplayState(task);
   };
 
-  const cardClassName = [
-    variant === "suggested" ? classes.ghostItem : "",
-    isSelected && !done ? classes.selectedItem : "",
-    isRemoving && !done ? classes.removingItem : "",
-  ]
-    .filter(Boolean)
-    .join(" ");
-
   const bumpPomodoros = () => editItem({ ...item, pomodoros: pomodoros + 1 });
 
   const canTrackPomodoros = variant === "default" && isSelected;
 
   return (
-    <Card
+    <div
       ref={(el) => {
         if (activeIdx >= 0) milestoneRef(el);
       }}
-      withBorder
-      padding="xs"
-      pos="relative"
-      className={cardClassName || undefined}
+      className={cn(
+        cardStyles,
+        variant === "suggested" &&
+          "bg-transparent opacity-70 shadow-none ring-0 outline-1 outline-foreground/25 outline-dashed",
+        isSelected && !done && "py-5 ring-2 ring-foreground",
+        isRemoving && !done && "ring-2 ring-destructive"
+      )}
       onClick={() => {
         if (variant === "default" && !done && activeIdx >= 0) onSelect();
       }}
@@ -111,129 +117,128 @@ export function MilestoneCard({
       {canTrackPomodoros && (
         <button
           type="button"
-          className={[
-            classes.pomodoroDot,
-            pomodoros % 2 === 1 ? classes.pomodoroDotActive : "",
-          ]
-            .filter(Boolean)
-            .join(" ")}
+          className={cn(
+            pomodoroDotStyles,
+            pomodoros % 2 === 1 && "bg-foreground opacity-100"
+          )}
           onClick={(e) => {
             e.stopPropagation();
             bumpPomodoros();
           }}
         />
       )}
-      <Group gap="xs" wrap="nowrap" justify="space-between">
-        <Group gap="xs" wrap="nowrap">
-          <Text
-            fz={isSelected ? "h1" : undefined}
-            style={canTrackPomodoros ? { cursor: "pointer" } : undefined}
+      <div className="flex min-w-0 items-center gap-3">
+        {TagIcon && (
+          <TagIcon
+            strokeWidth={1.5}
+            className={cn(
+              "shrink-0 text-muted-foreground",
+              isSelected ? "size-9 text-foreground" : "size-4",
+              canTrackPomodoros && "cursor-pointer"
+            )}
             onClick={(e) => {
               if (!canTrackPomodoros) return;
               e.stopPropagation();
               bumpPomodoros();
             }}
-          >
-            {tag?.emoji}
-          </Text>
-          <Stack gap={2} style={{ minWidth: 0 }}>
-            <Text
-              fw={isSelected ? 600 : 400}
-              size="sm"
-              c={done ? "dimmed" : undefined}
-              td={done ? "line-through" : undefined}
-              fz={isSelected ? "h1" : undefined}
-            >
-              {item.name}
-            </Text>
-            {boundEntries.length > 0 && (
-              <Group gap={4} wrap="wrap">
-                {boundEntries.map((task, idx) => {
-                  const isFocused =
-                    editingMode.enabled &&
-                    editingMode.data.milestoneId === item.id &&
-                    editingMode.data.taskIndex === idx;
-                  return (
-                    <LinkedTaskBadge
-                      key={task.id}
-                      task={task}
-                      displayState={getDisplayState(task)}
-                      displayName={task.name}
-                      onCycle={() => cycleTaskHandler(task.id)}
-                      onEdit={() => onEditBacklogTask?.(task)}
-                      focused={isFocused}
-                    />
-                  );
-                })}
-              </Group>
-            )}
-          </Stack>
-        </Group>
-
-        {variant === "suggested" ? (
-          <Group gap={4} wrap="nowrap">
-            <Button
-              size="xs"
-              variant="light"
-              leftSection={<Plus size={12} />}
-              onClick={(e) => {
-                e.stopPropagation();
-                onUseSuggestion?.();
-              }}
-            >
-              Add
-            </Button>
-            <ActionIcon
-              size="xs"
-              variant="subtle"
-              onClick={(e) => {
-                e.stopPropagation();
-                onDismissSuggestion?.();
-              }}
-              title="Dismiss suggestion"
-            >
-              <X size={12} />
-            </ActionIcon>
-          </Group>
-        ) : (
-          <Group gap={4} wrap="nowrap">
-            {!done && (
-              <ActionIcon
-                size="xs"
-                variant="subtle"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onEdit();
-                }}
-              >
-                <Pencil size={12} />
-              </ActionIcon>
-            )}
-            <ActionIcon
-              size="xs"
-              variant="subtle"
-              color="green"
-              onClick={(e) => {
-                e.stopPropagation();
-                onToggleDone();
-              }}
-            >
-              <Check size={12} />
-            </ActionIcon>
-            <ActionIcon
-              size="xs"
-              variant="subtle"
-              color="red"
-              onClick={(e) => {
-                e.stopPropagation();
-                onDelete();
-              }}
-            >
-              <Trash2 size={12} />
-            </ActionIcon>
-          </Group>
+          />
         )}
-      </Group>
-    </Card>
+        <div className="flex min-w-0 flex-col gap-1">
+          <p
+            className={cn(
+              "text-sm",
+              isSelected && "text-3xl font-semibold tracking-tight",
+              done && "text-muted-foreground line-through"
+            )}
+          >
+            {item.name}
+          </p>
+          {boundEntries.length > 0 && (
+            <div className="-ml-1.5 flex flex-wrap gap-1">
+              {boundEntries.map((task, idx) => {
+                const isFocused =
+                  editingMode.enabled &&
+                  editingMode.data.milestoneId === item.id &&
+                  editingMode.data.taskIndex === idx;
+                return (
+                  <LinkedTaskBadge
+                    key={task.id}
+                    task={task}
+                    displayState={getDisplayState(task)}
+                    displayName={task.name}
+                    onCycle={() => cycleTaskHandler(task.id)}
+                    onEdit={() => onEditBacklogTask?.(task)}
+                    focused={isFocused}
+                  />
+                );
+              })}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {variant === "suggested" ? (
+        <div className="flex shrink-0 gap-1">
+          <Button
+            size="xs"
+            variant="outline"
+            onClick={(e) => {
+              e.stopPropagation();
+              onUseSuggestion?.();
+            }}
+          >
+            <Plus data-icon="inline-start" />
+            Add
+          </Button>
+          <Button
+            size="icon-xs"
+            variant="ghost"
+            onClick={(e) => {
+              e.stopPropagation();
+              onDismissSuggestion?.();
+            }}
+            title="Dismiss suggestion"
+          >
+            <X />
+          </Button>
+        </div>
+      ) : (
+        <div className="flex shrink-0 gap-1">
+          {!done && (
+            <Button
+              size="icon-xs"
+              variant="ghost"
+              onClick={(e) => {
+                e.stopPropagation();
+                onEdit();
+              }}
+            >
+              <Pencil />
+            </Button>
+          )}
+          <Button
+            size="icon-xs"
+            variant="ghost"
+            onClick={(e) => {
+              e.stopPropagation();
+              onToggleDone();
+            }}
+          >
+            <Check />
+          </Button>
+          <Button
+            size="icon-xs"
+            variant="ghost"
+            className="hover:text-destructive"
+            onClick={(e) => {
+              e.stopPropagation();
+              onDelete();
+            }}
+          >
+            <Trash2 />
+          </Button>
+        </div>
+      )}
+    </div>
   );
 }

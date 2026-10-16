@@ -1,4 +1,3 @@
-import { Card, Text } from "@mantine/core";
 import { ChevronDown } from "lucide-react";
 
 type Props = {
@@ -8,11 +7,13 @@ type Props = {
 
 export const CollapsedMilestonesCard = ({ count, onClick }: Props) => {
   return (
-    <Card onClick={onClick} style={{ cursor: "pointer", padding: 0 }}>
-      <Text size="sm" c="dimmed" fw={500}>
-        <ChevronDown size={14} style={{ display: "inline", marginRight: 4 }} />
-        {count} completed
-      </Text>
-    </Card>
+    <button
+      type="button"
+      onClick={onClick}
+      className="flex items-center gap-1 text-sm font-medium text-muted-foreground"
+    >
+      <ChevronDown className="size-3.5" />
+      <span className="font-mono">{count}</span> completed
+    </button>
   );
 };
