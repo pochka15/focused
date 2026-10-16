@@ -1,5 +1,5 @@
 import type { Milestone } from "@/lib/timeline/timeline-models";
-import { tagsMapping } from "@/lib/todos/mappings";
+import { getTag } from "@/lib/todos/mappings";
 import {
   Tooltip,
   TooltipContent,
@@ -52,7 +52,7 @@ const SortableItem = memo(
       transform: CSS.Transform.toString(transform),
     };
 
-    const Icon = tagsMapping[milestone.tag].icon;
+    const Icon = getTag(milestone.tag).icon;
 
     return (
       <Tooltip disabled={isDragging}>

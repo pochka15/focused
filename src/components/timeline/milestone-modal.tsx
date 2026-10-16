@@ -1,7 +1,13 @@
 import { useDeferredFocus } from "@/hooks/use-deferred-focus";
 import { useSimpleForm } from "@/hooks/use-simple-form";
 import type { Milestone, NewMilestone } from "@/lib/timeline/timeline-models";
-import { orderedTags, tagsMapping, type TagName } from "@/lib/todos/mappings";
+import {
+  DEFAULT_TAG,
+  isTagName,
+  orderedTags,
+  tagsMapping,
+  type TagName,
+} from "@/lib/todos/mappings";
 import { useBacklogStore } from "@/lib/stores/backlog-store";
 import { useShortcuts } from "@/shared-lib/shortcuts/use-shortcuts";
 import { MILESTONE_MODAL_SHORTCUTS } from "@/lib/shortcuts/shortcut-mappings";
@@ -33,9 +39,7 @@ const tagOptionStyles = tw`
 
 type MilestoneFormValues = {
   name: string;
-  priority: number;
   tag: TagName;
-  mode: string;
   taskIdsRaw: string;
 };
 
@@ -47,9 +51,7 @@ const parseTaskIds = (raw: string): number[] =>
 
 const defaultValues = (item?: Milestone): MilestoneFormValues => ({
   name: item?.name ?? "",
-  priority: item?.priority ?? 2,
-  tag: item?.tag ?? "other",
-  mode: item?.mode ?? "deep",
+  tag: item && isTagName(item.tag) ? item.tag : DEFAULT_TAG,
   taskIdsRaw: item?.taskIds?.join(", ") ?? "",
 });
 
@@ -77,13 +79,7 @@ export function MilestoneModal({ opened, onClose, onSubmit, editing }: Props) {
     .filter(Boolean) as typeof allTasks;
 
   const applyTag = (tagName: TagName) => {
-    const { autoFill } = tagsMapping[tagName];
-    setValues((prev) => ({
-      ...prev,
-      tag: tagName,
-      priority: autoFill.priority,
-      mode: autoFill.mode,
-    }));
+    setValues((prev) => ({ ...prev, tag: tagName }));
   };
 
   const handleSubmit = () => {
@@ -92,9 +88,7 @@ export function MilestoneModal({ opened, onClose, onSubmit, editing }: Props) {
     onSubmit({
       type: "task",
       name: values.name.trim(),
-      priority: values.priority,
       tag: values.tag,
-      mode: values.mode as NewMilestone["mode"],
       taskIds: taskIds.length > 0 ? taskIds : undefined,
     });
     reset();
@@ -200,8 +194,13 @@ export function MilestoneModal({ opened, onClose, onSubmit, editing }: Props) {
                     )}
                   >
                     <Icon strokeWidth={1.5} className="size-4 shrink-0" />
-                    <span className="truncate text-xs font-medium">
-                      {tagName}
+                    <span className="flex min-w-0 flex-col">
+                      <span className="truncate text-xs font-medium">
+                        {tagName}
+                      </span>
+                      <span className="truncate text-[0.625rem] opacity-70">
+                        {tag.description}
+                      </span>
                     </span>
                     <Kbd className="ml-auto">{tag.key}</Kbd>
                   </button>
@@ -209,11 +208,6 @@ export function MilestoneModal({ opened, onClose, onSubmit, editing }: Props) {
               })}
             </div>
           </FieldSet>
-
-          <p className="font-mono text-xs text-muted-foreground">
-            mode: <span className="text-foreground">{values.mode}</span> ·
-            priority: <span className="text-foreground">{values.priority}</span>
-          </p>
         </FieldGroup>
 
         <DialogFooter>

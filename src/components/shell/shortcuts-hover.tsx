@@ -30,7 +30,9 @@ const TIMELINE_SHORTCUTS_SECTION = {
   title: "Timeline",
   items: [
     `${TIMELINE_SHORTCUTS.newMilestone}: new milestone`,
+    `${TIMELINE_SHORTCUTS.newBacklogTask}: new inbox task`,
     `${TIMELINE_SHORTCUTS.newEvent}: new event`,
+    `${TIMELINE_SHORTCUTS.pickFromQueue}: pick from queue (k 1st, j 2nd)`,
     `${TIMELINE_SHORTCUTS.edit}: edit`,
     `${TIMELINE_SHORTCUTS.toggleDone}: toggle done`,
     `${TIMELINE_SHORTCUTS.moveDown}/${TIMELINE_SHORTCUTS.moveUp}: move cursor`,
@@ -52,16 +54,24 @@ const TIMELINE_CARD_SHORTCUTS_SECTION = {
 const BACKLOG_SHORTCUTS_SECTION = {
   title: "Backlog",
   items: [
-    `${BACKLOG_SHORTCUTS.switchMode}: zen/full switch`,
     `${BACKLOG_SHORTCUTS.newTask}: new task`,
     `${BACKLOG_SHORTCUTS.edit}: edit`,
     `${BACKLOG_SHORTCUTS.pushTimeline} / ${BACKLOG_SHORTCUTS.pushTimelineFront}: push timeline (back/front)`,
     `${BACKLOG_SHORTCUTS.postpone}: postpone`,
-    `${BACKLOG_SHORTCUTS.moveTask}: move task`,
-    `${BACKLOG_SHORTCUTS.toggleNext}: next`,
-    `${BACKLOG_SHORTCUTS.groupLeft}/${BACKLOG_SHORTCUTS.groupRight} or arrows: group nav`,
+    `${BACKLOG_SHORTCUTS.columnLeft}/${BACKLOG_SHORTCUTS.columnRight} or arrows: sections / queue`,
     `${BACKLOG_SHORTCUTS.taskDown}/${BACKLOG_SHORTCUTS.taskUp}/${BACKLOG_SHORTCUTS.taskFirst}/${BACKLOG_SHORTCUTS.taskLast}: task nav`,
-    `${BACKLOG_SHORTCUTS.swapDown}/${BACKLOG_SHORTCUTS.swapUp}: swap`,
+    `${BACKLOG_SHORTCUTS.shiftDown}/${BACKLOG_SHORTCUTS.shiftUp}: next/prev section`,
+  ],
+};
+
+const BACKLOG_QUEUE_SHORTCUTS_SECTION = {
+  title: "Queue",
+  items: [
+    `${BACKLOG_SHORTCUTS.toggleQueueing}: toggle queueing mode`,
+    `${BACKLOG_SHORTCUTS.enqueue}/Enter: queue task (queueing mode)`,
+    `${BACKLOG_SHORTCUTS.shiftDown}/${BACKLOG_SHORTCUTS.shiftUp}: reorder (queue column)`,
+    `${BACKLOG_SHORTCUTS.dequeue}: remove from queue`,
+    `${BACKLOG_SHORTCUTS.dequeueAll}: clear queue (queueing mode)`,
   ],
 };
 
@@ -77,7 +87,7 @@ const SHORTCUT_SECTIONS = [
   },
   {
     route: "/backlog",
-    sections: [BACKLOG_SHORTCUTS_SECTION],
+    sections: [BACKLOG_SHORTCUTS_SECTION, BACKLOG_QUEUE_SHORTCUTS_SECTION],
   },
   {
     route: "/notifications",

@@ -1,11 +1,9 @@
-import type { TagName, TodoMode } from "@/lib/todos/mappings";
+import type { TagName } from "@/lib/todos/mappings";
 
 export type NewMilestone = {
   type: "task";
   name: string;
-  priority: number;
   tag: TagName;
-  mode: TodoMode;
   completed?: boolean;
   taskIds?: number[];
   pomodoros?: number;

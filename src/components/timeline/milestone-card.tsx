@@ -6,7 +6,7 @@ import type { BacklogTask } from "@/lib/stores/backlog-store";
 import { useBacklogStore } from "@/lib/stores/backlog-store";
 import { useTimelineStore } from "@/lib/stores/timeline-store";
 import type { Milestone } from "@/lib/timeline/timeline-models";
-import { tagsMapping } from "@/lib/todos/mappings";
+import { getTag } from "@/lib/todos/mappings";
 import { useShortcutsMode } from "@/shared-lib/shortcuts/shortcuts-store";
 import { cycleTask } from "./milestone-card-utils";
 import { getTaskDisplayState } from "./timeline-view-utils";
@@ -61,8 +61,7 @@ export function MilestoneCard({
   const editItem = useTimelineStore((s) => s.editItem);
   const editingMode = useShortcutsMode("editingMilestoneCardTasks");
 
-  const tag = tagsMapping[item.tag];
-  const TagIcon = tag?.icon;
+  const TagIcon = getTag(item.tag).icon;
   const done = item.completed;
 
   const pomodoros = item.pomodoros ?? 0;

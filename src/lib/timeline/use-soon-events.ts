@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import { getMinutesUntil } from "@/lib/notifications/notifications-utils";
-import { tagsMapping } from "@/lib/todos/mappings";
 import type { Milestone, TimelineEvent } from "./timeline-models";
 
 const SOON_THRESHOLD_MINUTES = 30;
@@ -42,7 +41,8 @@ const isSoonEvent = (event: TimelineEvent): boolean => {
 export const toSuggestedMilestone = (event: TimelineEvent): Milestone => ({
   id: event.id,
   name: `[${event.rawTime}] ${event.name}`,
-  ...tagsMapping.other.autoFill,
+  type: "task",
+  tag: "other",
 });
 
 export const useSoonEvents = (events: TimelineEvent[]) => {

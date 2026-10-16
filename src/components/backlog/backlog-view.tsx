@@ -1,71 +1,57 @@
+import { groupIntoSections } from "@/lib/backlog/backlog-sections";
 import { toTimelineMilestoneFromBacklog } from "@/lib/backlog/backlog-to-timeline";
 import type { BacklogTask } from "@/lib/stores/backlog-store";
 import { useBacklogStore } from "@/lib/stores/backlog-store";
 import { useTimelineStore } from "@/lib/stores/timeline-store";
-import {
-  BACKLOG_GRID_COLUMNS,
-  BACKLOG_GROUPS,
-  type GridGroup,
-  useBacklogGridStore,
-} from "@/lib/stores/backlog-grid-store";
 import { showUndoNotification } from "@/lib/notifications/show-undo-notification";
-import {
-  getBacklogRouteSearch,
-  getBacklogRouteView,
-  type BacklogRouteView,
-} from "@/lib/backlog/backlog-route-mode";
 import { isMilestone, type Milestone } from "@/lib/timeline/timeline-models";
-import {
-  Window as W,
-  Window2D,
-  type UiWindow,
-} from "@/shared-lib/shortcuts/window";
+import { Window as W, type UiWindow } from "@/shared-lib/shortcuts/window";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-import { useMediaQuery } from "@uidotdev/usehooks";
-import { Plus } from "lucide-react";
+import { Kbd } from "@/components/ui/kbd";
+import { cn, tw } from "@/lib/utils";
+import { ListPlus, Plus } from "lucide-react";
 import { toast } from "sonner";
-import { useNavigate, useRouterState } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { BacklogGridNarrowView } from "./backlog-grid-narrow-view";
-import { BacklogGridWideView } from "./backlog-grid-wide-view";
 import { BacklogModal } from "./backlog-modal";
 import { BacklogPostponedOrDone } from "./backlog-postponed-or-done";
-import { useBacklogShortcuts } from "./use-backlog-shortcuts";
-import { useAllTasksSorted, useTasksByGroups } from "./use-backlog-groups";
+import { BacklogTaskCard } from "./backlog-task-card";
+import {
+  useBacklogShortcuts,
+  type BacklogColumn,
+} from "./use-backlog-shortcuts";
 
-const GROUPS = BACKLOG_GROUPS;
-const FIRST_GROUP = GROUPS[0] ?? 1;
+const sectionTitleStyles = tw`
+  flex items-center gap-2 text-[0.625rem] font-semibold tracking-widest
+  text-muted-foreground uppercase
+`;
+
+const queueColumnStyles = tw`
+  flex flex-col gap-3 bg-muted/30 p-3 transition-shadow lg:sticky lg:top-14
+`;
 
 export function BacklogView() {
-  const navigate = useNavigate();
-  const pathname = useRouterState({ select: (s) => s.location.pathname });
-  const search = useRouterState({ select: (s) => s.location.search });
   const tasks = useBacklogStore((s) => s.tasks);
+  const queue = useBacklogStore((s) => s.queue);
   const addTask = useBacklogStore((s) => s.addTask);
   const updateTask = useBacklogStore((s) => s.updateTask);
   const removeTask = useBacklogStore((s) => s.removeTask);
   const consumeNextId = useBacklogStore((s) => s.consumeNextId);
+  const enqueue = useBacklogStore((s) => s.enqueue);
+  const dequeue = useBacklogStore((s) => s.dequeue);
+  const setQueue = useBacklogStore((s) => s.setQueue);
+  const swapInQueue = useBacklogStore((s) => s.swapInQueue);
   const timelineItems = useTimelineStore((s) => s.items);
   const addTimelineItem = useTimelineStore((s) => s.addItem);
   const editTimelineItem = useTimelineStore((s) => s.editItem);
 
-  const assignTask = useBacklogGridStore((s) => s.assignTask);
-  const removeTaskFromGrid = useBacklogGridStore((s) => s.removeTask);
-  const swapWithin = useBacklogGridStore((s) => s.swapWithin);
+  // Periodic re-render so snoozed tasks wake up without interaction.
+  const [nowTick, setNowTick] = useState(() => Date.now());
 
-  const isWide = useMediaQuery("(min-width: 900px)") ?? false;
-
-  // Periodic re-render so snoozed badges expire without interaction.
-  const [, setNowTick] = useState(() => Date.now());
-  const zenMode = pathname.startsWith("/backlog")
-    ? getBacklogRouteView(search) === "zen"
-    : false;
-
-  const [window2D, setWindow2D] = useState(() =>
-    Window2D.create<GridGroup>(GROUPS)
-  );
-  const [isMoving, setIsMoving] = useState(false);
+  const [column, setColumn] = useState<BacklogColumn>("sections");
+  const [isQueueing, setIsQueueing] = useState(false);
+  const [sectionsWindow, setSectionsWindow] = useState<UiWindow>(W.create());
+  const [queueWindow, setQueueWindow] = useState<UiWindow>(W.create());
   const [modalOpen, setModalOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<BacklogTask | undefined>();
 
@@ -74,62 +60,56 @@ export function BacklogView() {
     return () => window.clearInterval(timer);
   }, []);
 
-  const { activeBacklogTasks, postponedTasks, doneTasks } = useMemo(() => {
-    const activeBacklogTasks = tasks.filter(
-      (task) => !task.isPostponed && !task.isDone
-    );
-    const postponedTasks = tasks.filter(
-      (task) => task.isPostponed && !task.isDone
-    );
-    const doneTasks = tasks.filter((task) => task.isDone);
-    return { activeBacklogTasks, postponedTasks, doneTasks };
-  }, [tasks]);
+  const { queueTasks, sections, postponedTasks, doneTasks } = useMemo(() => {
+    const active = tasks.filter((task) => !task.isPostponed && !task.isDone);
+    const activeById = new Map(active.map((task) => [task.id, task]));
+    const queueTasks = queue
+      .map((id) => activeById.get(id))
+      .filter(Boolean) as BacklogTask[];
+    const queued = new Set(queueTasks.map((task) => task.id));
+    return {
+      queueTasks,
+      sections: groupIntoSections(
+        active.filter((t) => !queued.has(t.id)),
+        nowTick
+      ),
+      postponedTasks: tasks.filter((task) => task.isPostponed && !task.isDone),
+      doneTasks: tasks.filter((task) => task.isDone),
+    };
+  }, [tasks, queue, nowTick]);
 
-  const groupedTasksBase = useTasksByGroups(activeBacklogTasks, GROUPS);
-  const allSorted = useAllTasksSorted(activeBacklogTasks);
+  const { sectionTasks, sectionStarts } = useMemo(() => {
+    const sectionStarts: number[] = [];
+    const sectionTasks: BacklogTask[] = [];
+    for (const section of sections) {
+      sectionStarts.push(sectionTasks.length);
+      sectionTasks.push(...section.tasks);
+    }
+    return { sectionTasks, sectionStarts };
+  }, [sections]);
 
-  const focusedGroup = window2D.focusedGroup;
-  const windows = window2D.windows;
   const cardRefs = useRef<Map<number, HTMLDivElement | null>>(new Map());
 
-  const groupColumns = useMemo(
-    () =>
-      Array.from({ length: BACKLOG_GRID_COLUMNS }, (_, colIdx) =>
-        GROUPS.filter((_, idx) => idx % BACKLOG_GRID_COLUMNS === colIdx)
-      ),
-    []
-  );
-
-  const getWindow = (group: GridGroup): UiWindow =>
-    windows[group] ?? W.create();
-  const getTasksForGroup = (group: GridGroup): BacklogTask[] =>
-    groupedTasksBase[group] ?? [];
-
-  const focusedTasks = isWide ? getTasksForGroup(focusedGroup) : allSorted;
-  const focusedCursor = isWide
-    ? getWindow(focusedGroup).cursor
-    : getWindow(FIRST_GROUP).cursor;
+  useEffect(() => {
+    setSectionsWindow((w) => W.shrinkTo(w, sectionTasks.length));
+  }, [sectionTasks.length]);
 
   useEffect(() => {
-    const sizes = Object.fromEntries(
-      GROUPS.map((group) => [group, getTasksForGroup(group).length])
-    ) as Record<GridGroup, number>;
-    setWindow2D((state) => Window2D.shrinkAllTo(state, sizes));
-  }, [groupedTasksBase]);
+    setQueueWindow((w) => W.shrinkTo(w, queueTasks.length));
+  }, [queueTasks.length]);
+
+  const focusedTask =
+    column === "queue"
+      ? queueTasks[queueWindow.cursor]
+      : sectionTasks[sectionsWindow.cursor];
 
   useEffect(() => {
-    const task = focusedTasks[focusedCursor];
-    if (task) {
-      cardRefs.current.get(task.id)?.scrollIntoView({ block: "nearest" });
+    if (focusedTask) {
+      cardRefs.current
+        .get(focusedTask.id)
+        ?.scrollIntoView({ block: "nearest" });
     }
-  }, [focusedCursor, focusedGroup, focusedTasks]);
-
-  const setWindowFor = (group: GridGroup, updater: (w: UiWindow) => UiWindow) =>
-    setWindow2D((state) => Window2D.updateWindow(state, group, updater));
-
-  const toggleTaskNext = (task: BacklogTask) => {
-    updateTask({ ...task, isNext: !task.isNext });
-  };
+  }, [focusedTask]);
 
   const snoozeTask = (task: BacklogTask, minutes: number) => {
     const snoozeUntil = new Date(Date.now() + minutes * 60_000).toISOString();
@@ -143,7 +123,6 @@ export function BacklogView() {
 
   const deleteWithUndo = (task: BacklogTask) => {
     removeTask(task.id);
-    removeTaskFromGrid(task.id);
     showUndoNotification(
       `del-task-${task.id}`,
       `"${task.name}" removed`,
@@ -171,6 +150,7 @@ export function BacklogView() {
         ...targetMilestone,
         taskIds: [...(targetMilestone.taskIds ?? []), task.id],
       });
+      dequeue(task.id);
       toast.success(`Linked to "${targetMilestone.name}"`, {
         description: `#${task.id} ${task.name}`,
       });
@@ -178,18 +158,26 @@ export function BacklogView() {
     }
 
     addTimelineItem(toTimelineMilestoneFromBacklog(task), pushFront);
+    dequeue(task.id);
     toast.success("Added to timeline", {
       description: `#${task.id} ${task.name}`,
     });
   };
 
+  const dequeueAll = () => {
+    if (queue.length === 0) return;
+    const previous = [...queue];
+    setQueue([]);
+    showUndoNotification(
+      "dequeue-all",
+      "Queue cleared",
+      () => setQueue(previous),
+      "bottom-left"
+    );
+  };
+
   const handleDeleteAllDone = () => {
-    tasks
-      .filter((t) => t.isDone)
-      .forEach((task) => {
-        removeTask(task.id);
-        removeTaskFromGrid(task.id);
-      });
+    tasks.filter((t) => t.isDone).forEach((task) => removeTask(task.id));
   };
 
   const postponeTask = (taskId: number) => {
@@ -206,9 +194,7 @@ export function BacklogView() {
     if (editingTask) {
       updateTask({ ...values, id: editingTask.id });
     } else {
-      const id = consumeNextId();
-      addTask({ ...values, id });
-      if (isWide && focusedGroup !== 1) assignTask(id, focusedGroup);
+      addTask({ ...values, id: consumeNextId() });
     }
     setEditingTask(undefined);
   };
@@ -218,34 +204,36 @@ export function BacklogView() {
     setModalOpen(true);
   };
 
-  const setRouteView = (view: BacklogRouteView) => {
-    void navigate({
-      to: "/backlog",
-      search: () => getBacklogRouteSearch(view),
-    });
-    setIsMoving(false);
+  const toggleQueueing = () => {
+    setIsQueueing((v) => !v);
+    setColumn("sections");
   };
 
   useBacklogShortcuts({
     modalOpen,
-    zenMode,
-    isWide,
-    isMoving,
-    focusedGroup,
-    focusedTasks,
-    allSorted,
-    getWindow,
-    setIsMoving,
-    setWindow2D,
-    setWindowFor,
-    setRouteView,
+    isQueueing,
+    setIsQueueing,
+    column,
+    setColumn,
+    sectionTasks,
+    sectionStarts,
+    queueTasks,
+    sectionsWindow,
+    setSectionsWindow,
+    queueWindow,
+    setQueueWindow,
     openModal,
-    assignTask,
-    swapWithin,
     pushTaskToTimeline,
     postponeTask,
-    toggleTaskNext,
+    enqueue,
+    dequeue,
+    dequeueAll,
+    swapInQueue,
   });
+
+  const setCardRef = (id: number) => (el: HTMLDivElement | null) => {
+    cardRefs.current.set(id, el);
+  };
 
   return (
     <div>
@@ -260,72 +248,124 @@ export function BacklogView() {
       />
 
       <div className="sticky top-0 z-10 -mx-4 mb-4 flex items-center justify-between gap-4 bg-background/90 px-4 py-2 backdrop-blur-sm">
-        <div className="flex items-center gap-4">
-          <h2 className="text-lg font-semibold tracking-wider uppercase">
-            Backlog
-          </h2>
-          <ToggleGroup
-            size="sm"
-            spacing={0}
-            value={[zenMode ? "zen" : "full"]}
-            onValueChange={(value) => {
-              const next = value[0];
-              if (next === "zen" && !zenMode) setRouteView("zen");
-              if (next === "full" && zenMode) setRouteView("full");
-            }}
+        <h2 className="text-lg font-semibold tracking-wider uppercase">
+          Backlog
+        </h2>
+        <div className="flex items-center gap-2">
+          <Button
+            size="xs"
+            variant={isQueueing ? "default" : "outline"}
+            onClick={toggleQueueing}
           >
-            <ToggleGroupItem value="zen">Zen</ToggleGroupItem>
-            <ToggleGroupItem value="full">Full</ToggleGroupItem>
-          </ToggleGroup>
+            <ListPlus data-icon="inline-start" />
+            {isQueueing ? "Queueing…" : "Queue"}
+          </Button>
+          <Button size="xs" variant="outline" onClick={() => openModal()}>
+            <Plus data-icon="inline-start" />
+            New
+          </Button>
         </div>
-        <Button size="xs" variant="outline" onClick={() => openModal()}>
-          <Plus data-icon="inline-start" />
-          New
-        </Button>
       </div>
 
-      {!isWide ? (
-        <BacklogGridNarrowView
-          allSorted={allSorted}
-          hasAnyTasks={tasks.length > 0}
-          mobileWindow={getWindow(FIRST_GROUP)}
-          zenMode={zenMode}
-          cardRefs={cardRefs}
-          onSelectTask={(windowState) =>
-            setWindowFor(FIRST_GROUP, () => windowState)
-          }
-          onEditTask={openModal}
-          onPostponeTask={postponeTask}
-          onPushTaskToTimeline={pushTaskToTimeline}
-          onToggleTaskNext={toggleTaskNext}
-          onSnoozeTask={snoozeTask}
-          onClearTaskSnooze={clearTaskSnooze}
-          onDeleteTask={deleteWithUndo}
-        />
-      ) : (
-        <BacklogGridWideView
-          groupColumns={groupColumns}
-          focusedGroup={focusedGroup}
-          groupedTasks={groupedTasksBase}
-          windows={windows}
-          isMoving={isMoving}
-          zenMode={zenMode}
-          cardRefs={cardRefs}
-          onSelectTask={(group, idx) =>
-            setWindowFor(group, (windowState) => W.withCursor(windowState, idx))
-          }
-          onFocusGroup={(group) =>
-            setWindow2D((state) => Window2D.setFocusedGroup(state, group))
-          }
-          onEditTask={openModal}
-          onPostponeTask={(task) => postponeTask(task.id)}
-          onPushTaskToTimeline={pushTaskToTimeline}
-          onToggleTaskNext={toggleTaskNext}
-          onSnoozeTask={snoozeTask}
-          onClearTaskSnooze={clearTaskSnooze}
-          onDeleteTask={deleteWithUndo}
-        />
-      )}
+      <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,24rem)]">
+        <div className="flex flex-col gap-6">
+          {sections.length === 0 && (
+            <p className="text-sm text-muted-foreground">
+              {tasks.length > 0 ? (
+                "Everything is queued or parked."
+              ) : (
+                <>
+                  No tasks yet. Press <Kbd>n</Kbd> to add one.
+                </>
+              )}
+            </p>
+          )}
+          {sections.map((section, sectionIdx) => {
+            const start = sectionStarts[sectionIdx] ?? 0;
+            const Icon = section.icon;
+            return (
+              <section key={section.tag} className="flex flex-col gap-2">
+                <p className={sectionTitleStyles}>
+                  <Icon strokeWidth={1.5} className="size-3.5" />
+                  {section.title}
+                  <span className="font-mono">({section.tasks.length})</span>
+                </p>
+                {section.tasks.map((task, idx) => {
+                  const flatIdx = start + idx;
+                  return (
+                    <BacklogTaskCard
+                      key={task.id}
+                      task={task}
+                      isSelected={
+                        column === "sections" &&
+                        flatIdx === sectionsWindow.cursor
+                      }
+                      isQueueing={isQueueing}
+                      cardRef={setCardRef(task.id)}
+                      onSelect={() => {
+                        setColumn("sections");
+                        setSectionsWindow((w) => W.withCursor(w, flatIdx));
+                      }}
+                      onEdit={() => openModal(task)}
+                      onEnqueue={
+                        isQueueing ? () => enqueue(task.id) : undefined
+                      }
+                      onPostpone={() => postponeTask(task.id)}
+                      onPushToTimeline={() => pushTaskToTimeline(task)}
+                      onSnooze={(minutes) => snoozeTask(task, minutes)}
+                      onClearSnooze={() => clearTaskSnooze(task)}
+                      onDelete={() => deleteWithUndo(task)}
+                    />
+                  );
+                })}
+              </section>
+            );
+          })}
+        </div>
+
+        <aside
+          className={cn(
+            queueColumnStyles,
+            column === "queue" && "ring-1 ring-foreground/25",
+            isQueueing &&
+              "ring-0 outline-1 outline-foreground/60 outline-dashed"
+          )}
+        >
+          <div className="flex items-center justify-between">
+            <p className={sectionTitleStyles}>
+              Queue
+              <span className="font-mono">({queueTasks.length})</span>
+            </p>
+            {isQueueing && (
+              <Badge>
+                <ListPlus data-icon="inline-start" />
+                queueing
+              </Badge>
+            )}
+          </div>
+          {queueTasks.length === 0 && (
+            <p className="text-xs text-muted-foreground/60 italic">
+              Empty. Press <Kbd>q</Kbd> to start queueing.
+            </p>
+          )}
+          {queueTasks.map((task, idx) => (
+            <BacklogTaskCard
+              key={task.id}
+              task={task}
+              showTagIcon
+              isSelected={column === "queue" && idx === queueWindow.cursor}
+              cardRef={setCardRef(task.id)}
+              onSelect={() => {
+                setColumn("queue");
+                setQueueWindow((w) => W.withCursor(w, idx));
+              }}
+              onEdit={() => openModal(task)}
+              onPushToTimeline={() => pushTaskToTimeline(task)}
+              onDequeue={() => dequeue(task.id)}
+            />
+          ))}
+        </aside>
+      </div>
 
       <BacklogPostponedOrDone
         postponedTasks={postponedTasks}

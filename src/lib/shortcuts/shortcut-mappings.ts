@@ -15,7 +15,9 @@ export const ROOT_SHORTCUTS = {
 export const TIMELINE_SHORTCUTS = {
   escape: "Escape",
   newMilestone: "n",
+  newBacklogTask: "shift+N",
   newEvent: "v",
+  pickFromQueue: "p",
   remove: "d",
   removeConfirm: "e",
   edit: "e",
@@ -32,6 +34,12 @@ export const TIMELINE_SHORTCUTS = {
   last: "shift+G",
 } as const;
 
+export const TIMELINE_QUEUE_PICK_SHORTCUTS = {
+  escape: "Escape",
+  pickFirst: "k",
+  pickSecond: "j",
+} as const;
+
 export const TIMELINE_CARD_SHORTCUTS = {
   escape: "Escape",
   moveUp: "k",
@@ -41,33 +49,36 @@ export const TIMELINE_CARD_SHORTCUTS = {
 } as const;
 
 export const BACKLOG_SHORTCUTS = {
-  switchMode: "z",
+  escape: "Escape",
   newTask: "n",
   edit: "e",
   pushTimeline: "p",
   pushTimelineFront: "shift+P",
   postpone: "x",
-  moveTask: "m",
-  toggleNext: "a",
-  groupRight: "l",
-  groupLeft: "h",
-  groupRightArrow: "ArrowRight",
-  groupLeftArrow: "ArrowLeft",
+  toggleQueueing: "q",
+  enqueue: "a",
+  enqueueEnter: "Enter",
+  dequeue: "d",
+  dequeueAll: "shift+D",
+  columnRight: "l",
+  columnLeft: "h",
+  columnRightArrow: "ArrowRight",
+  columnLeftArrow: "ArrowLeft",
   taskDown: "j",
   taskUp: "k",
   taskDownArrow: "ArrowDown",
   taskUpArrow: "ArrowUp",
   taskFirst: "g",
   taskLast: "shift+G",
-  swapDown: "shift+J",
-  swapUp: "shift+K",
+  // Sections column: jump between sections. Queue column: reorder.
+  shiftDown: "shift+J",
+  shiftUp: "shift+K",
 } as const;
 
 export const BACKLOG_MODAL_SHORTCUTS = {
   submit: "Enter",
   toggleFocus: "ctrl+n",
   tagKeys: ["n", "m", "h", "j", "k", "l"],
-  toggleNext: "a",
 } as const;
 
 export const MILESTONE_MODAL_SHORTCUTS = {

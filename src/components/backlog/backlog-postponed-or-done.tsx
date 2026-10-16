@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import type { BacklogTask } from "@/lib/stores/backlog-store";
 import { tw } from "@/lib/utils";
-import { Check, Trash2, Zap } from "lucide-react";
+import { Check, Trash2 } from "lucide-react";
 import type { ReactNode } from "react";
 
 const rowStyles = tw`
@@ -85,12 +85,6 @@ export function BacklogPostponedOrDone({
                   task={task}
                   badges={
                     <>
-                      {task.isNext && (
-                        <Badge>
-                          <Zap data-icon="inline-start" />
-                          next
-                        </Badge>
-                      )}
                       {task.tag.trim() && (
                         <Badge variant="secondary">{task.tag}</Badge>
                       )}

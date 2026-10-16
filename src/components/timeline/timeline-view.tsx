@@ -15,19 +15,20 @@ import {
   toSuggestedMilestone,
   useSoonEvents,
 } from "@/lib/timeline/use-soon-events";
-import { tagsMapping } from "@/lib/todos/mappings";
 import { Window as W, type UiWindow } from "@/shared-lib/shortcuts/window";
 import { Button } from "@/components/ui/button";
 import { Kbd } from "@/components/ui/kbd";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Trash2 } from "lucide-react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { toast } from "sonner";
+import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { EventModal } from "./event-modal";
 import { MilestoneCard } from "./milestone-card";
 import { cycleTask } from "./milestone-card-utils";
 import { MilestoneClimb } from "./milestone-climb";
 import { MilestonesStatsBar } from "./milestones-stats-bar";
 import { MilestoneModal } from "./milestone-modal";
+import { QueuePickRows } from "./queue-pick-rows";
 import { QuickNoteCard } from "./quick-note-card";
 import { TimelineEventRow } from "./timeline-event-row";
 import { TimelineNotesTab } from "./timeline-notes-tab";
@@ -38,6 +39,8 @@ import { useTimelineShortcuts } from "./use-timeline-shortcuts";
 type TimelineTab = "milestones" | "completed" | "events" | "notes";
 
 const MARK_TASKS_DONE_MESSAGE = "Ssup with tasks?";
+const QUEUE_PICK_SIZE = 2;
+const EMPTY_QUEUE_AUTO_HIDE_MS = 1200;
 
 const EmptyHint = ({ children }: { children: React.ReactNode }) => (
   <p className="mb-3 text-sm text-muted-foreground">{children}</p>
@@ -75,12 +78,43 @@ export function TimelineView() {
     BacklogTask | undefined
   >();
 
-  const showBacklogModal = editedBacklogTask !== undefined;
+  const [creatingBacklogTask, setCreatingBacklogTask] = useState(false);
+  const [queuePickOpen, setQueuePickOpen] = useState(false);
+
+  const showBacklogModal =
+    editedBacklogTask !== undefined || creatingBacklogTask;
+  const closeBacklogModal = () => {
+    setEditedBacklogTask(undefined);
+    setCreatingBacklogTask(false);
+  };
   const updateTask = useBacklogStore((s) => s.updateTask);
+  const queue = useBacklogStore((s) => s.queue);
+  const dequeue = useBacklogStore((s) => s.dequeue);
   const addTask = useBacklogStore((s) => s.addTask);
   const consumeNextId = useBacklogStore((s) => s.consumeNextId);
   const backlog = useBacklogStore((s) => s.tasks);
   const allTasksMap = useMemo(() => createTasksMap(backlog), [backlog]);
+
+  const queuePickTasks = useMemo(
+    () =>
+      queue
+        .map((id) => allTasksMap.get(id))
+        .filter(
+          (task): task is BacklogTask =>
+            !!task && !task.isDone && !task.isPostponed
+        )
+        .slice(0, QUEUE_PICK_SIZE),
+    [queue, allTasksMap]
+  );
+
+  useEffect(() => {
+    if (!queuePickOpen || queuePickTasks.length > 0) return;
+    const timer = window.setTimeout(
+      () => setQueuePickOpen(false),
+      EMPTY_QUEUE_AUTO_HIDE_MS
+    );
+    return () => window.clearTimeout(timer);
+  }, [queuePickOpen, queuePickTasks.length]);
 
   const milestoneRefs = useRef<(HTMLDivElement | null)[]>([]);
   const quickNoteRef = useRef<HTMLTextAreaElement | null>(null);
@@ -94,8 +128,8 @@ export function TimelineView() {
   const addHelperTask = (taskIds: number[]) => {
     addItem(
       {
-        ...tagsMapping["other"].autoFill,
         type: "task",
+        tag: "other",
         name: MARK_TASKS_DONE_MESSAGE,
         completed: false,
         taskIds,
@@ -177,6 +211,19 @@ export function TimelineView() {
     );
   };
 
+  const pickFromQueue = (task: BacklogTask) => {
+    const milestone = activeMilestones[windowData.cursor];
+    if (!milestone) return;
+    const taskIds = milestone.taskIds ?? [];
+    if (!taskIds.includes(task.id)) {
+      editItem({ ...milestone, taskIds: [...taskIds, task.id] });
+    }
+    dequeue(task.id);
+    toast.success(`Linked to "${milestone.name}"`, {
+      description: `#${task.id} ${task.name}`,
+    });
+  };
+
   const { isRemoving } = useTimelineShortcuts({
     milestoneModalOpen,
     eventModalOpen,
@@ -194,6 +241,11 @@ export function TimelineView() {
     onDelete: deleteWithUndo,
     focusNotesTab,
     onCycleTask: handleCycleTask,
+    onNewBacklogTask: () => setCreatingBacklogTask(true),
+    queuePickOpen,
+    setQueuePickOpen,
+    queuePickTasks,
+    onPickFromQueue: pickFromQueue,
   });
 
   const handleMilestoneSubmit = (newItem: NewMilestone) => {
@@ -251,16 +303,21 @@ export function TimelineView() {
       />
       <BacklogModal
         opened={showBacklogModal}
-        onClose={() => setEditedBacklogTask(undefined)}
+        onClose={closeBacklogModal}
         onSubmit={(values) => {
           if (editedBacklogTask) {
             updateTask({ ...editedBacklogTask, ...values });
           } else {
-            addTask({ id: consumeNextId(), ...values });
+            const id = consumeNextId();
+            addTask({ id, ...values });
+            toast.success("Added to inbox", {
+              description: `#${id} ${values.name}`,
+            });
           }
-          setEditedBacklogTask(undefined);
+          closeBacklogModal();
         }}
         editing={editedBacklogTask}
+        simple={creatingBacklogTask}
       />
       <EventModal
         opened={eventModalOpen}
@@ -310,28 +367,38 @@ export function TimelineView() {
                 (m) => m.id === item.id
               );
               return (
-                <MilestoneCard
-                  key={item.id}
-                  item={item}
-                  isSelected={isSelected}
-                  isRemoving={isSelected && isRemoving}
-                  activeIdx={activeIdx}
-                  milestoneRef={(el) => {
-                    if (activeIdx >= 0) {
-                      milestoneRefs.current[activeIdx] = el;
+                <Fragment key={item.id}>
+                  <MilestoneCard
+                    item={item}
+                    isSelected={isSelected}
+                    isRemoving={isSelected && isRemoving}
+                    activeIdx={activeIdx}
+                    milestoneRef={(el) => {
+                      if (activeIdx >= 0) {
+                        milestoneRefs.current[activeIdx] = el;
+                      }
+                    }}
+                    onSelect={() =>
+                      setWindowData((w) => W.withCursor(w, activeIdx))
                     }
-                  }}
-                  onSelect={() =>
-                    setWindowData((w) => W.withCursor(w, activeIdx))
-                  }
-                  onEdit={() => {
-                    setEditingMilestone(item);
-                    setMilestoneModalOpen(true);
-                  }}
-                  onToggleDone={() => handleToggleMilestoneDone(item)}
-                  onDelete={() => deleteWithUndo(item)}
-                  onEditBacklogTask={setEditedBacklogTask}
-                />
+                    onEdit={() => {
+                      setEditingMilestone(item);
+                      setMilestoneModalOpen(true);
+                    }}
+                    onToggleDone={() => handleToggleMilestoneDone(item)}
+                    onDelete={() => deleteWithUndo(item)}
+                    onEditBacklogTask={setEditedBacklogTask}
+                  />
+                  {isSelected && queuePickOpen && (
+                    <QueuePickRows
+                      tasks={queuePickTasks}
+                      onPick={(task) => {
+                        pickFromQueue(task);
+                        setQueuePickOpen(false);
+                      }}
+                    />
+                  )}
+                </Fragment>
               );
             })}
 

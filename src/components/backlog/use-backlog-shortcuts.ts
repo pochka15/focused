@@ -1,71 +1,62 @@
 import { BACKLOG_SHORTCUTS } from "@/lib/shortcuts/shortcut-mappings";
-import {
-  BACKLOG_GROUPS,
-  type GridGroup,
-} from "@/lib/stores/backlog-grid-store";
 import type { BacklogTask } from "@/lib/stores/backlog-store";
-import type { BacklogRouteView } from "@/lib/backlog/backlog-route-mode";
-import {
-  Window as W,
-  Window2D,
-  type UiWindow,
-  type UiWindow2D,
-} from "@/shared-lib/shortcuts/window";
+import { Window as W, type UiWindow } from "@/shared-lib/shortcuts/window";
 import { useShortcuts } from "@/shared-lib/shortcuts/use-shortcuts";
+import type { Dispatch, SetStateAction } from "react";
+
+export type BacklogColumn = "sections" | "queue";
 
 type Params = {
   modalOpen: boolean;
-  zenMode: boolean;
-  isWide: boolean;
-  isMoving: boolean;
-  focusedGroup: GridGroup;
-  focusedTasks: BacklogTask[];
-  allSorted: BacklogTask[];
-  getWindow: (group: GridGroup) => UiWindow;
-  setIsMoving: (isMoving: boolean) => void;
-  setWindow2D: (
-    updater: (state: UiWindow2D<GridGroup>) => UiWindow2D<GridGroup>
-  ) => void;
-  setWindowFor: (
-    group: GridGroup,
-    updater: (windowState: UiWindow) => UiWindow
-  ) => void;
-  setRouteView: (view: BacklogRouteView) => void;
+  isQueueing: boolean;
+  setIsQueueing: Dispatch<SetStateAction<boolean>>;
+  column: BacklogColumn;
+  setColumn: Dispatch<SetStateAction<BacklogColumn>>;
+  sectionTasks: BacklogTask[];
+  // Index in sectionTasks where each section begins.
+  sectionStarts: number[];
+  queueTasks: BacklogTask[];
+  sectionsWindow: UiWindow;
+  setSectionsWindow: Dispatch<SetStateAction<UiWindow>>;
+  queueWindow: UiWindow;
+  setQueueWindow: Dispatch<SetStateAction<UiWindow>>;
   openModal: (task?: BacklogTask) => void;
-  assignTask: (taskId: number, group: GridGroup) => void;
-  swapWithin: (
-    group: GridGroup,
-    fromId: number,
-    toId: number,
-    orderedIds: number[]
-  ) => void;
   pushTaskToTimeline: (task: BacklogTask, pushFront?: boolean) => void;
   postponeTask: (taskId: number) => void;
-  toggleTaskNext: (task: BacklogTask) => void;
+  enqueue: (taskId: number) => void;
+  dequeue: (taskId: number) => void;
+  dequeueAll: () => void;
+  swapInQueue: (aId: number, bId: number) => void;
 };
 
-const GROUPS = BACKLOG_GROUPS;
-const FIRST_GROUP = GROUPS[0] ?? 1;
+const findSectionIdx = (starts: number[], cursor: number): number => {
+  let idx = 0;
+  starts.forEach((start, i) => {
+    if (start <= cursor) idx = i;
+  });
+  return idx;
+};
 
 export function useBacklogShortcuts({
   modalOpen,
-  zenMode,
-  isWide,
-  isMoving,
-  focusedGroup,
-  focusedTasks,
-  allSorted,
-  getWindow,
-  setIsMoving,
-  setWindow2D,
-  setWindowFor,
-  setRouteView,
+  isQueueing,
+  setIsQueueing,
+  column,
+  setColumn,
+  sectionTasks,
+  sectionStarts,
+  queueTasks,
+  sectionsWindow,
+  setSectionsWindow,
+  queueWindow,
+  setQueueWindow,
   openModal,
-  assignTask,
-  swapWithin,
   pushTaskToTimeline,
   postponeTask,
-  toggleTaskNext,
+  enqueue,
+  dequeue,
+  dequeueAll,
+  swapInQueue,
 }: Params) {
   const bh = BACKLOG_SHORTCUTS;
 
@@ -73,9 +64,36 @@ export function useBacklogShortcuts({
     name: "backlogView",
     enabled: !modalOpen,
     keys: (key, event) => {
-      if (key === bh.switchMode) {
+      const inQueue = column === "queue";
+      const tasks = inQueue ? queueTasks : sectionTasks;
+      const n = tasks.length;
+      const cursor = inQueue ? queueWindow.cursor : sectionsWindow.cursor;
+      const task = tasks[cursor];
+      const setWindow = inQueue ? setQueueWindow : setSectionsWindow;
+
+      if (key === bh.toggleQueueing) {
+        setIsQueueing((v) => !v);
+        setColumn("sections");
+        return true;
+      }
+
+      if (isQueueing && key === bh.dequeueAll) {
+        dequeueAll();
+        return true;
+      }
+
+      if (isQueueing && key === bh.escape) {
+        setIsQueueing(false);
+        return true;
+      }
+
+      if (
+        isQueueing &&
+        !inQueue &&
+        (key === bh.enqueue || key === bh.enqueueEnter)
+      ) {
         event.preventDefault();
-        setRouteView(zenMode ? "full" : "zen");
+        if (task) enqueue(task.id);
         return true;
       }
 
@@ -84,136 +102,80 @@ export function useBacklogShortcuts({
         return true;
       }
 
-      const curTasks = isWide ? focusedTasks : allSorted;
-      const n = curTasks.length;
-      const cursorNow = isWide
-        ? getWindow(focusedGroup).cursor
-        : getWindow(FIRST_GROUP).cursor;
-
-      const numericKey = Number(key);
-      const isGroupNumber =
-        Number.isInteger(numericKey) && GROUPS.includes(numericKey);
-
-      if (isMoving) {
-        if (isGroupNumber) {
-          const destGroup = numericKey as GridGroup;
-          const task = curTasks[cursorNow];
-          if (task) assignTask(task.id, destGroup);
-          setIsMoving(false);
-          return true;
-        }
-        setIsMoving(false);
-        return false;
-      }
-
-      if (isGroupNumber) {
-        setWindow2D((state) =>
-          Window2D.setFocusedGroup(state, numericKey as GridGroup)
-        );
+      if (key === bh.columnRight || key === bh.columnRightArrow) {
+        event.preventDefault();
+        setColumn("queue");
         return true;
       }
-
-      if (key === bh.groupRight || key === bh.groupRightArrow) {
+      if (key === bh.columnLeft || key === bh.columnLeftArrow) {
         event.preventDefault();
-        setWindow2D((state) => Window2D.cycleFocusedGroup(state, 1));
-        return true;
-      }
-
-      if (key === bh.groupLeft || key === bh.groupLeftArrow) {
-        event.preventDefault();
-        setWindow2D((state) => Window2D.cycleFocusedGroup(state, -1));
+        setColumn("sections");
         return true;
       }
 
       if (key === bh.edit) {
-        const task = curTasks[cursorNow];
         if (task) openModal(task);
         return true;
       }
       if (key === bh.pushTimeline) {
-        const task = curTasks[cursorNow];
         if (task) pushTaskToTimeline(task);
         return true;
       }
       if (key === bh.pushTimelineFront) {
-        const task = curTasks[cursorNow];
         if (task) pushTaskToTimeline(task, true);
         return true;
       }
       if (key === bh.postpone) {
-        const task = curTasks[cursorNow];
         if (task) postponeTask(task.id);
         return true;
       }
-      if (key === bh.moveTask) {
-        setIsMoving(true);
-        return true;
-      }
-
-      if (key === bh.toggleNext) {
-        const task = curTasks[cursorNow];
-        if (task) toggleTaskNext(task);
+      if (key === bh.dequeue && inQueue) {
+        if (task) dequeue(task.id);
         return true;
       }
 
       if (key === bh.taskDown || key === bh.taskDownArrow) {
         event.preventDefault();
-        if (isWide)
-          setWindowFor(focusedGroup, (windowState) =>
-            W.moveSingle(windowState, 1, n)
-          );
-        else
-          setWindowFor(FIRST_GROUP, (windowState) =>
-            W.moveSingle(windowState, 1, n)
-          );
+        setWindow((w) => W.moveSingle(w, 1, n));
         return true;
       }
       if (key === bh.taskUp || key === bh.taskUpArrow) {
         event.preventDefault();
-        if (isWide)
-          setWindowFor(focusedGroup, (windowState) =>
-            W.moveSingle(windowState, -1, n)
-          );
-        else
-          setWindowFor(FIRST_GROUP, (windowState) =>
-            W.moveSingle(windowState, -1, n)
-          );
+        setWindow((w) => W.moveSingle(w, -1, n));
         return true;
       }
       if (key === bh.taskFirst) {
-        if (isWide) setWindowFor(focusedGroup, W.first);
-        else setWindowFor(FIRST_GROUP, W.first);
+        setWindow(W.first);
         return true;
       }
       if (key === bh.taskLast) {
-        if (isWide)
-          setWindowFor(focusedGroup, (windowState) => W.last(windowState, n));
-        else setWindowFor(FIRST_GROUP, (windowState) => W.last(windowState, n));
+        setWindow((w) => W.last(w, n));
         return true;
       }
 
-      const direction = key === bh.swapDown ? 1 : key === bh.swapUp ? -1 : 0;
+      const direction = key === bh.shiftDown ? 1 : key === bh.shiftUp ? -1 : 0;
+      if (!direction) return false;
 
-      if (direction) {
-        const group = isWide ? focusedGroup : FIRST_GROUP;
-        const cur = getWindow(group).cursor;
-        const fromTask = curTasks[cur];
-        const toTask = curTasks[cur + direction];
-        if (!fromTask || !toTask) return true;
-
-        swapWithin(
-          group,
-          fromTask.id,
-          toTask.id,
-          curTasks.map((task) => task.id)
-        );
-        setWindowFor(group, (windowState) =>
-          W.moveSingle(windowState, direction, n)
-        );
+      if (inQueue) {
+        const other = tasks[cursor + direction];
+        if (!task || !other) return true;
+        swapInQueue(task.id, other.id);
+        setQueueWindow((w) => W.moveSingle(w, direction, n));
         return true;
       }
 
-      return false;
+      const sectionIdx = findSectionIdx(sectionStarts, cursor);
+      const currentStart = sectionStarts[sectionIdx] ?? 0;
+      const target =
+        direction === 1
+          ? sectionStarts[sectionIdx + 1]
+          : cursor > currentStart
+            ? currentStart
+            : sectionStarts[sectionIdx - 1];
+      if (target !== undefined) {
+        setSectionsWindow((w) => W.withCursor(w, target));
+      }
+      return true;
     },
   });
 }

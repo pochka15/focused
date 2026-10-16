@@ -1,11 +1,25 @@
 import type {
+  Milestone,
   NewTimelineItem,
   TimelineItem,
 } from "@/lib/timeline/timeline-models";
+import { migrateTagName } from "@/lib/todos/mappings";
 import { remove } from "lodash";
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
 import { immer } from "zustand/middleware/immer";
+
+// v1: milestone tags collapsed to bigger/smaller/other, mode/priority dropped.
+const migrateItem = (item: TimelineItem): TimelineItem => {
+  if (item.type !== "task") return item;
+  const copy = { ...item } as Milestone & {
+    mode?: unknown;
+    priority?: unknown;
+  };
+  delete copy.mode;
+  delete copy.priority;
+  return { ...copy, tag: migrateTagName(item.tag) };
+};
 
 interface TimelineState {
   items: TimelineItem[];
@@ -94,7 +108,16 @@ export const useTimelineStore = create<TimelineState>()(
     })),
     {
       name: "timeline-storage",
+      version: 1,
       storage: createJSONStorage(() => localStorage),
+      migrate: (persisted, version) => {
+        const state = persisted as Partial<TimelineState>;
+        if (version < 1) {
+          state.items = (state.items ?? []).map(migrateItem);
+          state.history = (state.history ?? []).map(migrateItem);
+        }
+        return state as TimelineState;
+      },
       partialize: (state) => ({
         items: state.items,
         history: state.history,

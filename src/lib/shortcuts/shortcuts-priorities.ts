@@ -9,7 +9,7 @@ export const shortcutsPriorities = {
   milestoneModal: next(),
   eventModal: next(),
   backlogModal: next(),
-  planningSession: next(),
+  timelineQueuePick: next(),
   // Components
   timelineCardView: next(),
   // Views

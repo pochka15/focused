@@ -1,6 +1,12 @@
 import { useTimelineStore } from "@/lib/stores/timeline-store";
 import { isMilestone } from "@/lib/timeline/timeline-models";
-import { orderedTags, tagsMapping, type TagName } from "@/lib/todos/mappings";
+import {
+  DEFAULT_TAG,
+  isTagName,
+  orderedTags,
+  tagsMapping,
+  type TagName,
+} from "@/lib/todos/mappings";
 import { tw } from "@/lib/utils";
 import { Timer, type LucideIcon } from "lucide-react";
 import { useMemo } from "react";
@@ -10,20 +16,11 @@ const iconChipStyles = tw`
   ring-1 ring-foreground/10
 `;
 
-type TagCounts = {
-  "good-one": number;
-  "light-good": number;
-  "deep-routine": number;
-  "light-routine": number;
-};
-
 const approxMinutesByTag: Partial<
   Record<TagName, { min: number; max: number }>
 > = {
-  "good-one": { min: 30, max: 60 },
-  "light-good": { min: 15, max: 30 },
-  "deep-routine": { min: 30, max: 60 },
-  "light-routine": { min: 15, max: 30 },
+  bigger: { min: 30, max: 60 },
+  smaller: { min: 15, max: 30 },
 };
 
 function formatTimeRange(min: number, max: number): string {
@@ -73,23 +70,17 @@ export function MilestonesStatsBar() {
 
     for (const item of items) {
       if (!isMilestone(item) || !item.completed) continue;
-      counts[item.tag] += 1;
+      counts[isTagName(item.tag) ? item.tag : DEFAULT_TAG] += 1;
     }
-
-    const primaryCounts: TagCounts = {
-      "good-one": counts["good-one"] || 0,
-      "light-good": counts["light-good"] || 0,
-      "deep-routine": counts["deep-routine"] || 0,
-      "light-routine": counts["light-routine"] || 0,
-    };
 
     const total = Object.values(counts).reduce((a, b) => a + b, 0);
 
     // Calculate time range
     let totalMin = 0;
     let totalMax = 0;
-    for (const [tag, count] of Object.entries(primaryCounts)) {
-      const range = approxMinutesByTag[tag as TagName];
+    for (const tag of orderedTags) {
+      const count = counts[tag];
+      const range = approxMinutesByTag[tag];
       if (range && count > 0) {
         totalMin += range.min * count;
         totalMax += range.max * count;

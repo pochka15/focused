@@ -6,7 +6,9 @@ import type {
 import {
   TIMELINE_SHORTCUTS,
   TIMELINE_CARD_SHORTCUTS,
+  TIMELINE_QUEUE_PICK_SHORTCUTS,
 } from "@/lib/shortcuts/shortcut-mappings";
+import type { BacklogTask } from "@/lib/stores/backlog-store";
 import { useShortcuts } from "@/shared-lib/shortcuts/use-shortcuts";
 import { Window as W, type UiWindow } from "@/shared-lib/shortcuts/window";
 import type { Dispatch, RefObject, SetStateAction } from "react";
@@ -30,6 +32,11 @@ type UseTimelineShortcutsArgs = {
   onDelete: (item: Milestone) => void;
   focusNotesTab: () => void;
   onCycleTask: (taskId: number) => void;
+  onNewBacklogTask: () => void;
+  queuePickOpen: boolean;
+  setQueuePickOpen: Dispatch<SetStateAction<boolean>>;
+  queuePickTasks: BacklogTask[];
+  onPickFromQueue: (task: BacklogTask) => void;
 };
 
 export const useTimelineShortcuts = ({
@@ -49,6 +56,11 @@ export const useTimelineShortcuts = ({
   onDelete,
   focusNotesTab,
   onCycleTask,
+  onNewBacklogTask,
+  queuePickOpen,
+  setQueuePickOpen,
+  queuePickTasks,
+  onPickFromQueue,
 }: UseTimelineShortcutsArgs) => {
   const { enabled: isInsideCard, data: insideCardData } = useShortcutsMode(
     "editingMilestoneCardTasks"
@@ -99,6 +111,15 @@ export const useTimelineShortcuts = ({
       }
 
       const n = activeMilestones.length;
+      if (key === TIMELINE_SHORTCUTS.pickFromQueue) {
+        if (activeMilestones[windowData.cursor]) setQueuePickOpen(true);
+        return true;
+      }
+      if (key === TIMELINE_SHORTCUTS.newBacklogTask) {
+        event.preventDefault();
+        onNewBacklogTask();
+        return true;
+      }
       if (key === TIMELINE_SHORTCUTS.newMilestone) {
         setEditingMilestone(undefined);
         setMilestoneModalOpen(true);
@@ -187,6 +208,41 @@ export const useTimelineShortcuts = ({
         }
       }
       return false;
+    },
+  });
+
+  useShortcuts({
+    name: "timelineQueuePick",
+    enabled: queuePickOpen && !milestoneModalOpen && !eventModalOpen,
+    keys: (key, event) => {
+      if (
+        key === TIMELINE_QUEUE_PICK_SHORTCUTS.escape ||
+        key === TIMELINE_SHORTCUTS.pickFromQueue
+      ) {
+        event.preventDefault();
+        setQueuePickOpen(false);
+        return true;
+      }
+
+      // Nothing to pick: get out of the way.
+      if (queuePickTasks.length === 0) {
+        setQueuePickOpen(false);
+        return false;
+      }
+
+      const pickIdx =
+        key === TIMELINE_QUEUE_PICK_SHORTCUTS.pickFirst
+          ? 0
+          : key === TIMELINE_QUEUE_PICK_SHORTCUTS.pickSecond
+            ? 1
+            : -1;
+      const task = queuePickTasks[pickIdx];
+      if (task) {
+        event.preventDefault();
+        onPickFromQueue(task);
+        setQueuePickOpen(false);
+      }
+      return true;
     },
   });
 

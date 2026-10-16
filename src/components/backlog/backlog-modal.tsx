@@ -23,8 +23,8 @@ import { Input } from "@/components/ui/input";
 import { Kbd } from "@/components/ui/kbd";
 import { Textarea } from "@/components/ui/textarea";
 import { cn, tw } from "@/lib/utils";
-import { CircleDashed, Flame, Hourglass, type LucideIcon } from "lucide-react";
-import { useEffect, useRef } from "react";
+import { CircleDashed, type LucideIcon } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 
 const optionStyles = tw`
   flex w-full items-center gap-3 bg-muted/40 px-3 py-2 text-left
@@ -64,14 +64,12 @@ const OptionButton = ({
 type BacklogFormValues = {
   name: string;
   description: string;
-  isNext: boolean;
   tag: string;
 };
 
 const defaultValues = (task?: BacklogTask): BacklogFormValues => ({
   name: task?.name ?? "",
   description: task?.description ?? "",
-  isNext: task?.isNext ?? false,
   tag: task?.tag ?? "",
 });
 
@@ -80,13 +78,15 @@ type Props = {
   onClose: () => void;
   onSubmit: (values: Omit<BacklogTask, "id">) => void;
   editing?: BacklogTask;
+  // Only name + description; new tasks land in the inbox.
+  simple?: boolean;
 };
 
 // ─── Tag options ──────────────────────────────────────────────────────────────
 // Keys line up 1:1 with BACKLOG_MODAL_SHORTCUTS.tagKeys.
 
 const TAG_OPTIONS = [
-  { value: "", icon: CircleDashed, label: "Без тега" },
+  { value: "", icon: CircleDashed, label: "Входящие" },
   ...BACKLOG_TAG_PRESETS.map((preset) => ({
     value: preset.value,
     icon: preset.icon,
@@ -97,10 +97,15 @@ const TAG_OPTIONS = [
   key: BACKLOG_MODAL_SHORTCUTS.tagKeys[index]!,
 }));
 
-const NEXT_FALSE = { icon: Hourglass, label: "Пока не на очереди" };
-const NEXT_TRUE = { icon: Flame, label: "На очереди" };
-
-export function BacklogModal({ opened, onClose, onSubmit, editing }: Props) {
+export function BacklogModal({
+  opened,
+  onClose,
+  onSubmit,
+  editing,
+  simple: simpleProp = false,
+}: Props) {
+  // Latched on open so the closing animation doesn't flip the layout.
+  const [simple, setSimple] = useState(simpleProp);
   const nameRef = useRef<HTMLInputElement>(null);
   useDeferredFocus(nameRef, opened);
   const { values, setValues, reset } = useSimpleForm<BacklogFormValues>(
@@ -110,15 +115,15 @@ export function BacklogModal({ opened, onClose, onSubmit, editing }: Props) {
   useEffect(() => {
     if (opened) {
       setValues(defaultValues(editing));
+      setSimple(simpleProp);
     }
-  }, [opened, editing, setValues]);
+  }, [opened, editing, setValues, simpleProp]);
 
   const handleSubmit = () => {
     if (!values.name.trim()) return;
     onSubmit({
       name: values.name.trim(),
       description: values.description,
-      isNext: values.isNext,
       tag: values.tag,
       snoozeUntil: editing?.snoozeUntil ?? null,
       isDone: editing?.isDone ?? false,
@@ -149,7 +154,7 @@ export function BacklogModal({ opened, onClose, onSubmit, editing }: Props) {
         return true;
       }
 
-      if (inputFocused) return true;
+      if (inputFocused || simple) return true;
 
       const tagOpt = TAG_OPTIONS.find((opt) => opt.key === key);
       if (tagOpt) {
@@ -158,23 +163,17 @@ export function BacklogModal({ opened, onClose, onSubmit, editing }: Props) {
         return true;
       }
 
-      if (key === BACKLOG_MODAL_SHORTCUTS.toggleNext) {
-        event.preventDefault();
-        setValues((current) => ({ ...current, isNext: !current.isNext }));
-        return true;
-      }
-
       return true;
     },
   });
-
-  const nextOption = values.isNext ? NEXT_TRUE : NEXT_FALSE;
 
   return (
     <Dialog open={opened} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="sm:max-w-sm" initialFocus={false}>
         <DialogHeader>
-          <DialogTitle>{editing ? "Edit task" : "New task"}</DialogTitle>
+          <DialogTitle>
+            {editing ? "Edit task" : simple ? "New inbox task" : "New task"}
+          </DialogTitle>
         </DialogHeader>
         <FieldGroup>
           <Field>
@@ -202,39 +201,25 @@ export function BacklogModal({ opened, onClose, onSubmit, editing }: Props) {
             />
           </Field>
 
-          <FieldSet>
-            <FieldLegend variant="label">Tag</FieldLegend>
-            <div className="flex flex-col gap-1">
-              {TAG_OPTIONS.map((opt) => (
-                <OptionButton
-                  key={opt.value}
-                  selected={values.tag === opt.value}
-                  shortcut={opt.key}
-                  icon={opt.icon}
-                  label={opt.label}
-                  onClick={() =>
-                    setValues((current) => ({ ...current, tag: opt.value }))
-                  }
-                />
-              ))}
-            </div>
-          </FieldSet>
-
-          <FieldSet>
-            <FieldLegend variant="label">Next</FieldLegend>
-            <OptionButton
-              selected={values.isNext}
-              shortcut={BACKLOG_MODAL_SHORTCUTS.toggleNext}
-              icon={nextOption.icon}
-              label={nextOption.label}
-              onClick={() =>
-                setValues((current) => ({
-                  ...current,
-                  isNext: !current.isNext,
-                }))
-              }
-            />
-          </FieldSet>
+          {!simple && (
+            <FieldSet>
+              <FieldLegend variant="label">Tag</FieldLegend>
+              <div className="flex flex-col gap-1">
+                {TAG_OPTIONS.map((opt) => (
+                  <OptionButton
+                    key={opt.value}
+                    selected={values.tag === opt.value}
+                    shortcut={opt.key}
+                    icon={opt.icon}
+                    label={opt.label}
+                    onClick={() =>
+                      setValues((current) => ({ ...current, tag: opt.value }))
+                    }
+                  />
+                ))}
+              </div>
+            </FieldSet>
+          )}
         </FieldGroup>
 
         <DialogFooter>

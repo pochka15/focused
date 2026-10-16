@@ -1,126 +1,56 @@
-import {
-  AudioLines,
-  CakeSlice,
-  Candy,
-  Lollipop,
-  PlaneLanding,
-  Repeat,
-  Shapes,
-  Sparkles,
-  type LucideIcon,
-} from "lucide-react";
-import type { NewMilestone } from "../timeline/timeline-models";
+import { Mountain, Feather, Shapes, type LucideIcon } from "lucide-react";
 
 export type Tag = {
   key: string;
   icon: LucideIcon;
   description: string;
-  autoFill: Omit<NewMilestone, "name">;
 };
 
-export const orderedTags = [
-  "good-one",
-  "light-good",
-  "new-urgent",
-  "deep-routine",
-  "light-routine",
-  "daily-noise",
-  "pleasures",
-  "other",
-] as const;
-
-export const todoModes = ["deep", "light"] as const;
+export const orderedTags = ["bigger", "smaller", "other"] as const;
 
 export type TagName = (typeof orderedTags)[number];
-export type TodoMode = (typeof todoModes)[number];
+
+export const DEFAULT_TAG: TagName = "other";
 
 export const tagsMapping: Record<TagName, Tag> = {
-  "good-one": {
-    key: "u",
-    icon: Sparkles,
-    description: "О, a это прям хорошо",
-    autoFill: {
-      priority: 2,
-      tag: "good-one",
-      mode: "deep",
-      type: "task",
-    },
-  },
-  "new-urgent": {
-    key: "o",
-    icon: PlaneLanding,
-    description: "Прилетела срочная хрень",
-    autoFill: {
-      priority: 1,
-      tag: "new-urgent",
-      mode: "deep",
-      type: "task",
-    },
-  },
-  "light-good": {
-    key: "i",
-    icon: Lollipop,
-    description: "Недолго что-то полезное поделать",
-    autoFill: {
-      priority: 2,
-      tag: "light-good",
-      mode: "light",
-      type: "task",
-    },
-  },
-  "daily-noise": {
-    key: "l",
-    icon: AudioLines,
-    description: "Daily Noise",
-    autoFill: {
-      priority: 2,
-      tag: "daily-noise",
-      mode: "deep",
-      type: "task",
-    },
-  },
-  "deep-routine": {
+  bigger: {
     key: "j",
-    icon: Repeat,
-    description: "Раунды по работе",
-    autoFill: {
-      priority: 2,
-      tag: "deep-routine",
-      mode: "deep",
-      type: "task",
-    },
+    icon: Mountain,
+    description: "Окно побольше",
   },
-  "light-routine": {
+  smaller: {
     key: "k",
-    icon: Candy,
-    description: "Мелкие рабочие моменты",
-    autoFill: {
-      priority: 2,
-      tag: "light-routine",
-      mode: "light",
-      type: "task",
-    },
-  },
-  pleasures: {
-    key: "n",
-    icon: CakeSlice,
-    description: "А теперь время для флекса",
-    autoFill: {
-      priority: 3,
-      tag: "pleasures",
-      mode: "light",
-      type: "task",
-    },
+    icon: Feather,
+    description: "Окно поменьше",
   },
   other: {
-    key: "m",
+    key: "l",
     icon: Shapes,
     description: "Другое",
-    autoFill: {
-      priority: 2,
-      tag: "other",
-      mode: "light",
-      type: "task",
-    },
   },
+};
+
+export const isTagName = (value: unknown): value is TagName =>
+  typeof value === "string" && value in tagsMapping;
+
+export const getTag = (value: string | null | undefined): Tag =>
+  tagsMapping[isTagName(value) ? value : DEFAULT_TAG];
+
+// Tags used before the "bigger/smaller/other" simplification.
+const LEGACY_TAGS: Record<string, TagName> = {
+  "good-one": "bigger",
+  "deep-routine": "bigger",
+  "new-urgent": "bigger",
+  "daily-noise": "bigger",
+  "light-good": "smaller",
+  "light-routine": "smaller",
+  pleasures: "smaller",
+};
+
+export const migrateTagName = (value: unknown): TagName => {
+  if (isTagName(value)) return value;
+  if (typeof value === "string" && value in LEGACY_TAGS) {
+    return LEGACY_TAGS[value]!;
+  }
+  return DEFAULT_TAG;
 };

@@ -8,7 +8,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Skeleton } from "@/components/ui/skeleton";
 import { getBacklogTagPreset } from "@/lib/backlog/backlog-tag-presets";
 import { SNOOZE_PRESETS } from "@/lib/backlog/snooze-presets";
 import { isTaskSnoozed } from "@/lib/backlog/backlog-task-utils";
@@ -16,13 +15,13 @@ import type { BacklogTask } from "@/lib/stores/backlog-store";
 import { cn, tw } from "@/lib/utils";
 import {
   AlarmClock,
-  Flame,
+  ListPlus,
   Moon,
   Pencil,
   Plus,
   RotateCcw,
   Trash2,
-  Zap,
+  X,
 } from "lucide-react";
 
 const cardStyles = tw`
@@ -30,45 +29,49 @@ const cardStyles = tw`
   ring-1 ring-foreground/5 transition-[background-color,box-shadow]
 `;
 
-const nextBadgeStyles = tw`
-  animate-shimmer bg-linear-to-r from-foreground via-muted-foreground
-  to-foreground bg-size-[200%_100%] bg-clip-text text-transparent
-  *:[svg]:text-foreground
-`;
-
 type Props = {
   task: BacklogTask;
   isSelected: boolean;
-  isMoving: boolean;
-  zenMode?: boolean;
+  // Highlights the selection as "about to be queued".
+  isQueueing?: boolean;
+  showTagIcon?: boolean;
   cardRef: (el: HTMLDivElement | null) => void;
   onSelect: () => void;
   onEdit: () => void;
-  onPostpone: () => void;
+  onPostpone?: () => void;
   onPushToTimeline?: () => void;
-  onToggleNext?: () => void;
+  onEnqueue?: () => void;
+  onDequeue?: () => void;
   onSnooze?: (minutes: number) => void;
   onClearSnooze?: () => void;
-  onDelete: () => void;
+  onDelete?: () => void;
 };
+
+const stop =
+  (fn: () => void) =>
+  (e: React.MouseEvent): void => {
+    e.stopPropagation();
+    fn();
+  };
 
 export function BacklogTaskCard({
   task,
   isSelected,
-  isMoving,
-  zenMode = false,
+  isQueueing = false,
+  showTagIcon = false,
   cardRef,
   onSelect,
   onEdit,
   onPostpone,
   onPushToTimeline,
-  onToggleNext,
+  onEnqueue,
+  onDequeue,
   onSnooze,
   onClearSnooze,
   onDelete,
 }: Props) {
   const tagPreset = getBacklogTagPreset(task.tag);
-  const TagIcon = tagPreset?.icon;
+  const TagIcon = showTagIcon ? tagPreset?.icon : undefined;
   const snoozed = isTaskSnoozed(task);
 
   return (
@@ -77,160 +80,142 @@ export function BacklogTaskCard({
       className={cn(
         cardStyles,
         isSelected && "bg-accent ring-foreground/40",
-        isMoving &&
+        isQueueing &&
           isSelected &&
           "ring-0 outline-1 outline-foreground/60 outline-dashed"
       )}
       onClick={onSelect}
     >
       <div className="flex min-w-0 flex-1 flex-col gap-1.5">
-        {zenMode ? (
-          <Skeleton className="h-3 w-1/4 animate-none rounded-full bg-foreground/10" />
-        ) : (
-          <div className="flex flex-wrap items-center gap-1.5">
-            <p className="text-sm font-medium">
-              <span className="font-mono text-muted-foreground">
-                #{task.id}
-              </span>{" "}
-              {task.name}
-            </p>
-            {TagIcon && (
-              <TagIcon
-                strokeWidth={1.5}
-                className="size-3.5 text-muted-foreground"
-              />
-            )}
-          </div>
-        )}
-        {!zenMode && task.description && (
+        <div className="flex flex-wrap items-center gap-1.5">
+          <p className="text-sm font-medium">
+            <span className="font-mono text-muted-foreground">#{task.id}</span>{" "}
+            {task.name}
+          </p>
+          {TagIcon && (
+            <TagIcon
+              strokeWidth={1.5}
+              className="size-3.5 text-muted-foreground"
+            />
+          )}
+        </div>
+        {task.description && (
           <p className="text-xs text-muted-foreground">{task.description}</p>
         )}
-        {(task.isNext || task.tag.trim() || snoozed) && (
+        {snoozed && (
           <div className="flex flex-wrap gap-3">
-            {task.isNext && (
-              <Badge className={nextBadgeStyles}>
-                <Zap data-icon="inline-start" />
-                next
-              </Badge>
-            )}
-            {task.tag.trim() && <Badge variant="secondary">{task.tag}</Badge>}
-            {snoozed && (
-              <Badge variant="secondary">
-                <Moon data-icon="inline-start" />
-                snoozed
-              </Badge>
-            )}
+            <Badge variant="secondary">
+              <Moon data-icon="inline-start" />
+              until{" "}
+              {new Date(task.snoozeUntil!).toLocaleTimeString([], {
+                hour: "2-digit",
+                minute: "2-digit",
+              })}
+            </Badge>
           </div>
         )}
       </div>
 
-      {!zenMode && (
-        <div className="flex shrink-0 items-center gap-0.5">
-          {onPushToTimeline && (
-            <Button
-              variant="ghost"
-              size="icon-sm"
-              title="Push to timeline"
-              onClick={(e) => {
-                e.stopPropagation();
-                onPushToTimeline();
-              }}
+      <div className="flex shrink-0 items-center gap-0.5">
+        {onEnqueue && (
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            title="Add to queue"
+            onClick={stop(onEnqueue)}
+          >
+            <ListPlus />
+          </Button>
+        )}
+        {onPushToTimeline && (
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            title="Push to timeline"
+            onClick={stop(onPushToTimeline)}
+          >
+            <Plus />
+          </Button>
+        )}
+        {onSnooze && (
+          <DropdownMenu>
+            <DropdownMenuTrigger
+              render={
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
+                  title="Snooze presets"
+                  onClick={(e) => e.stopPropagation()}
+                />
+              }
             >
-              <Plus />
-            </Button>
-          )}
-          {onToggleNext && (
-            <Button
-              variant="ghost"
-              size="icon-sm"
-              title="Toggle next"
-              onClick={(e) => {
-                e.stopPropagation();
-                onToggleNext();
-              }}
+              <AlarmClock />
+            </DropdownMenuTrigger>
+            <DropdownMenuContent
+              align="end"
+              className="w-auto"
+              onClick={(e) => e.stopPropagation()}
             >
-              <Flame />
-            </Button>
-          )}
-          {onSnooze && (
-            <DropdownMenu>
-              <DropdownMenuTrigger
-                render={
-                  <Button
-                    variant="ghost"
-                    size="icon-sm"
-                    title="Snooze presets"
-                    onClick={(e) => e.stopPropagation()}
-                  />
-                }
-              >
-                <AlarmClock />
-              </DropdownMenuTrigger>
-              <DropdownMenuContent
-                align="end"
-                className="w-auto"
-                onClick={(e) => e.stopPropagation()}
-              >
-                <DropdownMenuGroup>
-                  {SNOOZE_PRESETS.map((preset) => (
+              <DropdownMenuGroup>
+                {SNOOZE_PRESETS.map((preset) => (
+                  <DropdownMenuItem
+                    key={preset.key}
+                    onClick={() => onSnooze(preset.minutes)}
+                  >
+                    {preset.label}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuGroup>
+              {snoozed && onClearSnooze && (
+                <>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuGroup>
                     <DropdownMenuItem
-                      key={preset.key}
-                      onClick={() => onSnooze(preset.minutes)}
+                      variant="destructive"
+                      onClick={() => onClearSnooze()}
                     >
-                      {preset.label}
+                      Clear snooze
                     </DropdownMenuItem>
-                  ))}
-                </DropdownMenuGroup>
-                {snoozed && onClearSnooze && (
-                  <>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuGroup>
-                      <DropdownMenuItem
-                        variant="destructive"
-                        onClick={() => onClearSnooze()}
-                      >
-                        Clear snooze
-                      </DropdownMenuItem>
-                    </DropdownMenuGroup>
-                  </>
-                )}
-              </DropdownMenuContent>
-            </DropdownMenu>
-          )}
+                  </DropdownMenuGroup>
+                </>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        )}
+        {onPostpone && (
           <Button
             variant="ghost"
             size="icon-sm"
             title="Postpone"
-            onClick={(e) => {
-              e.stopPropagation();
-              onPostpone();
-            }}
+            onClick={stop(onPostpone)}
           >
             <RotateCcw />
           </Button>
+        )}
+        <Button variant="ghost" size="icon-sm" onClick={stop(onEdit)}>
+          <Pencil />
+        </Button>
+        {onDequeue && (
           <Button
             variant="ghost"
             size="icon-sm"
-            onClick={(e) => {
-              e.stopPropagation();
-              onEdit();
-            }}
+            title="Remove from queue"
+            onClick={stop(onDequeue)}
           >
-            <Pencil />
+            <X />
           </Button>
+        )}
+        {onDelete && (
           <Button
             variant="ghost"
             size="icon-sm"
             className="ml-2 hover:text-destructive"
-            onClick={(e) => {
-              e.stopPropagation();
-              onDelete();
-            }}
+            onClick={stop(onDelete)}
           >
             <Trash2 />
           </Button>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 }
