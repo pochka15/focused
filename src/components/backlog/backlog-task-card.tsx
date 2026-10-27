@@ -29,6 +29,12 @@ const cardStyles = tw`
   ring-1 ring-foreground/5 transition-[background-color,box-shadow]
 `;
 
+const linkRegex = /\b(?:https?:\/\/|www\.)[^\s]+/gi;
+const truncateLinks = (description: string): string =>
+  description.replace(linkRegex, (link) =>
+    link.length > 80 ? `${link.slice(0, 80)}...` : link
+  );
+
 type Props = {
   task: BacklogTask;
   isSelected: boolean;
@@ -100,7 +106,9 @@ export function BacklogTaskCard({
           )}
         </div>
         {task.description && (
-          <p className="text-xs text-muted-foreground">{task.description}</p>
+          <p className="text-xs text-muted-foreground wrap-break-word">
+            {truncateLinks(task.description)}
+          </p>
         )}
         {snoozed && (
           <div className="flex flex-wrap gap-3">
