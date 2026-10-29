@@ -1,7 +1,3 @@
-import type { Notification } from "@/lib/notifications/notifications-models";
-import { parseRepeatDuration } from "@/lib/notifications/repeat-duration-utils";
-import { useNotificationsStore } from "@/lib/stores/notifications-store";
-import { useShortcuts } from "@/shared-lib/shortcuts/use-shortcuts";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
@@ -13,11 +9,15 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import type { Notification } from "@/lib/notifications/notifications-models";
+import {
+  resetNotificationTimes,
+} from "@/lib/notifications/notifications-utils";
+import { parseRepeatDuration } from "@/lib/notifications/repeat-duration-utils";
+import { useNotificationsStore } from "@/lib/stores/notifications-store";
+import { useShortcuts } from "@/shared-lib/shortcuts/use-shortcuts";
 import { ChevronDown, ChevronUp, Plus, RotateCcw, Trash2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-
-const DEFAULT_TIME_H = 11;
-const DEFAULT_TIME_M = 0;
 
 function newNotification(): Notification {
   return {
@@ -95,14 +95,7 @@ export function NotificationsView() {
   };
 
   const handleReset = () => {
-    setNotifications(
-      notifications.map((n) => ({
-        ...n,
-        timeH: DEFAULT_TIME_H,
-        timeM: DEFAULT_TIME_M,
-        isComplete: false,
-      }))
-    );
+    setNotifications(resetNotificationTimes(notifications));
   };
 
   useShortcuts({

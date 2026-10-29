@@ -1,5 +1,18 @@
 import type { Notification } from "@/lib/notifications/notifications-models";
 
+export const DEFAULT_TIME_H = 11;
+export const DEFAULT_TIME_M = 0;
+
+export const resetNotificationTimes = (
+  notifications: Notification[]
+): Notification[] =>
+  notifications.map((n) => ({
+    ...n,
+    timeH: DEFAULT_TIME_H,
+    timeM: DEFAULT_TIME_M,
+    isComplete: false,
+  }));
+
 export const getMinutesUntil = (timeH: number, timeM: number): number => {
   const now = new Date();
   const target = new Date();

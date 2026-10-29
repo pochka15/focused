@@ -33,6 +33,7 @@ interface TimelineState {
   archiveItem: (id: string) => void;
   restoreItem: (item: TimelineItem) => void;
   reorder: (fromIndex: number, toIndex: number) => void;
+  clearItems: () => void;
   setQuickNote: (note: string) => void;
   setNotesText: (text: string) => void;
   toggleShowCompletedMilestones: () => void;
@@ -80,6 +81,12 @@ export const useTimelineStore = create<TimelineState>()(
           if (!item) return;
           state.items.splice(fromIndex, 1);
           state.items.splice(toIndex, 0, item);
+        }),
+
+      clearItems: () =>
+        set((state) => {
+          state.items = [];
+          state.history = [];
         }),
 
       setQuickNote: (note) =>
