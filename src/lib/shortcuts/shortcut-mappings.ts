@@ -44,7 +44,7 @@ export const TIMELINE_CARD_SHORTCUTS = {
   escape: "Escape",
   moveUp: "k",
   moveDown: "j",
-  toggleTaskDone: "a",
+  toggleTaskDone: "l",
   exit: "f",
 } as const;
 

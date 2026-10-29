@@ -95,6 +95,9 @@ export function MilestoneCard({
 
   const bumpPomodoros = () => editItem({ ...item, pomodoros: pomodoros + 1 });
 
+  const isEditingTasks =
+    editingMode.enabled && editingMode.data.milestoneId === item.id;
+
   const canTrackPomodoros = variant === "default" && isSelected;
 
   return (
@@ -153,12 +156,15 @@ export function MilestoneCard({
             {item.name}
           </p>
           {boundEntries.length > 0 && (
-            <div className="-ml-1.5 flex flex-wrap gap-1">
+            <div
+              className={cn(
+                "-ml-1.5 flex gap-1",
+                isEditingTasks ? "flex-col items-start" : "flex-wrap"
+              )}
+            >
               {boundEntries.map((task, idx) => {
                 const isFocused =
-                  editingMode.enabled &&
-                  editingMode.data.milestoneId === item.id &&
-                  editingMode.data.taskIndex === idx;
+                  isEditingTasks && editingMode.data.taskIndex === idx;
                 return (
                   <LinkedTaskBadge
                     key={task.id}
