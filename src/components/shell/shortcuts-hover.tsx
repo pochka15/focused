@@ -111,10 +111,10 @@ const pinnedPanelStyles = tw`
 // Lines look like "j/k: move cursor" — render the keys part in mono.
 const ShortcutLine = ({ item }: { item: string }) => {
   const sep = item.indexOf(": ");
-  if (sep < 0) return <p className="text-xs">{item}</p>;
+  if (sep < 0) return <p className="col-span-2 text-xs">{item}</p>;
   return (
-    <p className="flex gap-3 text-xs">
-      <span className="w-20 shrink-0 font-mono text-muted-foreground">
+    <p className="col-span-2 grid grid-cols-subgrid text-xs">
+      <span className="font-mono text-muted-foreground">
         {item.slice(0, sep)}
       </span>
       <span>{item.slice(sep + 2)}</span>
@@ -154,16 +154,21 @@ export function ShortcutsHover({ pathname }: Props) {
   const visibleSections = [NAV_SHORTCUTS_SECTION, ...routeSections];
 
   const content = (
-    <div className="flex flex-col gap-3">
+    <div className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-3">
       {visibleSections.map((section, idx) => (
-        <div key={section.title} className="flex flex-col gap-1.5">
-          <p className="text-[0.625rem] font-semibold tracking-widest text-muted-foreground uppercase">
+        <div
+          key={section.title}
+          className="col-span-2 grid grid-cols-subgrid content-start gap-y-1.5"
+        >
+          <p className="col-span-2 text-[0.625rem] font-semibold tracking-widest text-muted-foreground uppercase">
             {section.title}
           </p>
           {section.items.map((item) => (
             <ShortcutLine key={item} item={item} />
           ))}
-          {idx < visibleSections.length - 1 && <Separator className="mt-1.5" />}
+          {idx < visibleSections.length - 1 && (
+            <Separator className="col-span-2 mt-1.5" />
+          )}
         </div>
       ))}
     </div>
